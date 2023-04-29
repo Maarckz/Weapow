@@ -1,44 +1,80 @@
-# WEAPOW
 
-Este projeto é uma coleção de ferramentas para auxiliar em tarefas de segurança da informação.
+# **WEAPOW**
+Este **projeto** é uma coleção de ferramentas para auxiliar em tarefas de *segurança da informação*.
+
+## Funcionalidades
+
+ **1. Criar lista de IPs:**
+Esta função cria uma lista de endereços IP com base nos *dois* ou *três* primeiros octetos fornecidos pelo usuário. Ao final do processo, será gerado um arquivo `ips.txt` com os IPs.
+> Você digitou 192.168 (2 octetos), será gerado uma lista de IP de 192.168.0.0 até 192.168.255.255. 
+
+
+ **2. Host Discovery :**
+Esta função usa o "*ping*" para descobrir quais endereços IP estão ativos na rede. A função armazena os endereços IP ativos em um arquivo chamado `hosts.txt` . Neste script é iniciado um conjunto de threads (400 threads) para executar o **ping** para cada endereço IP.
+> Na opção de confirmação, ao digitar "simple", você poderá ver o comando sem usar threads.
+
+
+ **3. Port Scanner  :**
+Nesta função, existem 3 modos de uso. Você pode fazer em um IP específico, em uma lista `hosts.txt` ou o modo "*simple*" como no caso anterior.
+ - **Modo Único**: O script solicita um endereço IP para escanear e verifica as portas de `1 ~ 65535`.  Se a conexão for bem-sucedida, o script imprime a porta e o serviço associado a ela. 
+ - **Modo Lista**: Aqui você pode usar a versão "*simple*" mencionada anteriormente, mas prosseguindo normalmente o script, verifica automaticamente os HostsUP do arquivo `hosts.txt`, dentro do Range de portas definido pelo usuário. Logo após o PortScan, é gerado um arquivo`portscan.txt` contendo os HostsUP + as portas que a ferramenta conseguiu se comunicar.
+> Este PORTSCANNER utiliza a biblioteca socket para fazer comunicação:
+    "s  =  socket.socket(socket.AF_INET, socket.SOCK_STREAM)"
+
+
+
+
+ 5. [4] - HTTP Finder 
+ 6. [5] - ServerHTTP 
+ 7. [6] - BackUp 
+ 8. [7] - CronTab 
+ 9. [8] - Finder 
+ 10. [9] - Auditor 
+ 11. [10]- Config IP 
+ 12. [11]- LinPeas 
+ 13. [12]- LinEnum 
+ 14. [13]- SUID 
+ 15. [14]- NC Lister 
+ 16. [15]- Reverse Shell 
+ 17. [16]- Server TCP
 
 ## Instalação
 
-As seguintes bibliotecas são utilizadas neste projeto:
+Esta ferramente exige Python3+
+```sh
+sudo apt-get install python3
+```
+Baixa bastar e executar:
 
-- `random.choice`,- `random.randint`,- `concurrent.futures.ThreadPoolExecutor`,- `socket`,- `os`,- `sys`,- `time`,- `re`,- `http.server`,- `socketserver`
+```sh
+git clone https://github.com/Maarckz/Weapow.git
+```
 
-## Utilização
+## Bibliotecas
 
-Para utilizar as ferramentas do projeto, execute o arquivo principal:
+| Biblioteca | Função |
+| ------ | ------ |
+| random | Fornece ferramentas para trabalhar com valores aleatórios. |
+| ThreadPoolExecutor | Cria Threads que podem ser usadas para executar funções em paralelo. |
+| socket | Permite que as aplicações possam se comunicar usando diferentes protocolos de rede |
+| os | Ela permite que o código possa interagir com o sistema. |
+| sys | Fornece acesso às variáveis e funções internas do interpretador Python. |
+| time | Fornece funções para trabalhar com o tempo |
+| re | Fornece suporte para trabalhar com expressões regulares. |
+| http.server | fornece suporte para criar servidores HTTP. |
+| socketserver | fornece uma infraestrutura para criar servidores de rede. |
 
-python WEAPOW.py
-
-A partir daí, basta escolher a opção correspondente à ferramenta desejada a partir do menu exibido:
-
- \033[0;34m[1]\033[m - Criar lista de IPs
- \033[0;34m[2]\033[m - Host Discovery
- \033[0;34m[3]\033[m - Port Scanner
- \033[0;34m[4]\033[m - HTTP Finder
- \033[0;34m[5]\033[m - ServerHTTP
- \033[0;34m[6]\033[m - BackUp
- \033[0;34m[7]\033[m - CronTab
- \033[0;34m[8]\033[m - Finder
- \033[0;34m[9]\033[m - Auditor
- \033[0;34m[10]\033[m- Config IP
- \033[0;34m[11]\033[m- LinPeas
- \033[0;34m[12]\033[m- LinEnum
- \033[0;34m[13]\033[m- SUID
- \033[0;34m[14]\033[m- NC Lister
- \033[0;34m[15]\033[m- Reverse Shell
- \033[0;34m[16]\033[m- Server TCP
- \033[0;34m[0]\033[m - Sair
-
-## Contribuição
-
+## Desenvolvimento
+Quer contribuir? Ótimo!
 Contribuições são bem-vindas! Sinta-se à vontade.
 
-## Licença
+## License
+Este projeto está licenciado sob a licença MIT.
+**Free Software, Hell Yeah!**
 
-Este projeto está licenciado sob a licença MIT. 
-Consulte o arquivo `LICENSE` para obter mais informações.
+[LinPEAS]:<https://github.com/carlospolop/PEASS-ng/tree/master/linPEAS>
+[Carlos Polop]:<https://github.com/carlospolop>
+[LinEnum]:<https://github.com/rebootuser/LinEnum>
+[rebootuser]:<https://github.com/rebootuser>
+
+
