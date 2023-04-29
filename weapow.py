@@ -663,13 +663,6 @@ def nc(porta):
         
 #=======================================================================================
 def reverse_shell():
-
-#  Esse código define uma função chamada reverse_shell() que apresenta um menu ao usuário com várias opções para executar 
-#  um shell reverso em uma máquina remota. As opções incluem diferentes tipos de shells reversos usando Bash, NC, Rust, PERL, 
-#  PHP, PowerShell, Python, SoCat, Node, JavaScript, TelNet, zsh e GoLang. O usuário seleciona uma opção e fornece o endereço 
-#  IP e a porta da máquina remota à qual deseja se conectar. A função então gera o comando shell reverso apropriado e o executa 
-#  na máquina remota. O código é destinado ao uso em testes de penetração e outros aplicativos relacionados à segurança.
-
     try:
         print('''
 Você deseja Pesquisar ou Executar?
@@ -861,21 +854,25 @@ Você deseja Pesquisar ou Executar?
         
 #=======================================================================================
 def server_tcp():
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    file = open("ARQ/output.txt", "w")
     try:
-        server.bind(("0.0.0.0", 4466))
-        server.listen(5)
-        print("Listening...")
-        client_socket, address = server.accept()
-        print("Received from: " + address[0])
-        data = client_socket.recv(1024).decode()
-        file.write(data)
-        server.close()
-    except Exception as error:
-        print("Erro: ", error)
-        server.close()
-
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        file = open("ARQ/output.txt", "w")
+        porta = int(input("Digite a Porta a ser escutada: "))
+        try:
+            server.bind(("0.0.0.0", porta))
+            server.listen(5)
+            print("Listening...")
+            client_socket, address = server.accept()
+            print("Received from: " + address[0])
+            data = client_socket.recv(1024).decode()
+            file.write(data)
+            server.close()
+        except Exception as error:
+            print("Erro: ", error)
+            server.close()
+    except FileNotFoundError:
+        os.system('mkdir ARQ')
+        server_tcp()
 #=======================================================================================
 def banner():
     try:
