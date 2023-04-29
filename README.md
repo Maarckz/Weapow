@@ -52,12 +52,24 @@ Nesta função, existem 3 modos de uso. Você pode fazer em um IP específico, e
 > Este PORTSCANNER utiliza a biblioteca socket para fazer comunicação:
     "s  =  socket.socket(socket.AF_INET, socket.SOCK_STREAM)"
 
+**4. HTTP Finder :**
+Esta função procura por servidores HTTP no arquivo `portscan.txt`. Ele verifica todas as linhas que contêm a *porta 80 aberta*, em seguida inicia uma conexão host, e envia uma solicitação `GET HTTP`. Ela recebe a resposta do servidor e a imprime na tela.
+> Esta função ainda está em desenvolvimento, mas a intenção é manipular o conteúdo do site encontrado, e fazer solicitações específicas para cada HOST.
+
+**5. ServerHTTP :**
+Esta é uma função que inicia um servidor HTTP. Ele recebe uma entrada do usuário para especificar qual **porta** deve ser usada para o servidor e, em seguida, inicia o servidor usando o módulo `http.server` do Python.
+> Essa função pode ser usada para envio de arquivos de um determinado host, tanto para uma auditoria, como para manutenção. 
+> Ex: Servidor de arquivos está fora (por algum motivo), você consegue fazer de um PC qualquer um servidor de arquivos.
+
+**6. BackUp :**
+Esta função faz backup do diretório do usuário, para uma pasta chamada `Backup`. O usuário é questionado se deseja realizar o backup ou não antes de prosseguir.
+**ATENÇÃO**: *Esta função inicia após a confirmação, e ainda não foi tratada para solicitar o diretório a ser feito o backup.*
+> Comando executado: `cp -v -r /home/$USER /home/$USER/Backup`
 
 
 
- 5. [4] - HTTP Finder 
- 6. [5] - ServerHTTP 
- 7. [6] - BackUp 
+
+
  8. [7] - CronTab 
  9. [8] - Finder 
  10. [9] - Auditor 
