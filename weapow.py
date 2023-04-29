@@ -588,12 +588,13 @@ def config_IP():
     print('\n')
     ip = input('Qual IP gostaria de atribuir a este Computador?\n')
     gateway = input('Digite o Gateway: ')
+    dns = input('Digite o nameserver + ip (Ex"nameserver 8.8.8.8"):  ')
     #Definir um endereço IP estático:
     os.system('sudo ip addr add {}/24 dev eth0'.format(ip))
     #Configurar o gateway padrão:
     os.system('sudo ip route add default via {}'.format(gateway))
     #Adicionar um servidor DNS:
-    os.system('echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf')
+    os.system('echo "{}" | sudo tee /etc/resolv.conf'.format(dns))
 
 #=======================================================================================
 def linpeas():
