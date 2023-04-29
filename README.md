@@ -79,25 +79,24 @@ Esta função permite ao usuário buscar por um arquivo específico em **todo** 
 Esta função coleta informações do sistema, onde são organizadas em seções para diferentes tipos de informações, incluindo: ***usuário, sistema, CPU, memória, rede, partições, dispositivos USB, programas instalados e histórico de bash***, em seguida as salva em no arquivo `auditoria.txt`
 > Essa função pode não funcionar dependendo da Distro usada.
 
-
-
-
-
-
-
-
-
 **10. Config IP :**
-Esta função permite ao usuário buscar por um arquivo específico em **todo** o sistema de arquivos usando o comando `find`. Quaisquer erros durante a busca são redirecionados para `2>/dev/null`.
->Essa função pode demorar um pouco dependendo da quantidade de arquivos a serem verificados.
+Esta função começa mostrando as informações de rede do computador, e em seguida permite ao usuário configurar o endereço IP, gateway e servidor DNS.
+>É importante notar que esta função deve ser executada com privilégios de superusuário.
 
 **11. LinPeas :**
-Esta função permite ao usuário buscar por um arquivo específico em **todo** o sistema de arquivos usando o comando `find`. Quaisquer erros durante a busca são redirecionados para `2>/dev/null`.
->Essa função pode demorar um pouco dependendo da quantidade de arquivos a serem verificados.
+Esta função executa o script do Marcos Polop `LinPeas.sh`
+> Essa função demora um pouco, mas é muito eficaz.
 
 **12. LinEnum :**
-Esta função permite ao usuário buscar por um arquivo específico em **todo** o sistema de arquivos usando o comando `find`. Quaisquer erros durante a busca são redirecionados para `2>/dev/null`.
->Essa função pode demorar um pouco dependendo da quantidade de arquivos a serem verificados.
+Esta função executa o script do rebootuser `LinEnum.sh`
+> Essa função demora um pouco, mas é muito eficaz.
+
+
+
+
+
+
+
 
 **13. SUID :**
 Esta função permite ao usuário buscar por um arquivo específico em **todo** o sistema de arquivos usando o comando `find`. Quaisquer erros durante a busca são redirecionados para `2>/dev/null`.
