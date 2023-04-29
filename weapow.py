@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-version = "v2.163-dev"
+version = "v2.164-dev"
 
 # CRIAR UM FORMATADOR DE PENDRIVE
 # CRIAR UM ENCRIPTADOR DE ARQUIVOS
@@ -9,7 +9,6 @@ from random import choice, randint as r
 from concurrent.futures import ThreadPoolExecutor as e
 import socket
 import os
-import subprocess
 import sys
 import time
 import re
@@ -61,8 +60,8 @@ bA, bB  = "{","}"
 #=======================================================================================
 def iplist_dois():  
     oct=str(input('Digite os dois primeiros octetos (Ex: 192.168):'))
-    subprocess.run(['mkdir', 'ARQ'])
-    subprocess.run(['rm', '-rf', 'ARQ/ips.txt'])
+    os.system('mkdir ARQ')
+    os.system('rm -rf ARQ/ips.txt')
     print('Por favor aguarde, estamos gerando seu arquivo.')
     i=0; p=1	
     while i < 255:
@@ -80,8 +79,8 @@ def iplist_dois():
 
 def iplist_tres():  
     oct=str(input('Digite os três primeiros octetos (Ex: 192.168.204):'))
-    subprocess.run(['mkdir', 'ARQ'])
-    subprocess.run(['rm', '-rf', 'ARQ/ips.txt'])
+    os.system('mkdir ARQ')
+    os.system('rm -rf ARQ/ips.txt')
     print('Por favor aguarde, estamos gerando seu arquivo.')
     p=1	
     while p < 255:
@@ -107,7 +106,7 @@ def ping_discovery():
                 content = f.read()
                 t = tuple(content.splitlines())
             ips = t
-            subprocess.run(['rm', '-rf', 'ARQ/ping.txt'])
+            os.system('rm -rf ARQ/ping.txt')
             for host in ips:
                 pipe = os.popen('ping -c 1 -W 1 {}'.format(host)).read() #tentar colocar .read() na variavél pipe e printar logo depois
                 print(pipe)
@@ -128,7 +127,7 @@ def host_discovery():
         print('((Para cancelar segure CTRL+C))')
         sit_host_discovery = input('Dependendo da quantidade de IPs, este processo poderá demorar. Deseja continuar o \033[0;31mHostDiscover\033[m? (S/N) ')
         if(sit_host_discovery.lower() == "s"):
-            subprocess.run(['rm', '-rf', 'ARQ/hosts.txt'])
+            os.system('rm -rf ARQ/hosts.txt')
             try:
                 def ping(host):
                     printer("Procurando Hosts: {}".format(str(host)))
@@ -194,6 +193,8 @@ def portscan_uniq():
         print(Ctrl_C)
     except FileNotFoundError:
         print("\nO arquivo de hosts descobertos deve ser gerado.")
+        input(press)
+        main()
 
 #=======================================================================================
 def portscan():
@@ -263,7 +264,8 @@ def portscan():
         print(Ctrl_C)
     except FileNotFoundError:
         print("\nO arquivo de hosts descobertos deve ser gerado.")
-
+        input(press)
+        main()
 #=======================================================================================
 def portscan_simple():
     try:
@@ -339,6 +341,8 @@ def portscan_simple():
         print(Ctrl_C)
     except FileNotFoundError:
         print("\nO arquivo de hosts descobertos deve ser gerado.")
+        input(press)
+        main()
         
 #=======================================================================================
 def http_finder():
@@ -372,6 +376,8 @@ def http_finder():
         print(Ctrl_C)
     except FileNotFoundError:
         print("\nO arquivo de hosts descobertos deve ser gerado.")
+        input(press)
+        main()
 
 #=======================================================================================
 def serverhttp():
@@ -423,18 +429,25 @@ Para configurar uma rotina C[R]ON:
 \033[0;31m+----------------------------------\033[m Minutos (0-59) se quiser a cada 15min use: '/15'
 
 Exemplo: 
-\033[7;33m*/15 **** /usr/bin/python3 /caminho/do/weapow.py\033[m   [A cada 15min EXEC o arquivo weapow.py usando Python3]
+\033[7;33m*/15 * * * * /usr/bin/python3 /caminho/do/weapow.py\033[m   [A cada 15min EXEC o arquivo weapow.py usando Python3]
 \033[7;33m30 15 14 6 * /tmp/backup.sh\033[m                        [No dia 14JUN às 15:30 EXEC o backup.sh]
 
 
 Você pode conferir a alteração com o comando: "\033[0;34m$ crontab -e\033[m"
 
 ''')
-    sit_cron = input("Deseja continuar a configuração do C[R]ON? (S/N)")
+    sit_cron = input("Deseja substituir as configurações do C[R]ON? (S/N)")
     if(sit_cron.lower() == "s"):
-        os.system("crontab -e")
-        input(press)
-        main()
+        try:
+            enter = input("Digite a entrada do C[R]ON:\n")
+            os.system('echo "{}" | crontab -'.format(enter))
+            print('C[R]ON configurado corretamente.')
+            input(press)
+            main()
+        except TypeError:
+            print("Faltam [Argumentos] para entrada")
+            input(press)
+            main()
     else:
         input(press)
         main()
@@ -480,11 +493,8 @@ def infosys():
         output += '\n'
         output += 'CPU ===========================================================\n'
         output += os.popen('cat /proc/cpuinfo | grep "model name" | uniq').read()
-        #output += "Cores :  {}\n".format(psutil.cpu_count(logical=False))
+        output += os.popen(''' cat /proc/cpuinfo | awk '/cpu cores/ {gsub("cpu cores", "Cores"); print}' | uniq''').read()
         output += os.popen(''' cat /proc/cpuinfo | awk '/siblings/ {gsub("siblings", "Threads"); print}' | uniq''').read()
-        #output += "Maximal Freq :  {.max:.1f}Mhz\n".format(psutil.cpu_freq())
-        #output += "Current Freq :  {.current:.1f}Mhz\n".format(psutil.cpu_freq())
-        #output += "CPU Usage :  {}%\n".format(psutil.cpu_percent())
         output += '===============================================================\n'
         
         output += '\n'
