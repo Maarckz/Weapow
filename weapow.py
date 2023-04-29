@@ -574,49 +574,14 @@ def infosys():
     except KeyboardInterrupt:
         print('\n')
         print(Ctrl_C)
+    except FileNotFoundError:
+        os.system('mkdir ARQ')
+        with open('ARQ/auditoria.txt', 'w') as file:
+                file.write(output)
+        print('Seu Arquivo foi gerado com Sucesso!')
+        input(press)
+        main()
         
-        ############################################################################
-        # TRECHO DE CODIGO DE OUTRA PESSOA NO GITHUB
-        # GOSTEI DA SOLUÇÃO , TENTAR IMPLEMENTAR NO AUDITOR
-        ############################################################################
-        
-        teste = '''
-        print(f"\n [ * ] Disk")
-        get_partitions = psutil.disk_partitions()
-        #print(get_partitions)
-
-        for part in get_partitions:
-            print(f"\n  Device :  {part.device}\n"
-                    f"  Mounted At :  {part.mountpoint}\n"
-                    f"  Type :  {part.fstype}\n")
-            try:
-                part_usage = psutil.disk_usage(part.mountpoint)
-            except PermissionError:
-                continue
-            print(f"  Total Size :  {show_size(part_usage.total)}\n"
-                    f"  In Use :  {show_size(part_usage.used)}\n"
-                    f"  Free :  {show_size(part_usage.free)}\n")
-                    #f"  Percentance :  {part_usage.percent}%")
-        disk_io = psutil.disk_io_counters()
-        print(f"  Read Since Boot :  {show_size(disk_io.read_bytes)}\n"
-                f"  Written Since Boot :  {show_size(disk_io.write_bytes)}\n")
-        virtual_mem = psutil.virtual_memory()
-        swap = psutil.swap_memory()
-        print(f"\n [ * ] Ram\n"
-                f"  Total :  {show_size(virtual_mem.total)}\n"
-                f"  Available :  {show_size(virtual_mem.available)}\n"
-                f"  In Use :  {show_size(virtual_mem.used)}\n"
-                f"  Percentence :  {show_size(virtual_mem.percent)}%\n")
-        print(f" [ * ] SWAP\n"
-                f"  Total :  {show_size(swap.total)}\n"
-                f"  Free :  {show_size(swap.free)}\n"
-                f"  In Use :  {show_size(swap.used)}\n"
-                f"  Percentence :  {swap.percent}%\n")'''
-        
-        ############################################################################
-        #FIM DO TRECHO DE CÓDIGO COPIADO
-        ############################################################################
-
 #=======================================================================================
 def config_IP():
     os.system('sudo ip addr show')
