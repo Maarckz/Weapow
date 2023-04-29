@@ -91,28 +91,21 @@ Esta função executa o script do Marcos Polop `LinPeas.sh`
 Esta função executa o script do rebootuser `LinEnum.sh`
 > Essa função demora um pouco, mas é muito eficaz.
 
-
-
-
-
-
-
-
 **13. SUID :**
-Esta função permite ao usuário buscar por um arquivo específico em **todo** o sistema de arquivos usando o comando `find`. Quaisquer erros durante a busca são redirecionados para `2>/dev/null`.
->Essa função pode demorar um pouco dependendo da quantidade de arquivos a serem verificados.
+Esta função busca por arquivos com a permissão `setuid` ativada em um determinado caminho do sistema ou, caso nenhum caminho seja especificado, em todo o sistema.
+>Esta função executa o comando `find` com as opções `-perm -u=s -type f`.
 
 **14. NC Lister  :**
-Esta função permite ao usuário buscar por um arquivo específico em **todo** o sistema de arquivos usando o comando `find`. Quaisquer erros durante a busca são redirecionados para `2>/dev/null`.
->Essa função pode demorar um pouco dependendo da quantidade de arquivos a serem verificados.
+Esta função inicia uma "*Escuta*" na porta especificada. Quando uma conexão é estabelecida com o servidor, a função imprime o endereço IP do cliente conectado e inicia um loop para receber comandos do cliente e enviá-los de volta. 
+>O nome da função, `nc`, é uma abreviação de `netcat`, uma ferramenta de terminal usada para enviar e receber dados em redes de computadores.
 
 **15. Reverse Shell  :**
-Esta função permite ao usuário buscar por um arquivo específico em **todo** o sistema de arquivos usando o comando `find`. Quaisquer erros durante a busca são redirecionados para `2>/dev/null`.
->Essa função pode demorar um pouco dependendo da quantidade de arquivos a serem verificados.
+Esta função possui 2 funcionalidades, **Pesquisar** e **Executar**. Ela apresenta um menu ao usuário opções para executar um shell reverso em uma máquina remota. Os tipos de *shells reversos* podem ser conferidos da ferramenta, estes incluem `Bash, NC, Rust, PERL, PHP, PowerShell, Python, SoCat, Node, JavaScript, TelNet, zsh e GoLang`. O usuário seleciona uma opção e fornece o endereço IP e a porta da máquina remota à qual deseja se conectar, então gera o comando shell reverso apropriado e o executa na máquina remota.
+>**Com grandes poderes vêm grandes responsabilidades** - Lee, Stan.
 
 **16. Server TCP :**
-Esta função permite ao usuário buscar por um arquivo específico em **todo** o sistema de arquivos usando o comando `find`. Quaisquer erros durante a busca são redirecionados para `2>/dev/null`.
->Essa função pode demorar um pouco dependendo da quantidade de arquivos a serem verificados.
+Esta função cria um servidor TCP que ouve em uma porta informada pelo usuário e espera por uma conexão de cliente. Esta ferramenta é muito usada para estabelecer uma SHELL REVERSA sem explorar falha.
+>**Com grandes poderes vêm grandes responsabilidades** - Lee, Stan.
 
 ## License
 Este projeto está licenciado sob a licença MIT.
