@@ -66,20 +66,54 @@ Esta função faz backup do diretório do usuário, para uma pasta chamada `Back
 **ATENÇÃO**: *Esta função inicia após a confirmação, e ainda não foi tratada para solicitar o diretório a ser feito o backup.*
 > Comando executado: `cp -v -r /home/$USER /home/$USER/Backup`
 
+**7. CronTab :**
+Esta função permite ao usuário configurar uma tarefa CRON. É exibida um gráfico explicando como fazer a configuração no *crontab*. 
+> Esta função **substitui** a tabela do CRON, deixando somente a função atual, verifique antes, se não existe algo programado pelo `crontab -e`
+> Você pode adicionar mais de uma tarefa separando as tarefas com `;`
+
+**8. Finder :**
+Esta função permite ao usuário buscar por um arquivo específico em **todo** o sistema de arquivos usando o comando `find`. Quaisquer erros durante a busca são redirecionados para `2>/dev/null`.
+>Essa função pode demorar um pouco dependendo da quantidade de arquivos a serem verificados.
+
+**9. Auditor :**
+Esta função coleta informações do sistema, onde são organizadas em seções para diferentes tipos de informações, incluindo: ***usuário, sistema, CPU, memória, rede, partições, dispositivos USB, programas instalados e histórico de bash***, em seguida as salva em no arquivo `auditoria.txt`
+> Essa função pode não funcionar dependendo da Distro usada.
 
 
 
 
- 8. [7] - CronTab 
- 9. [8] - Finder 
- 10. [9] - Auditor 
- 11. [10]- Config IP 
- 12. [11]- LinPeas 
- 13. [12]- LinEnum 
- 14. [13]- SUID 
- 15. [14]- NC Lister 
- 16. [15]- Reverse Shell 
- 17. [16]- Server TCP
+
+
+
+
+
+**10. Config IP :**
+Esta função permite ao usuário buscar por um arquivo específico em **todo** o sistema de arquivos usando o comando `find`. Quaisquer erros durante a busca são redirecionados para `2>/dev/null`.
+>Essa função pode demorar um pouco dependendo da quantidade de arquivos a serem verificados.
+
+**11. LinPeas :**
+Esta função permite ao usuário buscar por um arquivo específico em **todo** o sistema de arquivos usando o comando `find`. Quaisquer erros durante a busca são redirecionados para `2>/dev/null`.
+>Essa função pode demorar um pouco dependendo da quantidade de arquivos a serem verificados.
+
+**12. LinEnum :**
+Esta função permite ao usuário buscar por um arquivo específico em **todo** o sistema de arquivos usando o comando `find`. Quaisquer erros durante a busca são redirecionados para `2>/dev/null`.
+>Essa função pode demorar um pouco dependendo da quantidade de arquivos a serem verificados.
+
+**13. SUID :**
+Esta função permite ao usuário buscar por um arquivo específico em **todo** o sistema de arquivos usando o comando `find`. Quaisquer erros durante a busca são redirecionados para `2>/dev/null`.
+>Essa função pode demorar um pouco dependendo da quantidade de arquivos a serem verificados.
+
+**14. NC Lister  :**
+Esta função permite ao usuário buscar por um arquivo específico em **todo** o sistema de arquivos usando o comando `find`. Quaisquer erros durante a busca são redirecionados para `2>/dev/null`.
+>Essa função pode demorar um pouco dependendo da quantidade de arquivos a serem verificados.
+
+**15. Reverse Shell  :**
+Esta função permite ao usuário buscar por um arquivo específico em **todo** o sistema de arquivos usando o comando `find`. Quaisquer erros durante a busca são redirecionados para `2>/dev/null`.
+>Essa função pode demorar um pouco dependendo da quantidade de arquivos a serem verificados.
+
+**16. Server TCP :**
+Esta função permite ao usuário buscar por um arquivo específico em **todo** o sistema de arquivos usando o comando `find`. Quaisquer erros durante a busca são redirecionados para `2>/dev/null`.
+>Essa função pode demorar um pouco dependendo da quantidade de arquivos a serem verificados.
 
 ## License
 Este projeto está licenciado sob a licença MIT.
