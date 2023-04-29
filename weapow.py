@@ -1,9 +1,5 @@
 #!/usr/bin/env python
-version = "v2.164-dev"
-
-# CRIAR UM FORMATADOR DE PENDRIVE
-# CRIAR UM ENCRIPTADOR DE ARQUIVOS
-# VERIFICAR UMA PROGRAMAÇÃO PARA CRONTAB ( ROTINA DE BKP E AUDITORIA)
+version = "v2.165-dev"
 
 from random import choice, randint as r
 from concurrent.futures import ThreadPoolExecutor as e
@@ -15,20 +11,17 @@ import re
 import http.server as hs
 import socketserver as ss
 
-bann = '''\033[1;33m____    __    ____  _______     ___      .______     ______   ____    __    ____ 
-\   \  /  \  /   / |   ____|   /   \     |   _  \   /  __  \  \   \  /  \  /   / 
- \   \/    \/   /  |  |__     /  ^  \    |  |_)  | |  |  |  |  \   \/    \/   /  
-  \            /   |   __|   /  /_\  \   |   ___/  |  |  |  |   \            /   
-   \    /\    /    |  |____ /  _____  \  |  |      |  `--'  |    \    /\    /    
-    \__/  \__/     |_______/__/     \__\ | _|       \______/      \__/  \__/     
-\033[m''''''                                              ╭╮        ╭╮      ╭╮         ╭╮
-                                              ┃┃        ┃┃      ┃┃         ┃┃
-(\ (\ \033[1;35m________________________________________\033[m┃╰━┳╮╭╮ ╭━╯┣━━╮╭━━┫┃╭╮╭┳━━┳┳━╯┣━━╮
-( ^.^)\033[1;35m________________________________________\033[m┃╭╮┃┃┃┃ ┃╭╮┃┃━┫┃╭╮┃┃┃╰╯┃┃━╋┫╭╮┃╭╮┃
-O_(")(")                                      ┃╰╯┃╰╯┃ ┃╰╯┃┃━┫┃╭╮┃╰┫┃┃┃┃━┫┃╰╯┃╭╮┃
-\033[7;33m{}\033[m                                    ╰━━┻╮╭╯ ╰━━┻━━╯╰╯╰┻━┻┻┻┻━━┻┻━━┻╯╰╯
-                                                ╭━╯┃\033[0;31m>Ferramenta feita em Python3\033[m
-                                                ╰━━╯'''.format(version)
+bann = '''\033[1;33m
+888  888  888  .d88b.   8888b.  88888b.   .d88b.  888  888  888 
+888  888  888 d8P  Y8b     "88b 888 "88b d88""88b 888  888  888 
+888  888  888 88888888 .d888888 888  888 888  888 888  888  888 
+Y88b 888 d88P Y8b.     888  888 888 d88P Y88..88P Y88b 888 d88P 
+ "Y8888888P"   "Y8888  "Y888888 88888P"   "Y88P"   "Y8888888P"  
+\033[7;32m{}\033[m                     \033[1;33m888\033[m'''''' \033[1;30m  __ _  ___ ____ _________/ /_____\033[m
+ (\ (\ \033[1;35m                        \033[m\033[1;33m888\033[m \033[1;30m /  ' \/ _ `/ _ `/ __/ __/  '_/_ /\033[m
+ ( ^.^)\033[1;35m========================\033[m\033[1;33m888\033[m \033[1;30m/_/_/_/\_,_/\_,_/_/  \__/_/\_\/__/\033[m
+ O_(")(")                      \033[1;33m888\033[m \033[0;31m>DefCyberTool\033[m
+                                '''.format(version)
 
 press = '(Pressione qualquer tecla para voltar ao menu inicial)'
 Ctrl_C = 'Você pressionou Ctrl+C para interromper o programa!'
@@ -96,32 +89,6 @@ def iplist_tres():
     main()
 
 #=======================================================================================
-def ping_discovery():
-    print('((Para cancelar segure CTRL+C))')
-    sit_host_discovery = input('Esta opção pode demorar por muito tempo. Deseja continuar? (S/N) ')
-    if(sit_host_discovery.lower() == "s"):
-        print('Aguarde ...')
-        try:
-            with open('ARQ/ips.txt','r') as f:
-                content = f.read()
-                t = tuple(content.splitlines())
-            ips = t
-            os.system('rm -rf ARQ/ping.txt')
-            for host in ips:
-                pipe = os.popen('ping -c 1 -W 1 {}'.format(host)).read() #tentar colocar .read() na variavél pipe e printar logo depois
-                print(pipe)
-                with open('ARQ/ping.txt','a') as w:
-                    w.write(pipe)
-        except FileNotFoundError:
-            print("\nO arquivo de IPs descobertos deve ser gerado.")	
-        except KeyboardInterrupt:
-            print('\n')
-            print(Ctrl_C)
-    else:
-        input(press)
-        main()
-
-#=======================================================================================
 def host_discovery():
     try:
         print('((Para cancelar segure CTRL+C))')
@@ -170,6 +137,32 @@ def host_discovery():
                 print('\n')
                 print(Ctrl_C)
                 exit(1)
+
+#=======================================================================================
+def ping_discovery():
+    print('((Para cancelar segure CTRL+C))')
+    sit_host_discovery = input('Esta opção pode demorar por muito tempo. Deseja continuar? (S/N) ')
+    if(sit_host_discovery.lower() == "s"):
+        print('Aguarde ...')
+        try:
+            with open('ARQ/ips.txt','r') as f:
+                content = f.read()
+                t = tuple(content.splitlines())
+            ips = t
+            os.system('rm -rf ARQ/ping.txt')
+            for host in ips:
+                pipe = os.popen('ping -c 1 -W 1 {}'.format(host)).read() #tentar colocar .read() na variavél pipe e printar logo depois
+                print(pipe)
+                with open('ARQ/ping.txt','a') as w:
+                    w.write(pipe)
+        except FileNotFoundError:
+            print("\nO arquivo de IPs descobertos deve ser gerado.")	
+        except KeyboardInterrupt:
+            print('\n')
+            print(Ctrl_C)
+    else:
+        input(press)
+        main()
 
 #=======================================================================================
 def portscan_uniq():
@@ -403,9 +396,10 @@ def backup():
     sit_bak = input('Deseja realmente fazer BKP do usuário desta estação? (S/N) ')
     try:
         if(sit_bak.lower() == "s"):
+            dir = input("Digite o diretório a ser feito o BKP:\n")
             print('Fazendo BACKUP ...')
             time.sleep(2)
-            os.system('cp -v -r /home/$USER /home/$USER/Backup')
+            os.system('cp -v -r {} /home/$USER/Backup'.format(dir))
         else:
             input(press)
             main()
