@@ -1,6 +1,37 @@
 
 # **WEAPOW**
-Este **projeto** é uma coleção de ferramentas para auxiliar em tarefas de *segurança da informação*.
+
+Este **projeto** é uma coleção de ferramentas para auxiliar em tarefas de *segurança da informação, auditoria, e estudos para PENTEST e BUGBOUNTY*.
+
+## Instalação
+
+Esta ferramente exige Python3+
+```sh
+sudo apt-get install python3
+```
+Baixa bastar e executar:
+
+```sh
+git clone https://github.com/Maarckz/Weapow.git
+```
+
+## Bibliotecas
+
+| Biblioteca | Função |
+| ------ | ------ |
+| random | Fornece ferramentas para trabalhar com valores aleatórios. |
+| ThreadPoolExecutor | Cria Threads que podem ser usadas para executar funções em paralelo. |
+| socket | Permite que as aplicações possam se comunicar usando diferentes protocolos de rede |
+| os | Ela permite que o código possa interagir com o sistema. |
+| sys | Fornece acesso às variáveis e funções internas do interpretador Python. |
+| time | Fornece funções para trabalhar com o tempo |
+| re | Fornece suporte para trabalhar com expressões regulares. |
+| http.server | fornece suporte para criar servidores HTTP. |
+| socketserver | fornece uma infraestrutura para criar servidores de rede. |
+
+## Desenvolvimento
+Quer contribuir? Ótimo!
+Contribuições são bem-vindas! Sinta-se à vontade.
 
 ## Funcionalidades
 
@@ -37,36 +68,6 @@ Nesta função, existem 3 modos de uso. Você pode fazer em um IP específico, e
  15. [14]- NC Lister 
  16. [15]- Reverse Shell 
  17. [16]- Server TCP
-
-## Instalação
-
-Esta ferramente exige Python3+
-```sh
-sudo apt-get install python3
-```
-Baixa bastar e executar:
-
-```sh
-git clone https://github.com/Maarckz/Weapow.git
-```
-
-## Bibliotecas
-
-| Biblioteca | Função |
-| ------ | ------ |
-| random | Fornece ferramentas para trabalhar com valores aleatórios. |
-| ThreadPoolExecutor | Cria Threads que podem ser usadas para executar funções em paralelo. |
-| socket | Permite que as aplicações possam se comunicar usando diferentes protocolos de rede |
-| os | Ela permite que o código possa interagir com o sistema. |
-| sys | Fornece acesso às variáveis e funções internas do interpretador Python. |
-| time | Fornece funções para trabalhar com o tempo |
-| re | Fornece suporte para trabalhar com expressões regulares. |
-| http.server | fornece suporte para criar servidores HTTP. |
-| socketserver | fornece uma infraestrutura para criar servidores de rede. |
-
-## Desenvolvimento
-Quer contribuir? Ótimo!
-Contribuições são bem-vindas! Sinta-se à vontade.
 
 ## License
 Este projeto está licenciado sob a licença MIT.
