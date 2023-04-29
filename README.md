@@ -1,15 +1,9 @@
 
 # **WEAPOW**
 
-O WEAPOW é um **projeto** criado em Python, por Maarckz (SH1N003), que oferece uma coleção de ferramentas para ajudar profissionais de *segurança da informação, auditoria, e estudos paraO WEAPOW é um projeto incrível criado em Python que oferece uma ampla gama de ferramentas para ajudar profissionais de segurança da informação, auditoria, PENTEST e BUGBOUNTY em suas tarefas diárias. Se você está procurando uma solução completa e fácil de usar, o WEAPOW pode ser exatamente o que você precisa.
+O WEAPOW é um **projeto** criado em Python, por Maarckz (SH1N003), que oferece uma coleção de ferramentas para ajudar profissionais de *segurança da informação, auditoria, e estudos para PENTEST e BUGBOUNTY* em suas tarefas diárias. Se você está procurando uma solução completa e fácil de usar, o WEAPOW pode ser exatamente o que você precisa.
 
-Algumas das principais funções incluem a criação de lista de IPs, descoberta de hosts ativos, scanner de portas, busca por servidores HTTP, início de servidor HTTP, backup de diretório do usuário, configuração de tarefas CRON e busca por arquivos específicos em todo o sistema de arquivos. Com o WEAPOW, você tem todas as ferramentas necessárias para garantir a segurança da sua rede.
-
-O projeto WEAPOW é um recurso valioso para profissionais de segurança da informação e entusiastas que desejam aprender mais sobre essa área. Com uma ampla gama de recursos e ferramentas, o WEAPOW pode ajudá-lo a proteger sua rede e garantir que você esteja preparado para lidar com qualquer situação de segurança da informação que possa surgir.
-
-Se você está procurando uma solução completa para segurança da informação e auditoria, não procure mais do que o WEAPOW. Experimente hoje mesmo e veja como essa ferramenta pode ajudar você a garantir a segurança da sua rede. PENTEST e BUGBOUNTY* em suas tarefas diárias. Se você está procurando uma solução fácil de usar, o WEAPOW pode ser exatamente o que você precisa.
-
-Algumas das principais funções incluem a criação de ListIP, HostDiscovery, PortScanner, Search HTTP, Server HTTP, BackUP, Configuração CRON e busca por vulnerabilidades específicos em todo o sistema de arquivos. O projeto WEAPOW é um recurso valioso para profissionais de segurança da informação e entusiastas que desejam aprender mais sobre essa área. Com uma ampla gama de recursos e ferramentas, o WEAPOW pode ajudá-lo a proteger sua rede, obter informações para segurança da informação e auditoria.
+Algumas das principais funções incluem a criação de ListIP, HostDiscovery, PortScanner, Search HTTP, Server HTTP, BackUP, Configuração CRON e busca por vulnerabilidades específicos em todo o sistema de arquivos. O projeto WEAPOW é um recurso valioso para profissionais de segurança da informação e entusiastas que desejam aprender mais sobre essa área. Com uma gama de recursos e ferramentas, o WEAPOW pode ajudá-lo a proteger sua rede, obter informações para segurança da informação e auditoria.
 
 ## Instalação
 
