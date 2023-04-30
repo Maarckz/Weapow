@@ -1,12 +1,12 @@
 #!/usr/bin/env python
-version = "v2.165-dev"
+version = "v2.17-dev"
 
 from random import choice, randint as r
 from concurrent.futures import ThreadPoolExecutor as e
 import socket
 import os
 import sys
-import time
+import time as t
 import re
 import http.server as hs
 import socketserver as ss
@@ -17,10 +17,10 @@ bann = '''\033[1;33m
 888  888  888 88888888 .d888888 888  888 888  888 888  888  888 
 Y88b 888 d88P Y8b.     888  888 888 d88P Y88..88P Y88b 888 d88P 
  "Y8888888P"   "Y8888  "Y888888 88888P"   "Y88P"   "Y8888888P"  
-\033[7;32m{}\033[m                     \033[1;33m888\033[m'''''' \033[1;30m  __ _  ___ ____ _________/ /_____\033[m
- (\ (\ \033[1;35m                        \033[m\033[1;33m888\033[m \033[1;30m /  ' \/ _ `/ _ `/ __/ __/  '_/_ /\033[m
- ( ^.^)\033[1;35m========================\033[m\033[1;33m888\033[m \033[1;30m/_/_/_/\_,_/\_,_/_/  \__/_/\_\/__/\033[m
- O_(")(")                      \033[1;33m888\033[m \033[0;31m>DefCyberTool\033[m
+\033[7;32m{}\033[m                       \033[1;33m888\033[m'''''' \033[1;30m  __ _  ___ ____ _________/ /_____\033[m
+ (\ (\ \033[1;35m                         \033[m\033[1;33m888\033[m \033[1;30m /  ' \/ _ `/ _ `/ __/ __/  '_/_ /\033[m
+ ( ^.^)\033[1;35m=========================\033[m\033[1;33m888\033[m \033[1;30m/_/_/_/\_,_/\_,_/_/  \__/_/\_\/__/\033[m
+ O_(")(")                       \033[1;33m888\033[m \033[0;31m>DefCyberTool\033[m
                                 '''.format(version)
 
 press = '(Pressione qualquer tecla para voltar ao menu inicial)'
@@ -35,7 +35,8 @@ def genRandChars(l):
     c = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
     return ''.join(choice(c) for x in range(l))
 
-adOptions = {"Sleep": 0.05}
+dir = 'mkdir ARQ'
+bA, bB  = "{","}"
 vars = { 
     "str": genRandChars(r(10, 16)),
     "socket": genRandChars(r(8, 12)), 
@@ -47,44 +48,42 @@ vars = {
     "socketserver": genRandChars(r(16, 32)),
     "requests": genRandChars(r(64, 96)), 
     }
-# USO: {vars["socket"])}
-bA, bB  = "{","}"
 
 #=======================================================================================
 def iplist_dois():  
     oct=str(input('Digite os dois primeiros octetos (Ex: 192.168):'))
-    os.system('mkdir ARQ')
+    os.system(dir)
     os.system('rm -rf ARQ/ips.txt')
     print('Por favor aguarde, estamos gerando seu arquivo.')
     i=0; p=1	
     while i < 255:
-        ip="{}.{}.{}".format(oct,i,p)
+        ip=f"{oct}.{i}.{p}"
         for p in range(0, 255):
-            ip="{}.{}.{}".format(oct,i,p)
+            ip=f"{oct}.{i}.{p}"
             with open("ARQ/ips.txt", "a") as f:
                 print(ip, file=f)
         i = i+1
         with open("ARQ/ips.txt", "a") as f:
                 print(ip, file=f)
-    print('Seu Arquivo foi gerado com Sucesso! ==> ({}/16)'.format(oct))	
+    print(f'Seu Arquivo foi gerado com Sucesso! ==> ({oct}/16)')	
     input(press)
     main()
 
 def iplist_tres():  
     oct=str(input('Digite os três primeiros octetos (Ex: 192.168.204):'))
-    os.system('mkdir ARQ')
+    os.system(dir)
     os.system('rm -rf ARQ/ips.txt')
     print('Por favor aguarde, estamos gerando seu arquivo.')
     p=1	
     while p < 255:
         for p in range(0, 255):
-            ip="{}.{}".format(oct,p)
+            ip=f"{oct}.{p}"
             with open("ARQ/ips.txt", "a") as f:
                 print(ip, file=f)
         p = p+1
         with open("ARQ/ips.txt", "a") as f:
                 print(ip, file=f)
-    print('Seu Arquivo foi gerado com Sucesso! ==> ({}/24)'.format(oct))	
+    print(f'Seu Arquivo foi gerado com Sucesso! ==> ({oct}/24)')	
     input(press)
     main()
 
@@ -97,8 +96,8 @@ def host_discovery():
             os.system('rm -rf ARQ/hosts.txt')
             try:
                 def ping(host):
-                    printer("Procurando Hosts: {}".format(str(host)))
-                    result = os.system('ping -c 3 -W 1 {} > /dev/null'.format(host))
+                    printer(f"Procurando Hosts: {str(host)}")
+                    result = os.system(f'ping -c 3 -W 1 {host} > /dev/null')
                     if (result == 0):
                         with open('ARQ/hosts.txt','a') as h:
                             print(host, file=h)
@@ -114,10 +113,9 @@ def host_discovery():
                         with e(max_workers=int(thread)) as exe:
                             for host in hosts:
                                 exe.submit(ping, host)
-                                time.sleep(0.05)
+                                t.sleep(0.05)
                     except KeyboardInterrupt:
-                                print('\n')
-                                print(Ctrl_C)	 
+                                print('\n',Ctrl_C)
                                 exit(1)           	
                 ok()
                 input('(Pressione qualquer tecla para continuar)')
@@ -128,14 +126,12 @@ def host_discovery():
             except FileNotFoundError:
                 print("\nO arquivo de IPs descobertos deve ser gerado.")	
             except KeyboardInterrupt:
-                print('\n')
-                print(Ctrl_C)
+                print('\n',Ctrl_C)
                 exit(1)
         elif(sit_host_discovery.lower() == "simple"):
             ping_discovery()
     except KeyboardInterrupt:
-                print('\n')
-                print(Ctrl_C)
+                print('\n',Ctrl_C)
                 exit(1)
 
 #=======================================================================================
@@ -146,20 +142,19 @@ def ping_discovery():
         print('Aguarde ...')
         try:
             with open('ARQ/ips.txt','r') as f:
-                content = f.read()
-                t = tuple(content.splitlines())
+                conteudo = f.read()
+                t = tuple(conteudo.splitlines())
             ips = t
             os.system('rm -rf ARQ/ping.txt')
             for host in ips:
-                pipe = os.popen('ping -c 1 -W 1 {}'.format(host)).read() #tentar colocar .read() na variavél pipe e printar logo depois
+                pipe = os.popen(f'ping -c 1 -W 1 {host}').read()
                 print(pipe)
                 with open('ARQ/ping.txt','a') as w:
                     w.write(pipe)
         except FileNotFoundError:
             print("\nO arquivo de IPs descobertos deve ser gerado.")	
         except KeyboardInterrupt:
-            print('\n')
-            print(Ctrl_C)
+            print('\n',Ctrl_C)
     else:
         input(press)
         main()
@@ -169,21 +164,21 @@ def portscan_uniq():
     try:
         ip = input('Digite o IP: ')
         for port in range(1,65535):
-            printer("Procurando Portas: {}".format(str(port)))
+            printer(f"Procurando Portas: {str(port)}")
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.settimeout(0.1)
             result = s.connect_ex((ip,port))
             if result == 0:
                 try:
-                    service = "{}".format(socket.getservbyport(port))
-                    print('Porta Aberta: {} / {} '.format(port, service))
+                    service = f'{socket.getservbyport(port)}'
+                    print(f'Porta Aberta: {port} / {service}')
                 except socket.error:
-                    print('Porta Aberta: {} / {} '.format(port, 'Desconhecido'))
+                    desc = 'Desconhecido'
+                    print(f'Porta Aberta: {port} / {desc}')
         input(press)
         main()
     except KeyboardInterrupt:
-        print('\n')
-        print(Ctrl_C)
+        print('\n',Ctrl_C)
     except FileNotFoundError:
         print("\nO arquivo de hosts descobertos deve ser gerado.")
         input(press)
@@ -199,7 +194,7 @@ def portscan():
             lst[i] = lst[i].replace(remove, "")
         print('Hosts descobertos:')
         for host in lst:
-            print('[+] {}'.format(host))
+            print(f'[+] {host}')
             os.system('rm -rf ARQ/portscan.txt')
         sit_h = input('\nDependendo da quantidade de hosts, este processo poderá demorar. Deseja continuar o \033[0;31mPortScanner\033[m? (S/N) ')
         if(sit_h.lower() == "s"):
@@ -207,10 +202,10 @@ def portscan():
             print('Aguarde ...')
             for host in lst: 
                 def scan(ip,port,l):
-                    printer("Procurando Portas: {}".format(str(port)))
+                    printer(f"Procurando Portas: {str(port)}")
                     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     s.settimeout(1)
-                    time.sleep(0.01)
+                    t.sleep(0.01)
                     result = s.connect_ex((ip,port))
                     espaco = 10 - l
                     espaco = " " * espaco
@@ -220,7 +215,7 @@ def portscan():
                         with open("ARQ/portscan.txt", "a") as f:
                             try:
                                 service = "{}".format(socket.getservbyport(port))
-                                time.sleep(0.1)
+                                t.sleep(0.1)
                                 print("{}/TCP {} {}".format(str(port),espaco,service), file=f)
                                 print(str(port) + "/TCP" + espaco + "{}       ".format(service))
                             except socket.error:
@@ -253,8 +248,7 @@ def portscan():
         if KeyboardInterrupt:
             print('')
     except KeyboardInterrupt:
-        print('\n')
-        print(Ctrl_C)
+        print('\n',Ctrl_C)
     except FileNotFoundError:
         print("\nO arquivo de hosts descobertos deve ser gerado.")
         input(press)
@@ -275,10 +269,10 @@ def portscan_simple():
             lst.append(pattern.search(line)[0]) 
         print('Hosts descobertos:')
         for host in lst:
-            print('[+] {}'.format(host))
+            print(f'[+] {host}')
         os.system('rm -rf ARQ/portscanbyping.txt')
         sit_h = input('\nEste processo poderá levar DIAS dependendo da quantidade de hosts. Deseja continuar o \033[0;31mPortScanner\033[m? (S/N) ')
-        time.sleep(0.25)
+        t.sleep(0.25)
         if(sit_h.lower() == "s"):
             print('Aguarde ...')
             for host in lst:
@@ -290,7 +284,7 @@ def portscan_simple():
                     printer("Procurando Portas: {}".format(str(port)))
                     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     s.settimeout(1)
-                    time.sleep(0.01)
+                    t.sleep(0.01)
                     result = s.connect_ex((ip,port))
                     espaco = 10 - l
                     espaco = " " * espaco
@@ -300,7 +294,7 @@ def portscan_simple():
                         with open("ARQ/portscan.txt", "a") as f:
                             try:
                                 service = "{}".format(socket.getservbyport(port))
-                                time.sleep(0.1)
+                                t.sleep(0.1)
                                 print("{}/TCP {} {}".format(str(port),espaco,service), file=f)
                                 print(str(port) + "/TCP" + espaco + service)
                             except socket.error:
@@ -330,8 +324,7 @@ def portscan_simple():
             input(press)
             main()
     except KeyboardInterrupt:
-        print('\n')
-        print(Ctrl_C)
+        print('\n',Ctrl_C)
     except FileNotFoundError:
         print("\nO arquivo de hosts descobertos deve ser gerado.")
         input(press)
@@ -353,7 +346,7 @@ def http_finder():
             lst.append(pattern.search(line)[0])
         print("Encontrado HTTP Server nos seguintes Hosts: \n")
         for host in lst:
-            print('[+] {}\n'.format(host))
+            print(f'[+] {host}\n')
         os.system("rm -rf ARQ/httup.txt")
         print("Continua ...")
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -365,8 +358,7 @@ def http_finder():
         input(press)
         main()
     except KeyboardInterrupt:
-        print('\n')
-        print(Ctrl_C)
+        print('\n',Ctrl_C)
     except FileNotFoundError:
         print("\nO arquivo de hosts descobertos deve ser gerado.")
         input(press)
@@ -378,7 +370,7 @@ def serverhttp():
         port = int(input('Qual porta será usada para o HTTP Server? '))
         server = hs.SimpleHTTPRequestHandler
         request = ss.TCPServer(("",port),server)
-        print("Server HTTP \033[1;32m'ONLINE'\033[m na PORTA: \033[7;33m{}\033[m\n".format(port))
+        print(f"Server HTTP \033[1;32m'ONLINE'\033[m na PORTA: \033[7;33m{port}\033[m\n")
         request.serve_forever()
     except OverflowError:
         print('\nDigite uma porta valida. (0 ~ 65535)')
@@ -387,8 +379,7 @@ def serverhttp():
         print('\nDigite uma porta valida. (0 ~ 65535)')
         serverhttp()
     except KeyboardInterrupt:
-        print('\n')
-        print(Ctrl_C)
+        print('\n',Ctrl_C)
 
 #=======================================================================================
 def backup():
@@ -398,14 +389,13 @@ def backup():
         if(sit_bak.lower() == "s"):
             dir = input("Digite o diretório a ser feito o BKP:\n")
             print('Fazendo BACKUP ...')
-            time.sleep(2)
-            os.system('cp -v -r {} /home/$USER/Backup'.format(dir))
+            t.sleep(2)
+            os.system(f'cp -v -r {dir} /home/$USER/Backup')
         else:
             input(press)
             main()
     except KeyboardInterrupt:
-        print('\n')	
-        print(Ctrl_C)
+        print('\n',Ctrl_C)
 
 #=======================================================================================
 def cron():
@@ -434,7 +424,7 @@ Você pode conferir a alteração com o comando: "\033[0;34m$ crontab -e\033[m"
     if(sit_cron.lower() == "s"):
         try:
             enter = input("Digite a entrada do C[R]ON:\n")
-            os.system('echo "{}" | crontab -'.format(enter))
+            os.system(f'echo "{enter}" | crontab -')
             print('C[R]ON configurado corretamente.')
             input(press)
             main()
@@ -452,14 +442,13 @@ def finder():
         find = str(input('Digite o arquivo que deseja encontrar: '))
         print('Estamos procurando ...')
         print('==================================================================================\n')
-        os.system('find / -name {} 2>/dev/null | grep {}'.format(find,find))
+        os.system(f'find / -name {find} 2>/dev/null | grep {find}')
         print('\n==================================================================================')
         print('Fim da busca!\n')
         input(press)
         main()
     except KeyboardInterrupt:
-        print('\n')
-        print(Ctrl_C)
+        print('\n',Ctrl_C)
 
 #=======================================================================================
 def infosys():
@@ -557,7 +546,7 @@ def infosys():
         output += 'O histórico do BASH deve ser salvo manualmente por enquanto!\n'
         output += 'Use o comando: $ history\n'
         output += '===============================================================\n'
-
+        
         print(output)
 
         sit_audi = input('Deseja salvar em arquivo? (S/N) ')
@@ -572,10 +561,9 @@ def infosys():
             input(press)
             main()
     except KeyboardInterrupt:
-        print('\n')
-        print(Ctrl_C)
+        print('\n',Ctrl_C)
     except FileNotFoundError:
-        os.system('mkdir ARQ')
+        os.system(dir)
         with open('ARQ/auditoria.txt', 'w') as file:
                 file.write(output)
         print('Seu Arquivo foi gerado com Sucesso!')
@@ -590,17 +578,17 @@ def config_IP():
     gateway = input('Digite o Gateway: ')
     dns = input('Digite o nameserver + ip (Ex"nameserver 8.8.8.8"):  ')
     #Definir um endereço IP estático:
-    os.system('sudo ip addr add {}/24 dev eth0'.format(ip))
+    os.system(f'sudo ip addr add {ip}/24 dev eth0')
     #Configurar o gateway padrão:
-    os.system('sudo ip route add default via {}'.format(gateway))
+    os.system(f'sudo ip route add default via {gateway}')
     #Adicionar um servidor DNS:
-    os.system('echo "{}" | sudo tee /etc/resolv.conf'.format(dns))
+    os.system(f'echo "{dns}" | sudo tee /etc/resolv.conf')
 
 #=======================================================================================
 def linpeas():
     try:
         sit_linpeas = input('Esta opção pode demorar por muito tempo. Deseja continuar? (S/N) ')
-        time.sleep(0.25)
+        t.sleep(0.25)
         if(sit_linpeas.lower() == "s"):
             os.system('chmod +x linpeas.sh')
             os.system('./linpeas.sh')
@@ -609,14 +597,13 @@ def linpeas():
             main()
         pass
     except KeyboardInterrupt:
-        print('\n')
-        print(Ctrl_C)
+        print('\n',Ctrl_C)
 
 #=======================================================================================
 def linenum():
     try:
         sit_linenum = input('Esta opção pode demorar por muito tempo. Deseja continuar? (S/N) ')
-        time.sleep(0.25)
+        t.sleep(0.25)
         if(sit_linenum.lower() == "s"):
             os.system('chmod +x LinEnum.sh')
             os.system('./LinEnum.sh')
@@ -625,8 +612,7 @@ def linenum():
             main()
         pass
     except KeyboardInterrupt:
-        print('\n')
-        print(Ctrl_C)
+        print('\n',Ctrl_C)
 
 #=======================================================================================
 def suid():
@@ -634,7 +620,7 @@ def suid():
     if (bool(path) == False):
         path = '/'
     print('Este processo pode demorar alguns segundos, aguarde ...\n')
-    os.system('find {} -perm -u=s -type f 2>/dev/null'.format(path))
+    os.system(f'find {path} -perm -u=s -type f 2>/dev/null')
 
 #=======================================================================================
 def nc(porta):
@@ -642,7 +628,7 @@ def nc(porta):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.bind(("", porta))
         s.listen(1)
-        print("Escutando na porta {}".format(porta))
+        print(f"Escutando na porta {porta}")
         conn, addr = s.accept()
         print('Conexão recebida de',addr[0])
         while True:
@@ -651,15 +637,14 @@ def nc(porta):
             command = input()
             command += "\n"
             conn.send(command.encode())
-            time.sleep(0.1)
+            t.sleep(0.1)
             sys.stdout.write("\033[A" + ans.split("\n")[-1])
     except OSError:
         print('Esta PORTA está sendo utilizada.')
         porta = int(input("Digite a Porta: "))
         nc(porta)
     except KeyboardInterrupt:
-        print('\n')
-        print(Ctrl_C)
+        print('\n',Ctrl_C)
         
 #=======================================================================================
 def reverse_shell():
@@ -863,7 +848,7 @@ def server_tcp():
             server.listen(5)
             print("Listening...")
             client_socket, address = server.accept()
-            print("Received from: " + address[0])
+            print(f"Received from: {address[0]}")
             data = client_socket.recv(1024).decode()
             file.write(data)
             server.close()
@@ -871,7 +856,7 @@ def server_tcp():
             print("Erro: ", error)
             server.close()
     except FileNotFoundError:
-        os.system('mkdir ARQ')
+        os.system(dir)
         server_tcp()
 #=======================================================================================
 def banner():
@@ -901,7 +886,6 @@ def banner():
  \033[0;34m[0]\033[m - Sair
 ''')
         opcao=int(input('Escolha uma opção: '))
-
         if opcao == 1:
             sit_ip = int(input('Deseja informar 2 ou 3 octetos? (2/3) '))
             if (sit_ip == 2):
@@ -956,7 +940,7 @@ def banner():
         elif opcao == 14:
             porta = int(input("Digite a Porta: "))
             comando = """python3 -c 'import pty;pty.spawn("/bin/bash")'"""
-            print("Sugestão de comando: {}".format(comando))
+            print(f"Sugestão de comando: {comando}")
             nc(porta)
             pass
         elif opcao == 15:
@@ -986,8 +970,7 @@ def main():
     try:
         banner()
     except (KeyboardInterrupt):
-        print('\n')
-        print(Ctrl_C)
+        print('\n',Ctrl_C)
     except ValueError as e:
             print('Digite a opção correta.')
             input('(Pressione qualquer tecla para continuar)')
