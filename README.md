@@ -14,7 +14,7 @@ sudo apt-get install python3
 Baixa bastar e executar:
 
 ```sh
-git clone https://github.com/Maarckz/Weapow.git | 
+git clone https://github.com/Maarckz/Weapow.git && cd Weapow && python weapow.py
 ```
 
 ## Bibliotecas
