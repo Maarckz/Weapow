@@ -1,7 +1,6 @@
+
 <div align="center">
-<a href="https://github.com/maarckz">
-<img height="70em" src="[https://github-profile-trophy.vercel.app/?username=maarckz&column=6&margin-w=15&margin-h=15](https://raw.githubusercontent.com/Maarckz/Maarckz/e1352f79575d0bbb84933cf9ba028da0465e116a/Images/Logo.png)](https://raw.githubusercontent.com/Maarckz/Maarckz/e1352f79575d0bbb84933cf9ba028da0465e116a/Images/Logo.png)"/>
-</a>
+  <a href="https://github.com/maarckz" target="_blank"><img height="180em" src="https://github-readme-stats.vercel.app/api?username=maarckz&show_icons=true&theme=dark&%20%20include_all_commits=true&count_private=false"/> 
 </div>
 
 
