@@ -1,5 +1,4 @@
-
-# **WEAPOW**
+[![MasterHead](https://raw.githubusercontent.com/Maarckz/Maarckz/e1352f79575d0bbb84933cf9ba028da0465e116a/Images/Logo.png)](https://github.com/Maarckz/Weapow)
 
 O WEAPOW é um **projeto** criado em Python, por Maarckz (SH1N003), que oferece uma coleção de ferramentas para ajudar profissionais de *segurança da informação, auditoria, e estudos para PENTEST e BUGBOUNTY* em suas tarefas diárias. Se você está procurando uma solução completa e fácil de usar, o WEAPOW pode ser exatamente o que você precisa.
 
