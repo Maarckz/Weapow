@@ -1,6 +1,7 @@
 
-<div align="center">
-  <a href="https://github.com/maarckz" target="_blank"><img height="180em" src="https://github.com/Maarckz/Maarckz/blob/main/Images/Logo.png"/> 
+
+<div align="left">
+  <a href="https://github.com/maarckz" target="_blank"><img height="200" width= "600" src="https://github.com/Maarckz/Maarckz/blob/main/Images/Logo.png?raw=true"/> 
 </div>
 
 
