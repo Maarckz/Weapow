@@ -75,14 +75,13 @@ def iplist_tres():
     os.system('rm -rf ARQ/ips.txt')
     print('Por favor aguarde, estamos gerando seu arquivo.')
     p=1	
-    while p < 255:
-        for p in range(0, 255):
-            ip=f"{oct}.{p}"
-            with open("ARQ/ips.txt", "a") as f:
-                print(ip, file=f)
-        p = p+1
+    for p in range(0, 255):
+        ip=f"{oct}.{p}"
         with open("ARQ/ips.txt", "a") as f:
-                print(ip, file=f)
+            print(ip, file=f)
+    p = p+1
+    with open("ARQ/ips.txt", "a") as f:
+            print(ip, file=f)
     print(f'Seu Arquivo foi gerado com Sucesso! ==> ({oct}/24)')	
     input(press)
     main()
@@ -101,9 +100,8 @@ def host_discovery():
                     if (result == 0):
                         with open('ARQ/hosts.txt','a') as h:
                             print(host, file=h)
-                        print('')
-                        print(host)
-                def ok():
+                        print('\n',host)
+                def threading():
                     with open('ARQ/ips.txt','r') as f:
                         content = f.read()
                         b = tuple(content.splitlines())
@@ -117,7 +115,7 @@ def host_discovery():
                     except KeyboardInterrupt:
                                 print('\n',Ctrl_C)
                                 exit(1)           	
-                ok()
+                threading()
                 input('(Pressione qualquer tecla para continuar)')
                 main()
             except RuntimeError as er:
@@ -128,36 +126,9 @@ def host_discovery():
             except KeyboardInterrupt:
                 print('\n',Ctrl_C)
                 exit(1)
-        elif(sit_host_discovery.lower() == "simple"):
-            ping_discovery()
     except KeyboardInterrupt:
                 print('\n',Ctrl_C)
                 exit(1)
-
-#=======================================================================================
-def ping_discovery():
-    print('((Para cancelar segure CTRL+C))')
-    sit_host_discovery = input('Esta opção pode demorar por muito tempo. Deseja continuar? (S/N) ')
-    if(sit_host_discovery.lower() == "s"):
-        print('Aguarde ...')
-        try:
-            with open('ARQ/ips.txt','r') as f:
-                conteudo = f.read()
-                t = tuple(conteudo.splitlines())
-            ips = t
-            os.system('rm -rf ARQ/ping.txt')
-            for host in ips:
-                pipe = os.popen(f'ping -c 1 -W 1 {host}').read()
-                print(pipe)
-                with open('ARQ/ping.txt','a') as w:
-                    w.write(pipe)
-        except FileNotFoundError:
-            print("\nO arquivo de IPs descobertos deve ser gerado.")	
-        except KeyboardInterrupt:
-            print('\n',Ctrl_C)
-    else:
-        input(press)
-        main()
 
 #=======================================================================================
 def portscan_uniq():
@@ -190,8 +161,8 @@ def portscan():
         with open("ARQ/hosts.txt", "r") as f:
             lst = f.readlines()
         remove ='\n'
-        for i in range(len(lst)):
-            lst[i] = lst[i].replace(remove, "")
+        for l in range(len(lst)):
+            lst[l] = lst[l].replace(remove,"")
         print('Hosts descobertos:')
         for host in lst:
             print(f'[+] {host}')
@@ -214,10 +185,10 @@ def portscan():
                     else :
                         with open("ARQ/portscan.txt", "a") as f:
                             try:
-                                service = "{}".format(socket.getservbyport(port))
+                                service = f"{socket.getservbyport(port)}"
                                 t.sleep(0.1)
-                                print("{}/TCP {} {}".format(str(port),espaco,service), file=f)
-                                print(str(port) + "/TCP" + espaco + "{}       ".format(service))
+                                print(f"{str(port)}/TCP {espaco} {service}", file=f)
+                                print(str(port) + "/TCP" + espaco + f"{service}       ")
                             except socket.error:
                                 print(str(port) + "/TCP" + espaco + "Desconhecido", file=f)
                                 print(str(port) + "/TCP" + espaco + "Desconhecido")
