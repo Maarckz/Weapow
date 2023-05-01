@@ -1,7 +1,7 @@
 
 
 <div align="left">
-  <a href="https://github.com/maarckz" target="_blank"><img height="400" width= "1000" src="https://github.com/Maarckz/Maarckz/blob/main/Images/Logo.png?raw=true"/> 
+  <a href="https://github.com/maarckz/weapow" target="_blank"><img height="380" width= "920" src="https://github.com/Maarckz/Maarckz/blob/main/Images/Logo.png?raw=true"/> 
 </div>
 
 
