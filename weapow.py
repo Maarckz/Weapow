@@ -1,8 +1,9 @@
 #!/usr/bin/env python
-version = "v2.17-dev"
+version = "v2.2-dev"
 
 from random import choice, randint as r
 from concurrent.futures import ThreadPoolExecutor as e
+from bs4 import BeautifulSoup
 import socket
 import os
 import sys
@@ -10,6 +11,8 @@ import time as t
 import re
 import http.server as hs
 import socketserver as ss
+import requests
+
 
 bann = '''\033[1;33m
 888  888  888  .d88b.   8888b.  88888b.   .d88b.  888  888  888 
@@ -17,7 +20,7 @@ bann = '''\033[1;33m
 888  888  888 88888888 .d888888 888  888 888  888 888  888  888 
 Y88b 888 d88P Y8b.     888  888 888 d88P Y88..88P Y88b 888 d88P 
  "Y8888888P"   "Y8888  "Y888888 88888P"   "Y88P"   "Y8888888P"  
-\033[7;32m{}\033[m                       \033[1;33m888\033[m'''''' \033[1;30m  __ _  ___ ____ _________/ /_____\033[m
+ \033[7;32m{}\033[m                       \033[1;33m888\033[m'''''' \033[1;30m  __ _  ___ ____ _________/ /_____\033[m
  (\ (\ \033[1;35m                         \033[m\033[1;33m888\033[m \033[1;30m /  ' \/ _ `/ _ `/ __/ __/  '_/_ /\033[m
  ( ^.^)\033[1;35m=========================\033[m\033[1;33m888\033[m \033[1;30m/_/_/_/\_,_/\_,_/_/  \__/_/\_\/__/\033[m
  O_(")(")                       \033[1;33m888\033[m \033[0;31m>DefCyberTool\033[m
@@ -64,7 +67,7 @@ def iplist_dois():
                 print(ip, file=f)
         i = i+1
         with open("ARQ/ips.txt", "a") as f:
-                print(ip, file=f)
+            print(ip, file=f)
     print(f'Seu Arquivo foi gerado com Sucesso! ==> ({oct}/16)')	
     input(press)
     main()
@@ -334,6 +337,46 @@ def http_finder():
         print("\nO arquivo de hosts descobertos deve ser gerado.")
         input(press)
         main()
+
+#=======================================================================================
+def link():
+    def crawler(url):
+        response = requests.get(url)
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.content, 'html.parser')
+            links = soup.find_all('a')
+            diretorios = {link['href'] for link in links if 'href' in link.attrs}
+            return diretorios
+        else:
+            print("Falha ao acessar a página:", response.status_code)
+            return []
+    try:
+        site_url = input('Digite o endereço do site: (www.site.com)\n')
+        os.system(dir)
+        diretorios_encontrados = crawler('http://' + site_url)
+        if diretorios_encontrados:
+            print("Diretórios encontrados:")
+            with open("ARQ/links.txt","a") as f:
+                for diretorio in diretorios_encontrados:
+                    os.system('rm -rf ARQ/links.txt')
+                
+                    print(diretorio,file=f)
+                    print(diretorio)
+        else:
+            print("Nenhum diretório encontrado.")
+    except requests.exceptions.MissingSchema as a:
+        print(a)
+    except requests.exceptions.ConnectionError as e:
+        print(e)
+    for link in diretorios_encontrados:
+        lnk = crawler(link)
+        if lnk:
+            print('Links de ' + link)
+            os.system('rm -rf ARQ/links.txt')
+            with open("ARQ/links.txt","a") as f:
+                for l in lnk:
+                        print(l,file=f)
+                        print(l)
 
 #=======================================================================================
 def serverhttp():
@@ -834,26 +877,25 @@ def banner():
     try:
         os.system("clear")
         print(bann)
-        print('''\033[2;32m Olá! ^-^, insider!\033[m''')
-        print('''
- MENU:
+        print(''' MENU:
 
  \033[0;34m[1]\033[m - Criar lista de IPs
  \033[0;34m[2]\033[m - Host Discovery
  \033[0;34m[3]\033[m - Port Scanner
  \033[0;34m[4]\033[m - HTTP Finder
- \033[0;34m[5]\033[m - ServerHTTP
- \033[0;34m[6]\033[m - BackUp
- \033[0;34m[7]\033[m - CronTab
- \033[0;34m[8]\033[m - Finder
- \033[0;34m[9]\033[m - Auditor
- \033[0;34m[10]\033[m- Config IP
- \033[0;34m[11]\033[m- LinPeas
- \033[0;34m[12]\033[m- LinEnum
- \033[0;34m[13]\033[m- SUID
- \033[0;34m[14]\033[m- NC Lister
- \033[0;34m[15]\033[m- Reverse Shell
- \033[0;34m[16]\033[m- Server TCP
+ \033[0;34m[5]\033[m - Link
+ \033[0;34m[6]\033[m - ServerHTTP
+ \033[0;34m[7]\033[m - BackUp
+ \033[0;34m[8]\033[m - CronTab
+ \033[0;34m[9]\033[m - Finder
+ \033[0;34m[10]\033[m- Auditor
+ \033[0;34m[11]\033[m- Config IP
+ \033[0;34m[12]\033[m- LinPeas
+ \033[0;34m[13]\033[m- LinEnum
+ \033[0;34m[14]\033[m- SUID
+ \033[0;34m[15]\033[m- NC Lister
+ \033[0;34m[16]\033[m- Reverse Shell
+ \033[0;34m[17]\033[m- Server TCP
  \033[0;34m[0]\033[m - Sair
 ''')
         opcao=int(input('Escolha uma opção: '))
@@ -882,48 +924,51 @@ def banner():
             http_finder()
             pass
         elif opcao == 5:
-            serverhttp()
+            link()
             pass
         elif opcao == 6:
-            backup()
+            serverhttp()
             pass
         elif opcao == 7:
-            cron()
+            backup()
             pass
         elif opcao == 8:
-            finder()
+            cron()
             pass
         elif opcao == 9:
-            infosys()
+            finder()
             pass
         elif opcao == 10:
-            config_IP()
+            infosys()
             pass
         elif opcao == 11:
-            linpeas()
+            config_IP()
             pass
         elif opcao == 12:
+            linpeas()
+            pass
+        elif opcao == 13:
             linenum()
             pass		
-        elif opcao == 13:
+        elif opcao == 14:
             suid()
             pass		
-        elif opcao == 14:
+        elif opcao == 15:
             porta = int(input("Digite a Porta: "))
             comando = """python3 -c 'import pty;pty.spawn("/bin/bash")'"""
             print(f"Sugestão de comando: {comando}")
             nc(porta)
             pass
-        elif opcao == 15:
+        elif opcao == 16:
             reverse_shell()
             pass		
-        elif opcao == 16:
+        elif opcao == 17:
             server_tcp()
             pass		
         elif (opcao == 0):
             print('Volte sempre! ¯\_(ツ)_/¯')
             exit()
-        elif opcao > 16:
+        elif opcao > 17:
             print('Digite uma opção válida!')
             input(press)
             main()
