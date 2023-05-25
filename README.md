@@ -3,7 +3,7 @@
 </div>
 
 
-O WEAPOW é um **projeto** criado em Python, por Maarckz, que oferece uma coleção de ferramentas para ajudar profissionais de *segurança da informação, auditoria, e estudos para PENTEST e BUGBOUNTY* em suas tarefas diárias. Se você está procurando uma solução completa e fácil de usar, o WEAPOW pode ser exatamente o que você precisa.
+O WEAPOW é um **projeto** criado em Python, por Maarckz (SH1N003), que oferece uma coleção de ferramentas para ajudar profissionais de *segurança da informação, auditoria, e estudos para PENTEST e BUGBOUNTY* em suas tarefas diárias. Se você está procurando uma solução completa e fácil de usar, o WEAPOW pode ser exatamente o que você precisa.
 
 Algumas das principais funções incluem a criação de ListIP, HostDiscovery, PortScanner, Search HTTP, Server HTTP, BackUP, Configuração CRON e busca por vulnerabilidades específicas em todo o sistema de arquivos. O projeto WEAPOW é um script para facilitar a vida de profissionais de segurança da informação e entusiastas que desejam aprender mais sobre essa área. Com uma gama de recursos e ferramentas, o WEAPOW pode ajudá-lo a proteger sua rede, obter mais  informações sobre ela.
 
@@ -25,13 +25,16 @@ git clone https://github.com/Maarckz/Weapow.git && cd Weapow && python weapow.py
 | ------ | ------ |
 | random | Fornece ferramentas para trabalhar com valores aleatórios. |
 | ThreadPoolExecutor | Cria Threads que podem ser usadas para executar funções em paralelo. |
+| BeautifulSoup | Permite a extração de dados de arquivos HTML e XML. |
 | socket | Permite que as aplicações possam se comunicar usando diferentes protocolos de rede |
 | os | Ela permite que o código possa interagir com o sistema. |
 | sys | Fornece acesso às variáveis e funções internas do interpretador Python. |
 | time | Fornece funções para trabalhar com o tempo |
 | re | Fornece suporte para trabalhar com expressões regulares. |
-| http.server | fornece suporte para criar servidores HTTP. |
-| socketserver | fornece uma infraestrutura para criar servidores de rede. |
+| http.server | Fornece suporte para criar servidores HTTP. |
+| socketserver | Fornece uma infraestrutura para criar servidores de rede. |
+| requests | Permite que envie requisições / solicitações HTTP. |
+
 
 ## Desenvolvimento
 Quer contribuir? Ótimo!
