@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-version = "v2.2-dev"
+version = "v2.21-dev"
 
 from random import choice, randint as r
 from concurrent.futures import ThreadPoolExecutor as e
@@ -38,7 +38,7 @@ def genRandChars(l):
     c = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
     return ''.join(choice(c) for x in range(l))
 
-dir = 'mkdir ARQ'
+dir = 'mkdir -p ARQ'
 bA, bB  = "{","}"
 vars = { 
     "str": genRandChars(r(10, 16)),
@@ -352,15 +352,15 @@ def link():
             return []
     try:
         site_url = input('Digite o endereço do site: (www.site.com)\n')
+        os.system('rm -rf ARQ/links.txt')
         os.system(dir)
         diretorios_encontrados = crawler('http://' + site_url)
         if diretorios_encontrados:
             print("Diretórios encontrados:")
-            with open("ARQ/links.txt","a") as f:
-                for diretorio in diretorios_encontrados:
-                    os.system('rm -rf ARQ/links.txt')
-                
-                    print(diretorio,file=f)
+            with open("ARQ/links.txt", "a") as f:
+                diretorios_ordenados = sorted(diretorios_encontrados) 
+                for diretorio in diretorios_ordenados:
+                    print(diretorio, file=f)
                     print(diretorio)
         else:
             print("Nenhum diretório encontrado.")
@@ -368,16 +368,22 @@ def link():
         print(a)
     except requests.exceptions.ConnectionError as e:
         print(e)
-    for link in diretorios_encontrados:
-        lnk = crawler(link)
-        if lnk:
-            print('Links de ' + link)
-            os.system('rm -rf ARQ/links.txt')
-            with open("ARQ/links.txt","a") as f:
-                for l in lnk:
-                        print(l,file=f)
+    except KeyboardInterrupt:
+        print('\n',Ctrl_C)
+    try:
+        for link in diretorios_encontrados:
+            lnk = crawler(link)
+            if lnk:
+                print('Links de ' + link)
+                with open("ARQ/links.txt", "a") as f:
+                    lnk = sorted(lnk)
+                    for l in lnk:
+                        print(l, file=f)
                         print(l)
-
+    except KeyboardInterrupt:
+        print('\n',Ctrl_C)
+    input(press)
+    main()
 #=======================================================================================
 def serverhttp():
     try:
