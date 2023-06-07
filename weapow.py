@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-version = "v2.21-dev"
+version = "v2.3-dev"
 
-from random import choice, randint as r
-from concurrent.futures import ThreadPoolExecutor as e
-from bs4 import BeautifulSoup
-import socket
-import os
+from random import choice, randint as r                        #                             
+from concurrent.futures import ThreadPoolExecutor as e         #
+from bs4 import BeautifulSoup                                  #
+import socket                                                  #
+import os                                                      # 
 import sys
 import time as t
 import re
@@ -26,69 +26,52 @@ Y88b 888 d88P Y8b.     888  888 888 d88P Y88..88P Y88b 888 d88P
  O_(")(")                       \033[1;33m888\033[m \033[0;31m>DefCyberTool\033[m
                                 '''.format(version)
 
-press = '(Pressione qualquer tecla para voltar ao menu inicial)'
-Ctrl_C = 'Você pressionou Ctrl+C para interromper o programa!'
+
+press = '(Pressione qualquer tecla para voltar ao menu inicial)'   #------------------------------------#
+Ctrl_C = 'Você pressionou Ctrl+C para interromper o programa!'     # Definida essa variável global      #
+dir = 'mkdir -p ARQ'                                               # para evitar repetições nos códigos #
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)              # -----------------------------------# 
 
 def printer(shit):
-    sys.stdout.write(shit+"                \r")
+    sys.stdout.write(shit+(" " * 16) +"\r")
     sys.stdout.flush()
     return True
-
-def genRandChars(l):
-    c = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
-    return ''.join(choice(c) for x in range(l))
-
-dir = 'mkdir -p ARQ'
-bA, bB  = "{","}"
-vars = { 
-    "str": genRandChars(r(10, 16)),
-    "socket": genRandChars(r(8, 12)), 
-    "os": genRandChars(r(8, 12)),
-    "sys": genRandChars(r(22, 36)),
-    "time": genRandChars(r(8, 12)), 
-    "re": genRandChars(r(6, 12)), 
-    "http.server": genRandChars(r(4, 6)), 
-    "socketserver": genRandChars(r(16, 32)),
-    "requests": genRandChars(r(64, 96)), 
-    }
-
 #=======================================================================================
-def iplist_dois():  
-    oct=str(input('Digite os dois primeiros octetos (Ex: 192.168):'))
+def iplist():
+    try:
+        num_oct = int(input('Deseja informar 2 ou 3 octetos? (2/3) '))
+        if num_oct == 2:
+            octetos = str(input('Digite os dois primeiros octetos (Ex: 192.168):'))
+            mask = 16
+        elif num_oct == 3:
+            octetos = str(input('Digite os três primeiros octetos (Ex: 192.168.204):'))
+            mask = 24
+        else:
+            print('Digite a opção correta.')
+            input(press)
+            iplist()
+    except ValueError:
+        print('Digite a opção correta.')
+        input(press)
+        iplist()
+    except KeyboardInterrupt:
+        print('\n'+Ctrl_C)
+        exit(1)
     os.system(dir)
     os.system('rm -rf ARQ/ips.txt')
-    print('Por favor aguarde, estamos gerando seu arquivo.')
-    i=0; p=1	
-    while i < 255:
-        ip=f"{oct}.{i}.{p}"
-        for p in range(0, 255):
-            ip=f"{oct}.{i}.{p}"
-            with open("ARQ/ips.txt", "a") as f:
-                print(ip, file=f)
-        i = i+1
-        with open("ARQ/ips.txt", "a") as f:
-            print(ip, file=f)
-    print(f'Seu Arquivo foi gerado com Sucesso! ==> ({oct}/16)')	
-    input(press)
-    main()
-
-def iplist_tres():  
-    oct=str(input('Digite os três primeiros octetos (Ex: 192.168.204):'))
-    os.system(dir)
-    os.system('rm -rf ARQ/ips.txt')
-    print('Por favor aguarde, estamos gerando seu arquivo.')
-    p=1	
-    for p in range(0, 255):
-        ip=f"{oct}.{p}"
-        with open("ARQ/ips.txt", "a") as f:
-            print(ip, file=f)
-    p = p+1
     with open("ARQ/ips.txt", "a") as f:
-            print(ip, file=f)
-    print(f'Seu Arquivo foi gerado com Sucesso! ==> ({oct}/24)')	
-    input(press)
+        if num_oct == 2:
+            for i in range(0, 256):
+                for p in range(0, 256):
+                    ip = f"{octetos}.{i}.{p}"
+                    print(ip, file=f)
+        elif num_oct == 3:
+            for p in range(0, 256):
+                ip = f"{octetos}.{p}"
+                print(ip, file=f)
+    print(f'Seu Arquivo foi gerado com Sucesso! ==> ({octetos}/{mask})')
+    input(press)   
     main()
-
 #=======================================================================================
 def host_discovery():
     try:
@@ -107,8 +90,7 @@ def host_discovery():
                 def threading():
                     with open('ARQ/ips.txt','r') as f:
                         content = f.read()
-                        b = tuple(content.splitlines())
-                    hosts = b
+                        hosts = tuple(content.splitlines())
                     thread = 400
                     try:
                         with e(max_workers=int(thread)) as exe:
@@ -116,10 +98,10 @@ def host_discovery():
                                 exe.submit(ping, host)
                                 t.sleep(0.05)
                     except KeyboardInterrupt:
-                                print('\n',Ctrl_C)
+                                print('\n'+Ctrl_C)
                                 exit(1)           	
                 threading()
-                input('(Pressione qualquer tecla para continuar)')
+                input(press)
                 main()
             except RuntimeError as er:
                 print(er)
@@ -127,10 +109,10 @@ def host_discovery():
             except FileNotFoundError:
                 print("\nO arquivo de IPs descobertos deve ser gerado.")	
             except KeyboardInterrupt:
-                print('\n',Ctrl_C)
+                print('\n'+Ctrl_C)
                 exit(1)
     except KeyboardInterrupt:
-                print('\n',Ctrl_C)
+                print('\n'+Ctrl_C)
                 exit(1)
 
 #=======================================================================================
@@ -139,20 +121,18 @@ def portscan_uniq():
         ip = input('Digite o IP: ')
         for port in range(1,65535):
             printer(f"Procurando Portas: {str(port)}")
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.settimeout(0.1)
+            s.settimeout(0.5)
             result = s.connect_ex((ip,port))
             if result == 0:
                 try:
                     service = f'{socket.getservbyport(port)}'
                     print(f'Porta Aberta: {port} / {service}')
                 except socket.error:
-                    desc = 'Desconhecido'
-                    print(f'Porta Aberta: {port} / {desc}')
+                    print(f'Porta Aberta: {port} / "Desconhecido" ')
         input(press)
         main()
     except KeyboardInterrupt:
-        print('\n',Ctrl_C)
+        print('\n'+Ctrl_C)
     except FileNotFoundError:
         print("\nO arquivo de hosts descobertos deve ser gerado.")
         input(press)
@@ -168,7 +148,12 @@ def portscan():
             lst[l] = lst[l].replace(remove,"")
         print('Hosts descobertos:')
         for host in lst:
-            print(f'[+] {host}')
+            try:
+                hostname = socket.gethostbyaddr(host)[0]    
+                print(f'[+] {host} ({hostname})')
+            except socket.herror:
+                print(f'[+] {host}')
+                
             os.system('rm -rf ARQ/portscan.txt')
         sit_h = input('\nDependendo da quantidade de hosts, este processo poderá demorar. Deseja continuar o \033[0;31mPortScanner\033[m? (S/N) ')
         if(sit_h.lower() == "s"):
@@ -177,9 +162,8 @@ def portscan():
             for host in lst: 
                 def scan(ip,port,l):
                     printer(f"Procurando Portas: {str(port)}")
-                    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     s.settimeout(1)
-                    t.sleep(0.01)
+                    t.sleep(0.1)
                     result = s.connect_ex((ip,port))
                     espaco = 10 - l
                     espaco = " " * espaco
@@ -200,12 +184,12 @@ def portscan():
                                 exit(1)
                     return True
                 def ok():
-                    thread = 16
+                    thread = 40
                     ports = range(rang)
                     with open("ARQ/portscan.txt", "a") as f:
                         print("[+] Host: "+host, file=f)
                         print("\n[+] Host: "+host)
-                        print("PORTA          SERVIÇO")
+                        print("PORTA        SERVIÇO")
                     with e(max_workers=int(thread)) as exe:
                         try:
                             for port in ports:
@@ -214,21 +198,19 @@ def portscan():
                             print("[-] Saindo!")
                             exit(1)				
                 ok()
-        if(sit_h.lower() == "simple"):
-            portscan_simple()
         else:
             input(press)
             main()
         if KeyboardInterrupt:
             print('')
     except KeyboardInterrupt:
-        print('\n',Ctrl_C)
+        print('\n'+Ctrl_C)
     except FileNotFoundError:
         print("\nO arquivo de hosts descobertos deve ser gerado.")
         input(press)
         main()
 #=======================================================================================
-def portscan_simple():
+def concat_ping():
     try:
         with open("ARQ/hosts.txt", "r") as f:
             linhas = f.readlines()
@@ -244,61 +226,8 @@ def portscan_simple():
         print('Hosts descobertos:')
         for host in lst:
             print(f'[+] {host}')
-        os.system('rm -rf ARQ/portscanbyping.txt')
-        sit_h = input('\nEste processo poderá levar DIAS dependendo da quantidade de hosts. Deseja continuar o \033[0;31mPortScanner\033[m? (S/N) ')
-        t.sleep(0.25)
-        if(sit_h.lower() == "s"):
-            print('Aguarde ...')
-            for host in lst:
-                def printer(shit):
-                    sys.stdout.write(shit+"               \r")
-                    sys.stdout.flush()
-                    return True
-                def scan(ip,port,l):
-                    printer("Procurando Portas: {}".format(str(port)))
-                    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    s.settimeout(1)
-                    t.sleep(0.01)
-                    result = s.connect_ex((ip,port))
-                    espaco = 10 - l
-                    espaco = " " * espaco
-                    if result:
-                        return None
-                    else :
-                        with open("ARQ/portscan.txt", "a") as f:
-                            try:
-                                service = "{}".format(socket.getservbyport(port))
-                                t.sleep(0.1)
-                                print("{}/TCP {} {}".format(str(port),espaco,service), file=f)
-                                print(str(port) + "/TCP" + espaco + service)
-                            except socket.error:
-                                print(str(port) + "/TCP" + espaco + "Desconhecido", file=f)
-                                print(str(port) + "/TCP" + espaco + "Desconhecido")
-                            except KeyboardInterrupt:
-                                print("[-] Saindo!")
-                                exit(1)
-                    return True
-                def ok():
-                    thread = 16
-                    ports = range(8888)
-                    with open("ARQ/portscan.txt", "a") as f:
-                        print("[+] Host: "+host, file=f)
-                        print("\n[+] Host: "+host)
-                        print("PORTA          SERVIÇO")
-                    
-                    with e(max_workers=int(thread)) as exe:
-                        try:
-                            for port in ports:
-                                exe.submit(scan, host, port, len(str(port)))
-                        except KeyboardInterrupt:
-                            print("[-] Saindo!")
-                            exit(1)				
-                ok()
-        else:
-            input(press)
-            main()
     except KeyboardInterrupt:
-        print('\n',Ctrl_C)
+        print('\n'+Ctrl_C)
     except FileNotFoundError:
         print("\nO arquivo de hosts descobertos deve ser gerado.")
         input(press)
@@ -319,20 +248,17 @@ def http_finder():
         for line in port_up: 
             lst.append(pattern.search(line)[0])
         print("Encontrado HTTP Server nos seguintes Hosts: \n")
+
         for host in lst:
             print(f'[+] {host}\n')
-        os.system("rm -rf ARQ/httup.txt")
-        print("Continua ...")
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((host, 80))
-        s.send(b"GET / HTTP/1.0\r\n\r\n")
-        resp = s.recv(4096)
-        s.close()
-        print(resp)
-        input(press)
-        main()
+            os.system("rm -rf ARQ/httup.txt")
+            response = requests.get('http://'+host)
+            content = response.text
+            print(content)
+            input(press)
+            main()
     except KeyboardInterrupt:
-        print('\n',Ctrl_C)
+        print('\n'+Ctrl_C)
     except FileNotFoundError:
         print("\nO arquivo de hosts descobertos deve ser gerado.")
         input(press)
@@ -369,7 +295,7 @@ def link():
     except requests.exceptions.ConnectionError as e:
         print(e)
     except KeyboardInterrupt:
-        print('\n',Ctrl_C)
+        print('\n'+Ctrl_C)
     try:
         for link in diretorios_encontrados:
             lnk = crawler(link)
@@ -381,7 +307,7 @@ def link():
                         print(l, file=f)
                         print(l)
     except KeyboardInterrupt:
-        print('\n',Ctrl_C)
+        print('\n'+Ctrl_C)
     input(press)
     main()
 #=======================================================================================
@@ -399,7 +325,7 @@ def serverhttp():
         print('\nDigite uma porta valida. (0 ~ 65535)')
         serverhttp()
     except KeyboardInterrupt:
-        print('\n',Ctrl_C)
+        print('\n'+Ctrl_C)
 
 #=======================================================================================
 def backup():
@@ -415,7 +341,7 @@ def backup():
             input(press)
             main()
     except KeyboardInterrupt:
-        print('\n',Ctrl_C)
+        print('\n'+Ctrl_C)
 
 #=======================================================================================
 def cron():
@@ -468,7 +394,7 @@ def finder():
         input(press)
         main()
     except KeyboardInterrupt:
-        print('\n',Ctrl_C)
+        print('\n'+Ctrl_C)
 
 #=======================================================================================
 def infosys():
@@ -581,7 +507,7 @@ def infosys():
             input(press)
             main()
     except KeyboardInterrupt:
-        print('\n',Ctrl_C)
+        print('\n'+Ctrl_C)
     except FileNotFoundError:
         os.system(dir)
         with open('ARQ/auditoria.txt', 'w') as file:
@@ -617,7 +543,7 @@ def linpeas():
             main()
         pass
     except KeyboardInterrupt:
-        print('\n',Ctrl_C)
+        print('\n'+Ctrl_C)
 
 #=======================================================================================
 def linenum():
@@ -632,7 +558,7 @@ def linenum():
             main()
         pass
     except KeyboardInterrupt:
-        print('\n',Ctrl_C)
+        print('\n'+Ctrl_C)
 
 #=======================================================================================
 def suid():
@@ -645,7 +571,6 @@ def suid():
 #=======================================================================================
 def nc(porta):
     try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.bind(("", porta))
         s.listen(1)
         print(f"Escutando na porta {porta}")
@@ -664,7 +589,7 @@ def nc(porta):
         porta = int(input("Digite a Porta: "))
         nc(porta)
     except KeyboardInterrupt:
-        print('\n',Ctrl_C)
+        print('\n'+Ctrl_C)
         
 #=======================================================================================
 def reverse_shell():
@@ -839,7 +764,6 @@ Você deseja Pesquisar ou Executar?
                 input(press)
                 reverse_shell()
         elif(sit_rev == 2):
-            s=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
             commander=input('Digite o IP: ')
             porta=int(input('Digite a Porta: '))
             try:
@@ -860,21 +784,20 @@ Você deseja Pesquisar ou Executar?
 #=======================================================================================
 def server_tcp():
     try:
-        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         file = open("ARQ/output.txt", "w")
         porta = int(input("Digite a Porta a ser escutada: "))
         try:
-            server.bind(("0.0.0.0", porta))
-            server.listen(5)
+            s.bind(("0.0.0.0", porta))
+            s.listen(5)
             print("Listening...")
-            client_socket, address = server.accept()
+            client_socket, address = s.accept()
             print(f"Received from: {address[0]}")
             data = client_socket.recv(1024).decode()
             file.write(data)
-            server.close()
+            s.close()
         except Exception as error:
             print("Erro: ", error)
-            server.close()
+            s.close()
     except FileNotFoundError:
         os.system(dir)
         server_tcp()
@@ -906,15 +829,7 @@ def banner():
 ''')
         opcao=int(input('Escolha uma opção: '))
         if opcao == 1:
-            sit_ip = int(input('Deseja informar 2 ou 3 octetos? (2/3) '))
-            if (sit_ip == 2):
-                iplist_dois()
-            elif (sit_ip == 3):
-                iplist_tres()
-            else:
-                print('Digite a opção correta.')
-                input('(Pressione qualquer tecla para continuar)')
-                main()
+            iplist()
             pass
         elif opcao == 2:
             host_discovery()
@@ -992,7 +907,7 @@ def main():
     try:
         banner()
     except (KeyboardInterrupt):
-        print('\n',Ctrl_C)
+        print('\n'+Ctrl_C)
     except ValueError as e:
             print('Digite a opção correta.')
             input('(Pressione qualquer tecla para continuar)')
