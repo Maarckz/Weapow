@@ -143,52 +143,55 @@ def portscan():
     try:
         with open("ARQ/hosts.txt", "r") as f:
             lst = f.readlines()
-        remove ='\n'
-        for l in range(len(lst)):
-            lst[l] = lst[l].replace(remove,"")
+        remove = '\n'
+        lst = [l.replace(remove, "") for l in lst]
         print('Hosts descobertos:')
         for host in lst:
             try:
-                hostname = socket.gethostbyaddr(host)[0]    
+                hostname = socket.gethostbyaddr(host)[0]
                 print(f'[+] {host} ({hostname})')
             except socket.herror:
                 print(f'[+] {host}')
-                
             os.system('rm -rf ARQ/portscan.txt')
-        sit_h = input('\nDependendo da quantidade de hosts, este processo poderá demorar. Deseja continuar o \033[0;31mPortScanner\033[m? (S/N) ')
-        if(sit_h.lower() == "s"):
+        sit_h = input('\nDependendo da quantidade de hosts, este processo poderá demorar. Deseja continuar o '
+                      '\033[0;31mPortScanner\033[m? (S/N) ')
+        if sit_h.lower() == "s":
             rang = int(input('Digite o RANGE de portas: '))
             print('Aguarde ...')
-            for host in lst: 
-                def scan(ip,port,l):
+            for host in lst:
+                def scan(ip, port, l):
                     printer(f"Procurando Portas: {str(port)}")
-                    s.settimeout(1)
-                    t.sleep(0.1)
-                    result = s.connect_ex((ip,port))
-                    espaco = 10 - l
-                    espaco = " " * espaco
-                    if result:
-                        return None
-                    else :
-                        with open("ARQ/portscan.txt", "a") as f:
-                            try:
-                                service = f"{socket.getservbyport(port)}"
-                                t.sleep(0.1)
-                                print(f"{str(port)}/TCP {espaco} {service}", file=f)
-                                print(str(port) + "/TCP" + espaco + f"{service}       ")
-                            except socket.error:
-                                print(str(port) + "/TCP" + espaco + "Desconhecido", file=f)
-                                print(str(port) + "/TCP" + espaco + "Desconhecido")
-                            except KeyboardInterrupt:
-                                print("[-] Saindo!")
-                                exit(1)
+                    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    s.settimeout(1)  # Tempo limite de 1 segundo para a conexão
+                    t.sleep(0.01)
+                    try:
+                        result = s.connect_ex((ip, port))
+                        espaco = 10 - l
+                        espaco = " " * espaco
+                        if result == 0:  # Verificar se a conexão foi estabelecida corretamente
+                            with open("ARQ/portscan.txt", "a") as f:
+                                try:
+                                    service = f"{socket.getservbyport(port)}"
+                                    t.sleep(0.1)
+                                    print(f"{str(port)}/TCP {espaco} {service}", file=f)
+                                    print(str(port) + "/TCP" + espaco + f"{service}       ")
+                                except socket.error:
+                                    print(str(port) + "/TCP" + espaco + "Desconhecido", file=f)
+                                    print(str(port) + "/TCP" + espaco + "Desconhecido")
+                                except KeyboardInterrupt:
+                                    print("[-] Saindo!")
+                                    exit(1)
+                    except (socket.timeout, ConnectionRefusedError, OSError):
+                        pass
+                    finally:
+                        s.close()
                     return True
                 def ok():
-                    thread = 40
+                    thread = 16
                     ports = range(rang)
                     with open("ARQ/portscan.txt", "a") as f:
-                        print("[+] Host: "+host, file=f)
-                        print("\n[+] Host: "+host)
+                        print("[+] Host: " + host, file=f)
+                        print("\n[+] Host: " + host)
                         print("PORTA        SERVIÇO")
                     with e(max_workers=int(thread)) as exe:
                         try:
@@ -196,7 +199,7 @@ def portscan():
                                 exe.submit(scan, host, port, len(str(port)))
                         except KeyboardInterrupt:
                             print("[-] Saindo!")
-                            exit(1)				
+                            exit(1)
                 ok()
         else:
             input(press)
@@ -204,11 +207,12 @@ def portscan():
         if KeyboardInterrupt:
             print('')
     except KeyboardInterrupt:
-        print('\n'+Ctrl_C)
+        print('\n' + Ctrl_C)
     except FileNotFoundError:
         print("\nO arquivo de hosts descobertos deve ser gerado.")
         input(press)
         main()
+        
 #=======================================================================================
 def concat_ping():
     try:
