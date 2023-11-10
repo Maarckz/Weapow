@@ -23,17 +23,18 @@ git clone https://github.com/Maarckz/Weapow.git && cd Weapow && python weapow.py
 
 | Biblioteca | Função |
 | ------ | ------ |
-| random | Fornece ferramentas para trabalhar com valores aleatórios. |
-| ThreadPoolExecutor | Cria Threads que podem ser usadas para executar funções em paralelo. |
-| BeautifulSoup | Permite a extração de dados de arquivos HTML e XML. |
-| socket | Permite que as aplicações possam se comunicar usando diferentes protocolos de rede |
 | os | Ela permite que o código possa interagir com o sistema. |
-| sys | Fornece acesso às variáveis e funções internas do interpretador Python. |
-| time | Fornece funções para trabalhar com o tempo |
 | re | Fornece suporte para trabalhar com expressões regulares. |
+| sys | Fornece acesso às variáveis e funções internas do interpretador Python. |
+| socket | Permite que as aplicações possam se comunicar usando diferentes protocolos de rede |
+| requests | Permite que envie requisições / solicitações HTTP. |
+| time | Fornece funções para trabalhar com o tempo |
 | http.server | Fornece suporte para criar servidores HTTP. |
 | socketserver | Fornece uma infraestrutura para criar servidores de rede. |
-| requests | Permite que envie requisições / solicitações HTTP. |
+| BeautifulSoup | Permite a extração de dados de arquivos HTML e XML. |
+| requests.exceptions | Necessário para fazer tratamento de erros de requisição. |
+| urllib | Permite manipular URL. Ex: Fazer um parse. |
+| ThreadPoolExecutor | Cria Threads que podem ser usadas para executar funções em paralelo. |
 
 
 ## Desenvolvimento
@@ -63,7 +64,7 @@ Nesta função, existem 3 modos de uso. Você pode fazer em um IP específico, e
 Esta função procura por servidores HTTP no arquivo `portscan.txt`. Ele verifica todas as linhas que contêm a *porta 80 aberta*, em seguida inicia uma conexão host, e envia uma solicitação `GET HTTP`. Ela recebe a resposta do servidor e a imprime na tela.
 > Esta função ainda está em desenvolvimento, mas a intenção é manipular o conteúdo do site encontrado, e fazer solicitações específicas para cada HOST.
 
-**5. Link :**
+**5. WebCrawler :**
 Esta é uma função que usa **WebScraping** para extrair links de um site. Após a extração dos links do site inicial, o código imprime os links de um site, incluindo links de diretórios secundários encontrados em cada link principal. Esses links são armazenados sem tratamento no arquivo `links.txt`.
 > A ferramenta serve para fazer um levantamento de links, diretórios possíveis arquivos e conteúdos sensiveis dentro de um site. Ela também lida com exceções, como erros de conexão ou URL inválida, e exibe mensagens de erro apropriadas.  
 
@@ -72,49 +73,59 @@ Esta é uma função que inicia um servidor HTTP. Ele recebe uma entrada do usu�
 > Essa função pode ser usada para envio de arquivos de um determinado host, tanto para uma auditoria, como para manutenção. 
 > Ex: Servidor de arquivos está fora (por algum motivo), você consegue fazer de um PC qualquer um servidor de arquivos.
 
-**7. BackUp :**
+**7. WifiScanner :**
+Esta é uma função que inicia um servidor HTTP. Ele recebe uma entrada do usuário para especificar qual **porta** deve ser usada para o servidor e, em seguida, inicia o servidor usando o módulo `http.server` do Python.
+> Essa função pode ser usada para envio de arquivos de um determinado host, tanto para uma auditoria, como para manutenção. 
+> Ex: Servidor de arquivos está fora (por algum motivo), você consegue fazer de um PC qualquer um servidor de arquivos.
+
+**8. BackUp :**
 Esta função faz backup do diretório do usuário, para uma pasta chamada `Backup`. O usuário é questionado se deseja realizar o backup ou não antes de prosseguir.
 **ATENÇÃO**: *Esta função inicia após a confirmação, e ainda não foi tratada para solicitar o diretório a ser feito o backup.*
 > Comando executado: `cp -v -r /home/$USER /home/$USER/Backup`
 
-**8. CronTab :**
+**8.X. CronTab :**
 Esta função permite ao usuário configurar uma tarefa CRON. É exibida um gráfico explicando como fazer a configuração no *crontab*. 
 > Esta função **substitui** a tabela do CRON, deixando somente a função atual, verifique antes, se não existe algo programado pelo `crontab -e`
 > Você pode adicionar mais de uma tarefa separando as tarefas com `;`
 
-**9. Finder :**
+**9. CronTab :**
+Esta função permite ao usuário configurar uma tarefa CRON. É exibida um gráfico explicando como fazer a configuração no *crontab*. 
+> Esta função **substitui** a tabela do CRON, deixando somente a função atual, verifique antes, se não existe algo programado pelo `crontab -e`
+> Você pode adicionar mais de uma tarefa separando as tarefas com `;`
+
+**10. Finder :**
 Esta função permite ao usuário buscar por um arquivo específico em **todo** o sistema de arquivos usando o comando `find`. Quaisquer erros durante a busca são redirecionados para `2>/dev/null`.
 >Essa função pode demorar um pouco dependendo da quantidade de arquivos a serem verificados.
 
-**10. Auditor :**
+**11. Auditor :**
 Esta função coleta informações do sistema, onde são organizadas em seções para diferentes tipos de informações, incluindo: ***usuário, sistema, CPU, memória, rede, partições, dispositivos USB, programas instalados e histórico de bash***, em seguida as salva em no arquivo `auditoria.txt`
 > Essa função pode não funcionar dependendo da Distro usada.
 
-**11. Config IP :**
+**12. Config IP :**
 Esta função começa mostrando as informações de rede do computador, e em seguida permite ao usuário configurar o endereço IP, gateway e servidor DNS.
 >É importante notar que esta função deve ser executada com privilégios de superusuário.
 
-**12. LinPeas :**
+**13. LinPeas :**
 Esta função executa o script do Marcos Polop `LinPeas.sh`
 > Essa função demora um pouco, mas é muito eficaz.
 
-**13. LinEnum :**
+**14. LinEnum :**
 Esta função executa o script do rebootuser `LinEnum.sh`
 > Essa função demora um pouco, mas é muito eficaz.
 
-**14. SUID :**
+**15. SUID :**
 Esta função busca por arquivos com a permissão `setuid` ativada em um determinado caminho do sistema ou, caso nenhum caminho seja especificado, em todo o sistema.
 >Esta função executa o comando `find` com as opções `-perm -u=s -type f`.
 
-**15. NC Lister  :**
+**16. NC Lister  :**
 Esta função inicia uma "*Escuta*" na porta especificada. Quando uma conexão é estabelecida com o servidor, a função imprime o endereço IP do cliente conectado e inicia um loop para receber comandos do cliente e enviá-los de volta. 
 >O nome da função, `nc`, é uma abreviação de `netcat`, uma ferramenta de terminal usada para enviar e receber dados em redes de computadores.
 
-**16. Reverse Shell  :**
+**17. Reverse Shell  :**
 Esta função possui 2 funcionalidades, **Pesquisar** e **Executar**. Ela apresenta um menu ao usuário opções para executar um shell reverso em uma máquina remota. Os tipos de *shells reversos* podem ser conferidos da ferramenta, estes incluem `Bash, NC, Rust, PERL, PHP, PowerShell, Python, SoCat, Node, JavaScript, TelNet, zsh e GoLang`. O usuário seleciona uma opção e fornece o endereço IP e a porta da máquina remota à qual deseja se conectar, então gera o comando shell reverso apropriado e o executa na máquina remota.
 >**Com grandes poderes vêm grandes responsabilidades** - Lee, Stan.
 
-**17. Server TCP :**
+**18. Server TCP :**
 Esta função cria um servidor TCP que ouve em uma porta informada pelo usuário e espera por uma conexão de cliente. Esta ferramenta é muito usada para estabelecer uma SHELL REVERSA sem explorar falha.
 >**Com grandes poderes vêm grandes responsabilidades** - Lee, Stan.
 
