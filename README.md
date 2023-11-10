@@ -82,10 +82,9 @@ Esta função faz backup do diretório do usuário, para uma pasta chamada `Back
 **ATENÇÃO**: *Esta função inicia após a confirmação, e ainda não foi tratada para solicitar o diretório a ser feito o backup.*
 > Comando executado: `cp -v -r /home/$USER /home/$USER/Backup`
 
-**8.X. CronTab :**
-Esta função permite ao usuário configurar uma tarefa CRON. É exibida um gráfico explicando como fazer a configuração no *crontab*. 
-> Esta função **substitui** a tabela do CRON, deixando somente a função atual, verifique antes, se não existe algo programado pelo `crontab -e`
-> Você pode adicionar mais de uma tarefa separando as tarefas com `;`
+**8.X. Clonar :**
+Em breve. 
+> Em breve
 
 **9. CronTab :**
 Esta função permite ao usuário configurar uma tarefa CRON. É exibida um gráfico explicando como fazer a configuração no *crontab*. 
