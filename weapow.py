@@ -1,18 +1,18 @@
 #!/usr/bin/env python
-version = "v2.3-dev"
+version = "v2.5-dev"
 
-from random import choice, randint as r                        #                             
-from concurrent.futures import ThreadPoolExecutor as e         #
-from bs4 import BeautifulSoup                                  #
-import socket                                                  #
-import os                                                      # 
-import sys
-import time as t
+import os                                                      
 import re
+import sys
+import socket                                                  
+import requests
+import time as t
 import http.server as hs
 import socketserver as ss
-import requests
-
+from bs4 import BeautifulSoup                                
+from requests.exceptions import SSLError
+from urllib.parse import urlparse, urljoin                     
+from concurrent.futures import ThreadPoolExecutor as e         
 
 bann = '''\033[1;33m
 888  888  888  .d88b.   8888b.  88888b.   .d88b.  888  888  888 
@@ -20,11 +20,11 @@ bann = '''\033[1;33m
 888  888  888 88888888 .d888888 888  888 888  888 888  888  888 
 Y88b 888 d88P Y8b.     888  888 888 d88P Y88..88P Y88b 888 d88P 
  "Y8888888P"   "Y8888  "Y888888 88888P"   "Y88P"   "Y8888888P"  
- \033[7;32m{}\033[m                       \033[1;33m888\033[m'''''' \033[1;30m  __ _  ___ ____ _________/ /_____\033[m
+                                \033[1;33m888\033[m'''f''' \033[1;30m  __ _  ___ ____ _________/ /_____\033[m
  (\ (\ \033[1;35m                         \033[m\033[1;33m888\033[m \033[1;30m /  ' \/ _ `/ _ `/ __/ __/  '_/_ /\033[m
- ( ^.^)\033[1;35m=========================\033[m\033[1;33m888\033[m \033[1;30m/_/_/_/\_,_/\_,_/_/  \__/_/\_\/__/\033[m
- O_(")(")                       \033[1;33m888\033[m \033[0;31m>DefCyberTool\033[m
-                                '''.format(version)
+ ( ^.^)\033[1;35m-------------------------\033[m\033[1;33m888\033[m \033[1;30m/_/_/_/\_,_/\_,_/_/  \__/_/\_\/__/\033[m
+ O_(")(")                       \033[1;33m888\033[m \033[0;31m>DefCyberTool\033[m             \033[7;32m{version}\033[m
+ '''
 
 
 press = '(Pressione qualquer tecla para voltar ao menu inicial)'   #------------------------------------#
@@ -36,6 +36,7 @@ def printer(shit):
     sys.stdout.write(shit+(" " * 16) +"\r")
     sys.stdout.flush()
     return True
+    
 #=======================================================================================
 def iplist():
     try:
@@ -56,7 +57,7 @@ def iplist():
         iplist()
     except KeyboardInterrupt:
         print('\n'+Ctrl_C)
-        exit(1)
+        quit()
     os.system(dir)
     os.system('rm -rf ARQ/ips.txt')
     with open("ARQ/ips.txt", "a") as f:
@@ -72,6 +73,7 @@ def iplist():
     print(f'Seu Arquivo foi gerado com Sucesso! ==> ({octetos}/{mask})')
     input(press)   
     main()
+
 #=======================================================================================
 def host_discovery():
     try:
@@ -99,7 +101,7 @@ def host_discovery():
                                 t.sleep(0.05)
                     except KeyboardInterrupt:
                                 print('\n'+Ctrl_C)
-                                exit(1)           	
+                                quit()
                 threading()
                 input(press)
                 main()
@@ -110,10 +112,10 @@ def host_discovery():
                 print("\nO arquivo de IPs descobertos deve ser gerado.")	
             except KeyboardInterrupt:
                 print('\n'+Ctrl_C)
-                exit(1)
+                quit()
     except KeyboardInterrupt:
                 print('\n'+Ctrl_C)
-                exit(1)
+                quit()
 
 #=======================================================================================
 def portscan_uniq():
@@ -148,10 +150,17 @@ def portscan():
         print('Hosts descobertos:')
         for host in lst:
             try:
+                socket.setdefaulttimeout(0.5)
                 hostname = socket.gethostbyaddr(host)[0]
-                print(f'[+] {host} ({hostname})')
+                print(f'[+] {host} - ({hostname})')
+                print(f'[+] {host}')
+            except socket.timeout:
+                print(f'[+] {host}')
             except socket.herror:
                 print(f'[+] {host}')
+            except KeyboardInterrupt:
+                print("[-] Saindo!")
+                quit()
             os.system('rm -rf ARQ/portscan.txt')
         sit_h = input('\nDependendo da quantidade de hosts, este processo poderá demorar. Deseja continuar o '
                       '\033[0;31mPortScanner\033[m? (S/N) ')
@@ -162,13 +171,13 @@ def portscan():
                 def scan(ip, port, l):
                     printer(f"Procurando Portas: {str(port)}")
                     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    s.settimeout(1)  # Tempo limite de 1 segundo para a conexão
+                    s.settimeout(0.4)  
                     t.sleep(0.01)
                     try:
                         result = s.connect_ex((ip, port))
                         espaco = 10 - l
                         espaco = " " * espaco
-                        if result == 0:  # Verificar se a conexão foi estabelecida corretamente
+                        if result == 0: 
                             with open("ARQ/portscan.txt", "a") as f:
                                 try:
                                     service = f"{socket.getservbyport(port)}"
@@ -180,27 +189,25 @@ def portscan():
                                     print(str(port) + "/TCP" + espaco + "Desconhecido")
                                 except KeyboardInterrupt:
                                     print("[-] Saindo!")
-                                    exit(1)
+                                    quit()
                     except (socket.timeout, ConnectionRefusedError, OSError):
                         pass
                     finally:
                         s.close()
                     return True
-                def ok():
-                    thread = 16
-                    ports = range(rang)
-                    with open("ARQ/portscan.txt", "a") as f:
-                        print("[+] Host: " + host, file=f)
-                        print("\n[+] Host: " + host)
-                        print("PORTA        SERVIÇO")
-                    with e(max_workers=int(thread)) as exe:
-                        try:
-                            for port in ports:
-                                exe.submit(scan, host, port, len(str(port)))
-                        except KeyboardInterrupt:
-                            print("[-] Saindo!")
-                            exit(1)
-                ok()
+                thread = 16
+                ports = range(rang)
+                with open("ARQ/portscan.txt", "a") as f:
+                    print("[+] Host: " + host, file=f)
+                    print("\n[+] Host: " + host)
+                    print("PORTA        SERVIÇO")
+                with e(max_workers=int(thread)) as exe:
+                    try:
+                        for port in ports:
+                            exe.submit(scan, host, port, len(str(port)))
+                    except KeyboardInterrupt:
+                        print("[-] Saindo!")
+                        quit()
         else:
             input(press)
             main()
@@ -214,53 +221,40 @@ def portscan():
         main()
         
 #=======================================================================================
-def concat_ping():
-    try:
-        with open("ARQ/hosts.txt", "r") as f:
-            linhas = f.readlines()
-        hosts_up = []
-        for i, linha in enumerate(linhas):
-            match = re.search(r"1 received", linha)
-            if match:
-                hosts_up.append(linhas[i - 1])
-        pattern = re.compile(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})') 
-        lst=[] 
-        for line in hosts_up: 
-            lst.append(pattern.search(line)[0]) 
-        print('Hosts descobertos:')
-        for host in lst:
-            print(f'[+] {host}')
-    except KeyboardInterrupt:
-        print('\n'+Ctrl_C)
-    except FileNotFoundError:
-        print("\nO arquivo de hosts descobertos deve ser gerado.")
-        input(press)
-        main()
-        
-#=======================================================================================
 def http_finder():
     try:
         with open("ARQ/portscan.txt", "r") as f:
             linhas = f.readlines()
-        port_up = []
+        port_up = ()
         for i, linha in enumerate(linhas):
             match = re.search(r"80/", linha)
             if match:
                 port_up.append(linhas[i - 1])
         pattern = re.compile(r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")
-        lst=[] 
-        for line in port_up: 
-            lst.append(pattern.search(line)[0])
+        lst=()
         print("Encontrado HTTP Server nos seguintes Hosts: \n")
-
+        for line in port_up: 
+            try:
+                lst.append(pattern.search(line)[0])
+                #print(line)
+            except TypeError:
+                pass
+        
         for host in lst:
-            print(f'[+] {host}\n')
-            os.system("rm -rf ARQ/httup.txt")
-            response = requests.get('http://'+host)
-            content = response.text
-            print(content)
-            input(press)
-            main()
+            with open(f"ARQ/{host}.html", "a") as f:
+                print(f'[+] {host}\n')
+                os.system(f"rm -rf ARQ/{host}.html")
+                #os.system(f'wget {host} -O ARQ/{host}.html')
+                os.system(f'wget --mirror --convert-links --adjust-extension --page-requisites {host} -O ARQ/{host}')
+                #try:
+                #    response = requests.get('http://'+host)
+                #    content = response.text
+                #    print(content)
+                #except HTTPSConnectionPool as err:
+                #    print(err)
+                #    continue
+        input(press)
+        main()
     except KeyboardInterrupt:
         print('\n'+Ctrl_C)
     except FileNotFoundError:
@@ -269,51 +263,138 @@ def http_finder():
         main()
 
 #=======================================================================================
+
 def link():
-    def crawler(url):
-        response = requests.get(url)
+    def crawl(url):
+        try:
+            response = requests.get(url)
+        except SSLError as e:
+            print(f"SSLError: {e}")
+            return []
+
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'html.parser')
             links = soup.find_all('a')
-            diretorios = {link['href'] for link in links if 'href' in link.attrs}
-            return diretorios
-        else:
-            print("Falha ao acessar a página:", response.status_code)
-            return []
-    try:
-        site_url = input('Digite o endereço do site: (www.site.com)\n')
-        os.system('rm -rf ARQ/links.txt')
-        os.system(dir)
-        diretorios_encontrados = crawler('http://' + site_url)
-        if diretorios_encontrados:
-            print("Diretórios encontrados:")
-            with open("ARQ/links.txt", "a") as f:
-                diretorios_ordenados = sorted(diretorios_encontrados) 
-                for diretorio in diretorios_ordenados:
-                    print(diretorio, file=f)
-                    print(diretorio)
-        else:
-            print("Nenhum diretório encontrado.")
-    except requests.exceptions.MissingSchema as a:
-        print(a)
-    except requests.exceptions.ConnectionError as e:
-        print(e)
-    except KeyboardInterrupt:
-        print('\n'+Ctrl_C)
-    try:
-        for link in diretorios_encontrados:
-            lnk = crawler(link)
-            if lnk:
-                print('Links de ' + link)
-                with open("ARQ/links.txt", "a") as f:
-                    lnk = sorted(lnk)
-                    for l in lnk:
-                        print(l, file=f)
-                        print(l)
-    except KeyboardInterrupt:
-        print('\n'+Ctrl_C)
-    input(press)
-    main()
+            hrefcode = {urljoin(url, link['href']) for link in links if 'href' in link.attrs} ############################################################# ESTOU EM DÚVIDA COMO FUNCIONA
+            return hrefcode
+        return []
+
+    def ext_info(url):
+        durls = []
+        emails = set()
+        tel = set()
+        forms = []
+        subdomains = set()
+
+        try:
+            response = requests.get(url)
+        except SSLError as e:
+            print(f"SSLError: {e}")
+            return durls, emails, tel, forms, subdomains
+        except requests.exceptions.RequestException as e:
+            print(f"RequestException: {e}")
+            return durls, emails, tel, forms, subdomains
+
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.content, 'html.parser')
+
+            for link in soup.find_all('a'):
+                href = link.get('href')
+                if link is soup.find('id'):
+                    print(link)
+                elif link is not None:
+                    try:
+                        if href and href.startswith('/') or href.startswith('?'):
+                            durls.append(urljoin(url, href))
+                        else:
+                            print(href)
+                    except AttributeError as e:
+                        print(link,href,e)
+            for link in soup.find_all('a'):
+                href = link.get('href')
+                if href:
+                    if href.startswith("mailto:"):
+                        emails.add(href[7:])
+                    elif href.startswith("tel:") or "phone=" in href:
+                        tel.add(href[4:])
+
+            for form in soup.find_all('form'):
+                forms.append(url)
+
+            for link in soup.find_all('a'):
+                href = link.get('href')
+                if href:
+                    parsed_uri = urlparse(href)
+                    domain = '{uri.netloc}'.format(uri=parsed_uri).split(':')[0]
+                    subdomains.add(domain)
+
+        return durls, emails, tel, forms, subdomains #######################################  LEMBRAR COMO FUNCIONA 
+
+    def process_url(url):
+        visit_urls = set()
+        if url in visit_urls:
+            return
+        visit_urls.add(url)
+        divurls = crawl(url)
+        print("\n\nEfetuando WebCrawling em ", url)
+        for divurl in sorted(divurls):
+            print('\n\033[0;31m============================================================================================>>\033[m',t.strftime("\033[7;32m %d/%m/%y \033[m"))
+            print(divurl)
+            print('\033[0;31m============================================================================================>>\033[m',t.strftime("\033[7;32m %H:%M:%S \033[m"))
+
+            durls, emails, tel, forms, subdomains = ext_info(divurl)
+
+            if durls:
+                print('\nURLs INTERNAS:')
+                for url in durls:
+                    print(url)
+                    try:
+                        links(url)
+                    except requests.exceptions.ConnectionError as err:
+                        pass
+            if emails:
+                print('\nEMAILS:')
+                for email in emails:
+                    print(email)
+        
+            if tel:
+                print('\nTELEFONES:')
+                for phone in tel:
+                    print(phone)
+        
+            if forms:
+                print('\nFORMULÁRIOS:')
+                for form in forms:
+                    print(form)
+        
+            if subdomains:
+                print('\nSITES:')
+                for subdomain in subdomains:
+                    print(subdomain)
+            if durls:
+                print('\nURLs INTERNAS:')
+                for url in durls:
+                    print(url)
+                    # Chamada recursiva para o novo link encontrado
+                    
+    def links(target):
+        url_process = ['http://' + target]
+        url_atual = url_process.pop()
+        process_url(url_atual)
+        
+        #sit = input('\nDeseja salvar qo WebCrawl? (S/N) ')
+        #if(sit.lower() == 's'):
+        #    print('Aguarde enquanto o arquivo está sendo salvo ...')
+        #    with open('craw.txt', 'w') as f:
+        #        while url_process:
+        #            url_atual = url_process.pop()
+        #            os.dup2(f.fileno(), 1)
+        #            process_url(url_atual)
+        #            os.dup2(os.dup(2), 1) 
+        #    print("WebCrawler salvo com sucesso!")
+
+    target = input('Digite o endereço do site: (site.com)\n')
+    links(target)
 #=======================================================================================
 def serverhttp():
     try:
@@ -346,6 +427,17 @@ def backup():
             main()
     except KeyboardInterrupt:
         print('\n'+Ctrl_C)
+
+#=======================================================================================
+def clonar():
+    '''
+    df -h
+umount -t ext4 /dev/sdx && mkfs.ext4 /dev/sdx 
+	dd if=/deb/sdx of=/dev/sdy bs=1M conv=noerror 
+sudo blkid 
+sudo nano /etc/fstab
+    '''
+    pass
 
 #=======================================================================================
 def cron():
@@ -405,12 +497,18 @@ def infosys():
     try:
         output = ''
 
-        output += '\nWHOAMI =======================================================\n'
+        output += '\n'
+        output += 'WHOAMI =======================================================\n'
         output += '            User: {}'.format(os.popen('whoami').read())
         output += os.popen('hostnamectl').read()
         output += '      IPAddress : {}'.format(os.popen("ip addr | awk '/inet / {if (++n == 2) print $2}'").read())
-        output +="   Current Path : {}".format(os.popen('pwd').read())
+        output +="\n   Current Path : {}".format(os.popen('pwd').read())
         output +='===============================================================\n'
+
+        output += '\n'
+        output += 'ID ============================================================\n'
+        output += os.popen('id').read()
+        output += '===============================================================\n'
 
         output += '\n'
         output += 'UNAME =========================================================\n'
@@ -445,13 +543,20 @@ def infosys():
         output += '===============================================================\n'
         
         output += '\n'
+        output += 'NETSTAT =======================================================\n'
+        output += os.popen('netstat -ano').read()
+        output += '\n'
+        output += os.popen('netstat -nr').read()
+        output += '===============================================================\n'
+        
+        output += '\n'
         output += 'ROTAS =========================================================\n'
         output += os.popen('cat /proc/net/route').read()
         output += '===============================================================\n'
 
         output += '\n'
         output += 'SISTEMAS ======================================================\n'
-        output += os.popen('df').read()
+        output += os.popen('df -h').read()
         output += '===============================================================\n'
 
         output += '\n'
@@ -461,7 +566,7 @@ def infosys():
 
         output += '\n'
         output += 'USB ===========================================================\n'
-        output += os.popen('cat /etc/modprobe.d/blacklist.conf | grep usb').read()
+        output += os.popen('cat /etc/modprobe.d/blacklist.conf ').read()
         output += '===============================================================\n'
 
         output += '\n'
@@ -484,6 +589,17 @@ def infosys():
         output += os.popen('lslogins').read()
         output += '===============================================================\n'
         
+        output += '\n'
+        output += 'CAPTIVEF ======================================================\n'
+        #output += os.popen('getcap -r / 2>/dev/null').read()
+        output += '===============================================================\n'
+        
+        output += '\n'
+        output += 'PROCESSOS =====================================================\n'
+        output += os.popen('ps axjf').read()
+        output += '===============================================================\n'
+        
+
         prog = input('Deseja exibir os programas instalados? (S/N) ')
         if(prog.lower() == "s"):
             output += '\n'
@@ -805,6 +921,13 @@ def server_tcp():
     except FileNotFoundError:
         os.system(dir)
         server_tcp()
+
+#=======================================================================================
+def wifi_scan():
+    os.system('sudo airmon-ng')
+
+
+
 #=======================================================================================
 def banner():
     try:
@@ -816,19 +939,22 @@ def banner():
  \033[0;34m[2]\033[m - Host Discovery
  \033[0;34m[3]\033[m - Port Scanner
  \033[0;34m[4]\033[m - HTTP Finder
- \033[0;34m[5]\033[m - Link
+ \033[0;34m[5]\033[m - WebCrawler
  \033[0;34m[6]\033[m - ServerHTTP
- \033[0;34m[7]\033[m - BackUp
- \033[0;34m[8]\033[m - CronTab
- \033[0;34m[9]\033[m - Finder
- \033[0;34m[10]\033[m- Auditor
- \033[0;34m[11]\033[m- Config IP
- \033[0;34m[12]\033[m- LinPeas
- \033[0;34m[13]\033[m- LinEnum
- \033[0;34m[14]\033[m- SUID
- \033[0;34m[15]\033[m- NC Lister
- \033[0;34m[16]\033[m- Reverse Shell
- \033[0;34m[17]\033[m- Server TCP
+ \033[0;34m[7]\033[m - Wifi Scanner
+ \033[0;34m[8]\033[m - BackUp
+ \033[0;34m[8x]\033[m- Clonar Part|Disk
+ \033[0;34m[9]\033[m - CronTab
+ \033[0;34m[10]\033[m- Finder
+ \033[0;34m[11]\033[m- Auditor
+ \033[0;34m[12]\033[m- Config IP
+ \033[0;34m[13]\033[m- LinPeas
+ \033[0;34m[14]\033[m- LinEnum
+ \033[0;34m[15]\033[m- SUID
+ \033[0;34m[16]\033[m- NC Lister
+ \033[0;34m[17]\033[m- Reverse Shell
+ \033[0;34m[18]\033[m- Server TCP
+ \033[0;34m[19]\033[m- Tryeres
  \033[0;34m[0]\033[m - Sair
 ''')
         opcao=int(input('Escolha uma opção: '))
@@ -855,54 +981,60 @@ def banner():
             serverhttp()
             pass
         elif opcao == 7:
-            backup()
+            wifi_scan()
             pass
         elif opcao == 8:
-            cron()
+            backup()
             pass
         elif opcao == 9:
-            finder()
+            cron()
             pass
         elif opcao == 10:
-            infosys()
+            finder()
             pass
         elif opcao == 11:
-            config_IP()
+            infosys()
             pass
         elif opcao == 12:
-            linpeas()
+            config_IP()
             pass
         elif opcao == 13:
+            linpeas()
+            pass
+        elif opcao == 14:
             linenum()
             pass		
-        elif opcao == 14:
+        elif opcao == 15:
             suid()
             pass		
-        elif opcao == 15:
+        elif opcao == 16:
             porta = int(input("Digite a Porta: "))
             comando = """python3 -c 'import pty;pty.spawn("/bin/bash")'"""
             print(f"Sugestão de comando: {comando}")
             nc(porta)
             pass
-        elif opcao == 16:
+        elif opcao == 17:
             reverse_shell()
             pass		
-        elif opcao == 17:
+        elif opcao == 18:
             server_tcp()
             pass		
+        elif opcao == 19:
+            os.system('gnome-terminal --title=Python -- sudo python Tryeres/Tryeres.py')
+            main()		
         elif (opcao == 0):
             print('Volte sempre! ¯\_(ツ)_/¯')
-            exit()
-        elif opcao > 17:
+            quit()
+        elif opcao > 19:
             print('Digite uma opção válida!')
             input(press)
             main()
-    except ValueError:
-        print('Digite uma opção válida!')
+    except ValueError as e:
+        print(f'\nHouve um Erro! \n{e}')
         input(press)
         main()
     except NameError:
-        print('Digite uma opção válida!')
+        print('Digite uma opção válida!'+NameError)
         input(press)
         main()
         
@@ -917,3 +1049,4 @@ def main():
             input('(Pressione qualquer tecla para continuar)')
             main()
 main()
+
