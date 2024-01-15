@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-version = "v3.1-dev"
+version = "v3.3-dev"
 
 import os                                                      
 import re
@@ -709,30 +709,18 @@ Y88b  d88P Y88..88P 888  888 888    888 Y88b 888        888  Y88..88P Y88..88P 8
 
     \033[0;34m[1]\033[m - Criar usuário em RBASH
     \033[0;34m[2]\033[m - Permitir BASH padrão
-    \033[0;34m[3]\033[m - Hostname Resolve              
-    \033[0;34m[4]\033[m - Port Scanner
-    \033[0;34m[5]\033[m - NC GET
-    \033[0;34m[6]\033[m - WebFinder
-    \033[0;34m[7]\033[m - WebCrawler
-    \033[0;34m[8]\033[m - ServerHTTP
-    \033[0;34m[9]\033[m - Wifi Scanner
-    \033[0;34m[10]\033[m- BackUp
-    \033[0;34m[11]\033[m- Clonar Part|Disk
-    \033[0;34m[12]\033[m- CronTab
-    \033[0;34m[13]\033[m- Finder
-    \033[0;34m[14]\033[m- Auditor
-    \033[0;34m[15]\033[m- Config Tool
-    \033[0;34m[16]\033[m- LinPeas
-    \033[0;34m[17]\033[m- LinEnum
-    \033[0;34m[18]\033[m- SUID
-    \033[0;34m[19]\033[m- NC Listen
-    \033[0;34m[20]\033[m- Reverse Shell
-    \033[0;34m[21]\033[m- Server TCP
-    \033[0;34m[22]\033[m- Tryeres
-    \033[0;34m[0]\033[m - Sair
+    \033[0;34m[3]\033[m - Restringir TODOS os comandos             
+    \033[0;34m[4]\033[m - xxx
+    \033[0;34m[5]\033[m - xxx
+    \033[0;34m[6]\033[m - xxx
+    \033[0;34m[7]\033[m - xxx
+    \033[0;34m[8]\033[m - xxx
+    \033[0;34m[9]\033[m - xxx
+    \033[0;34m[10]\033[m- xxx
     ''')
     try:    
         opcao=int(input('Escolha uma opção: '))
+        
         if opcao == 1:
             user = input('Qual o usuário a ser configurado? ')
             os.system(f"sudo useradd -m -s /bin/rbash {user}")
@@ -743,77 +731,68 @@ Y88b  d88P Y88..88P 888  888 888    888 Y88b 888        888  Y88..88P Y88..88P 8
             os.system(f"sudo chmod 755 /home/{user}/.profile")
             os.system(f"sudo chmod 755 /home/{user}/.bashrc")
             print(f"Usuário '{user}' criado com sucesso, senha definida e permissões ajustadas.")
+        
         elif opcao == 2:
             user = input('Qual o usuário a ser configurado? ')
             os.system(f"sudo usermod --shell /bin/bash {user}")
+
         elif opcao == 3:
-            hostname_resolv()
-            pass
+            if os.path.exists('/usr/share/block'):
+                print("O script já foi executado anteriormente. Evitando repetição.")
+                main()
+            else:
+                comandos = os.popen('apropos ""').read()
+                lines = comandos.splitlines()
+                first_names = []
+                for line in lines:
+                    words = line.split()
+                    if words:
+                        first_names.append(words[0])
+                with open('block', 'w') as block_file:
+                    for name in first_names:
+                        block_file.write(name + '\n')
+                sita = input('Deseja confirmar o bloqueio? (S/N)')
+                if sita.lower() == 's':
+                    user = input('Digite o usuário: ')
+                    dir = f'/home/{user}/.bashrc'
+                    var = '${comandos[@]}'
+                    os.system('sudo mv block /usr/share/block')
+                    os.system(f'''sudo echo 'comandos=($(cat /usr/share/block))' >> {dir}''')
+                    os.system(f'''sudo echo 'for comando in "{var}"; do' >> {dir}''')
+                    os.system(f'''sudo echo '  alias "$comando"="echo '\''Comando bloqueado'\''"' >> {dir}''')
+                    os.system(f'''sudo echo 'done' >> {dir}''')
+                    print("Arquivo modificado com sucesso!")
+                    input(press)
+                    main()
+                else:
+                    input(press)
+                    main()
+                    
         elif opcao == 4:
-            sit_scan = input('Deseja utilizar um (H)ost ou a (L)ista? (H/L): ')
-            if (sit_scan.lower() == 'h'):
-                portscan_uniq()
-            elif (sit_scan.lower() == 'l'):
-                portscan()
             pass
         elif opcao == 5:
-            nc_get()
             pass
         elif opcao == 6:
-            http_finder()
             pass
         elif opcao == 7:
-            link()
             pass
         elif opcao == 8:
-            serverhttp()
             pass
         elif opcao == 9:
             pass
         elif opcao == 10:
-            backup()
             pass
-        elif opcao == 11:
-            input("(Configurar)")
-            #clonar()
-            pass
-        elif opcao == 12:
-            cron()
-            pass
-        elif opcao == 13:
-            finder()
-            pass
-        elif opcao == 14:
-            infosys()
-            pass
-        elif opcao == 15:
-            config()
-            pass
-        elif opcao == 16:
-            pass
-        elif opcao == 17:
-            pass		
-        elif opcao == 18:
-            pass
-        elif opcao == 19:
-            pass
-        elif opcao == 20:
-            pass
-        elif opcao == 21:
-            pass		
-        elif opcao == 22:
-            os.system('gnome-terminal --title=Python -- sudo python Tryeres/Tryeres.py')
         elif opcao == 0:
             print('Volte sempre! ¯\_(ツ)_/¯')
             quit()
-        elif opcao > 22:
+        elif opcao > 10:
             print('Digite uma opção válida!')
             input(press)
             
     except ValueError as e:
         print('Digite uma opção válida!')
         input(press)
-    except NameError:
+    except NameError as e:
         print('Digite uma opção válida!')
         input(press)
     
