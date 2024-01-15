@@ -4,10 +4,11 @@ version = "v3.1-dev"
 import os                                                      
 import re
 import sys
-import socket                                                  
+import socket
 import requests
 import threading
 import time as t
+import getpass as g                                                
 import http.server as hs
 import socketserver as ss
 from bs4 import BeautifulSoup                                
@@ -690,8 +691,135 @@ def infosys():
         
 
 #=======================================================================================
-def config_IP():
-    os.system('sudo ip addr show')
+def config():
+    ver = "v1.0-dev"
+    print(f'''
+.d8888b.                     .d888 d8b             88888888888                888 
+d88P  Y88b                   d88P"  Y8P                 888                    888 
+888    888                   888                        888                    888 
+888         .d88b.  88888b.  888888 888  .d88b.         888   .d88b.   .d88b.  888 
+888        d88""88b 888 "88b 888    888 d88P"88b        888  d88""88b d88""88b 888 
+888    888 888  888 888  888 888    888 888  888        888  888  888 888  888 888 
+Y88b  d88P Y88..88P 888  888 888    888 Y88b 888        888  Y88..88P Y88..88P 888 
+ "Y8888P"   "Y88P"  888  888 888    888  "Y88888        888   "Y88P"   "Y88P"  888 
+                                             888                                   
+                                        Y8b d88P       Esta função precisa de SUDO!
+                                         "Y88P"                            \033[7;32m{ver}\033[m''')
+    print(''' MENU:
+
+    \033[0;34m[1]\033[m - Criar usuário em RBASH
+    \033[0;34m[2]\033[m - Permitir BASH padrão
+    \033[0;34m[3]\033[m - Hostname Resolve              
+    \033[0;34m[4]\033[m - Port Scanner
+    \033[0;34m[5]\033[m - NC GET
+    \033[0;34m[6]\033[m - WebFinder
+    \033[0;34m[7]\033[m - WebCrawler
+    \033[0;34m[8]\033[m - ServerHTTP
+    \033[0;34m[9]\033[m - Wifi Scanner
+    \033[0;34m[10]\033[m- BackUp
+    \033[0;34m[11]\033[m- Clonar Part|Disk
+    \033[0;34m[12]\033[m- CronTab
+    \033[0;34m[13]\033[m- Finder
+    \033[0;34m[14]\033[m- Auditor
+    \033[0;34m[15]\033[m- Config Tool
+    \033[0;34m[16]\033[m- LinPeas
+    \033[0;34m[17]\033[m- LinEnum
+    \033[0;34m[18]\033[m- SUID
+    \033[0;34m[19]\033[m- NC Listen
+    \033[0;34m[20]\033[m- Reverse Shell
+    \033[0;34m[21]\033[m- Server TCP
+    \033[0;34m[22]\033[m- Tryeres
+    \033[0;34m[0]\033[m - Sair
+    ''')
+    try:    
+        opcao=int(input('Escolha uma opção: '))
+        if opcao == 1:
+            user = input('Qual o usuário a ser configurado? ')
+            os.system(f"sudo useradd -m -s /bin/rbash {user}")
+            senha = g.getpass("Digite a senha: ")
+            os.system(f"echo '{user}:{senha}' | sudo chpasswd")
+            os.system(f"sudo chown root: /home/{user}/.profile")
+            os.system(f"sudo chown root: /home/{user}/.bashrc")
+            os.system(f"sudo chmod 755 /home/{user}/.profile")
+            os.system(f"sudo chmod 755 /home/{user}/.bashrc")
+            print(f"Usuário '{user}' criado com sucesso, senha definida e permissões ajustadas.")
+        elif opcao == 2:
+            user = input('Qual o usuário a ser configurado? ')
+            os.system(f"sudo usermod --shell /bin/bash {user}")
+        elif opcao == 3:
+            hostname_resolv()
+            pass
+        elif opcao == 4:
+            sit_scan = input('Deseja utilizar um (H)ost ou a (L)ista? (H/L): ')
+            if (sit_scan.lower() == 'h'):
+                portscan_uniq()
+            elif (sit_scan.lower() == 'l'):
+                portscan()
+            pass
+        elif opcao == 5:
+            nc_get()
+            pass
+        elif opcao == 6:
+            http_finder()
+            pass
+        elif opcao == 7:
+            link()
+            pass
+        elif opcao == 8:
+            serverhttp()
+            pass
+        elif opcao == 9:
+            pass
+        elif opcao == 10:
+            backup()
+            pass
+        elif opcao == 11:
+            input("(Configurar)")
+            #clonar()
+            pass
+        elif opcao == 12:
+            cron()
+            pass
+        elif opcao == 13:
+            finder()
+            pass
+        elif opcao == 14:
+            infosys()
+            pass
+        elif opcao == 15:
+            config()
+            pass
+        elif opcao == 16:
+            pass
+        elif opcao == 17:
+            pass		
+        elif opcao == 18:
+            pass
+        elif opcao == 19:
+            pass
+        elif opcao == 20:
+            pass
+        elif opcao == 21:
+            pass		
+        elif opcao == 22:
+            os.system('gnome-terminal --title=Python -- sudo python Tryeres/Tryeres.py')
+        elif opcao == 0:
+            print('Volte sempre! ¯\_(ツ)_/¯')
+            quit()
+        elif opcao > 22:
+            print('Digite uma opção válida!')
+            input(press)
+            
+    except ValueError as e:
+        print('Digite uma opção válida!')
+        input(press)
+    except NameError:
+        print('Digite uma opção válida!')
+        input(press)
+    
+
+
+    '''os.system('sudo ip addr show')
     print('\n')
     ip = input('Qual IP gostaria de atribuir a este Computador?\n')
     gateway = input('Digite o Gateway: ')
@@ -701,7 +829,7 @@ def config_IP():
     #Configurar o gateway padrão:
     os.system(f'sudo ip route add default via {gateway}')
     #Adicionar um servidor DNS:
-    os.system(f'echo "{dns}" | sudo tee /etc/resolv.conf')
+    os.system(f'echo "{dns}" | sudo tee /etc/resolv.conf')'''
 
 
 #=======================================================================================
@@ -1009,7 +1137,7 @@ def banner():
  \033[0;34m[12]\033[m- CronTab
  \033[0;34m[13]\033[m- Finder
  \033[0;34m[14]\033[m- Auditor
- \033[0;34m[15]\033[m- Config IP
+ \033[0;34m[15]\033[m- Config Tool
  \033[0;34m[16]\033[m- LinPeas
  \033[0;34m[17]\033[m- LinEnum
  \033[0;34m[18]\033[m- SUID
@@ -1068,7 +1196,7 @@ def banner():
             infosys()
             pass
         elif opcao == 15:
-            config_IP()
+            config()
             pass
         elif opcao == 16:
             linpeas()
