@@ -14,6 +14,11 @@ Esta ferramente exige Python3+
 ```sh
 sudo apt-get install python3
 ```
+Bibliotecas necessárias:
+```sh
+pip3 install bs4
+pip3 install requests
+```
 Baixa bastar e executar:
 
 ```sh
