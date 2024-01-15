@@ -38,6 +38,7 @@ def printer(shit):
     sys.stdout.flush()
     return True
     
+
 #=======================================================================================
 def iplist():
     try:
@@ -60,7 +61,7 @@ def iplist():
         print('\n'+Ctrl_C)
         quit()
     os.system(dir)
-    os.system('rm -rf ARQ/ips.txt')
+    os.system('rm ARQ/ips.txt')
     with open("ARQ/ips.txt", "a") as f:
         if num_oct == 2:
             for i in range(0, 256):
@@ -75,13 +76,14 @@ def iplist():
     input(press)   
     main()
 
+
 #=======================================================================================
 def host_discovery():
     try:
         print('((Para cancelar segure CTRL+C))')
         sit_host_discovery = input('Dependendo da quantidade de IPs, este processo poderá demorar. Deseja continuar o \033[0;31mHostDiscover\033[m? (S/N) ')
         if(sit_host_discovery.lower() == "s"):
-            os.system('rm -rf ARQ/hosts.txt')
+            os.system('rm ARQ/hosts.txt')
             try:
                 def ping(host):
                     printer(f"Procurando Hosts: {str(host)}")
@@ -152,7 +154,6 @@ def portscan_uniq():
     try:
         ip = input('Digite o IP: ')
         for port in range(1,65535):
-            #printer(f"Procurando Portas: {str(port)}")
             s.settimeout(0.5)
             result = s.connect_ex((ip,port))
             if result == 0:
@@ -173,32 +174,14 @@ def portscan_uniq():
 
 #=======================================================================================
 def portscan():
+    os.system('rm ARQ/portscan.txt')
     try:
         with open("ARQ/hosts.txt", "r") as f:
             lst = f.readlines()
         remove = '\n'
         lst = [l.replace(remove, "") for l in lst]
-        print('Hosts descobertos:')
-        for host in lst:
-            try:
-                socket.setdefaulttimeout(0.5)
-                hostname = socket.gethostbyaddr(host)[0]
-                print(f'[+] {host} - ({hostname})')
-
-                #print(f'[+] {host}')
-                with open("ARQ/hostname.txt", "a") as f:
-                    print(f'{host} - ({hostname})', file=f)
-                
-            except socket.timeout:
-                print(f'[+] {host}')
-            except socket.herror:
-                print(f'[+] {host}')
-            except KeyboardInterrupt:
-                print("[-] Saindo!")
-                quit()
-            os.system('rm -rf ARQ/portscan.txt')
-        sit_h = input('\nDependendo da quantidade de hosts, este processo poderá demorar. Deseja continuar o '
-                      '\033[0;31mPortScanner\033[m? (S/N) ')
+       
+        sit_h = input('\nDependendo da quantidade de hosts, este processo poderá demorar. Deseja continuar o \033[0;31mPortScanner\033[m? (S/N) ')
         if sit_h.lower() == "s":
             rang = int(input('Digite o RANGE de portas: '))
             print("Não aparece nada, mas está rodando ...")
@@ -234,7 +217,7 @@ def portscan():
                 with open("ARQ/portscan.txt", "a") as f:
                     print("[+] Host: " + host, file=f)
                     print("\n[+] Host: " + host)
-                    print("PORTA          SERVIÇO PROVAVEL")
+                    print("PORTA          SERVIÇO")
                 with e(max_workers=int(thread)) as exe:
                     try:
                         for port in ports:
@@ -262,10 +245,10 @@ def http_finder():
         os.system(f'wget --mirror --convert-links --adjust-extension --page-requisites --timeout=10 http://{ip}:{porta} -P ARQ/WEB/')
 
     for ip in os.listdir("ARQ/HEAD"):
-        caminho_arquivo = os.path.join("ARQ/HEAD", ip)
+        arquivo = os.path.join("ARQ/HEAD", ip)
 
-        if os.path.isfile(caminho_arquivo):
-            with open(caminho_arquivo, 'r') as arquivo:
+        if os.path.isfile(arquivo):
+            with open(arquivo, 'r') as arquivo:
                 conteudo = arquivo.readlines()
                 servico_web_encontrado = False
                 porta = None
@@ -273,15 +256,12 @@ def http_finder():
                     match = re.search(r'Porta: (\d+)', linha)
                     if match:
                         porta = match.group(1)
-
                     if "http" in linha.lower() or "https" in linha.lower():
                         servico_web_encontrado = True
                         break  
-
                 if servico_web_encontrado:
                     thread = threading.Thread(target=wget_pg, args=(ip, porta))
                     thread.start()
-
     for thread in threading.enumerate():
         if thread != threading.current_thread():
             thread.join()
@@ -312,7 +292,6 @@ def nc_get():
                     host = linha.split(':')[-1].strip()
                 elif 'PORTA' not in linha and '/' in linha:
                     porta, servico = map(str.strip, linha.split('/')[0:2])
-                    #print(f"Host: {host}\tPorta: {porta}\tServiço: {servico}\n")
                     t = threading.Thread(target=get, args=(host, porta, servico))
                     t.start()
     sit = input("O Programa irá salvar os cabeçalhos das conexões em ./ARQ/HEAD. Deseja continuar (S/N): ")
@@ -331,7 +310,6 @@ def link():
         except SSLError as e:
             print(f"SSLError: {e}")
             return []
-
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'html.parser')
             links = soup.find_all('a')
@@ -387,7 +365,6 @@ def link():
                     parsed_uri = urlparse(href)
                     domain = '{uri.netloc}'.format(uri=parsed_uri).split(':')[0]
                     subdomains.add(domain)
-
         return durls, emails, tel, forms, subdomains #######################################  LEMBRAR COMO FUNCIONA 
 
     def process_url(url):
@@ -416,17 +393,14 @@ def link():
                 print('\nEMAILS:')
                 for email in emails:
                     print(email)
-        
             if tel:
                 print('\nTELEFONES:')
                 for phone in tel:
                     print(phone)
-        
             if forms:
                 print('\nFORMULÁRIOS:')
                 for form in forms:
                     print(form)
-        
             if subdomains:
                 print('\nSITES:')
                 for subdomain in subdomains:
@@ -441,7 +415,6 @@ def link():
         url_process = ['http://' + target]
         url_atual = url_process.pop()
         process_url(url_atual)
-        
         #sit = input('\nDeseja salvar qo WebCrawl? (S/N) ')
         #if(sit.lower() == 's'):
         #    print('Aguarde enquanto o arquivo está sendo salvo ...')
@@ -460,7 +433,7 @@ def link():
         for ip in os.listdir("ARQ/WEB"):
             links(ip)
             nsit = input('A busca neste host terminou. Deseja continuar? (S/N):  ')
-            if nsit.lower() == 's':  # Corrected comparison
+            if nsit.lower() == 's':
                 pass
             else:
                 break
@@ -483,6 +456,7 @@ def serverhttp():
     except KeyboardInterrupt:
         print('\n'+Ctrl_C)
 
+
 #=======================================================================================
 def backup():
     print("Este processo poderá levar MUITO tempo dependendo da quantidade de arquivos.")
@@ -499,6 +473,7 @@ def backup():
     except KeyboardInterrupt:
         print('\n'+Ctrl_C)
 
+
 #=======================================================================================
 def clonar():
     '''
@@ -509,6 +484,7 @@ sudo blkid
 sudo nano /etc/fstab
     '''
     pass
+
 
 #=======================================================================================
 def cron():
@@ -549,19 +525,24 @@ Você pode conferir a alteração com o comando: "\033[0;34m$ crontab -e\033[m"
         input(press)
         main()
 
+
 #=======================================================================================
 def finder():
     try:
         find = str(input('Digite o arquivo que deseja encontrar: '))
-        print('Estamos procurando ...')
+        print('Procurando com FIND:')
         print('==================================================================================\n')
-        os.system(f'find / -name {find} 2>/dev/null | grep {find}')
+        os.system(f'sudo find / -name {find} 2>/dev/null | grep {find}')
+        print('Procurando com GREP:')
+        print('==================================================================================\n')
+        os.system(f'sudo grep -iRl {find} / 2>/dev/null')
         print('\n==================================================================================')
         print('Fim da busca!\n')
         input(press)
         main()
     except KeyboardInterrupt:
         print('\n'+Ctrl_C)
+
 
 #=======================================================================================
 def infosys():
@@ -707,6 +688,7 @@ def infosys():
         input(press)
         main()
         
+
 #=======================================================================================
 def config_IP():
     os.system('sudo ip addr show')
@@ -720,6 +702,7 @@ def config_IP():
     os.system(f'sudo ip route add default via {gateway}')
     #Adicionar um servidor DNS:
     os.system(f'echo "{dns}" | sudo tee /etc/resolv.conf')
+
 
 #=======================================================================================
 def linpeas():
@@ -736,6 +719,7 @@ def linpeas():
     except KeyboardInterrupt:
         print('\n'+Ctrl_C)
 
+
 #=======================================================================================
 def linenum():
     try:
@@ -751,6 +735,7 @@ def linenum():
     except KeyboardInterrupt:
         print('\n'+Ctrl_C)
 
+
 #=======================================================================================
 def suid():
     path = input('Digite o caminho a ser pesquisado: ')
@@ -758,6 +743,7 @@ def suid():
         path = '/'
     print('Este processo pode demorar alguns segundos, aguarde ...\n')
     os.system(f'find {path} -perm -u=s -type f 2>/dev/null')
+
 
 #=======================================================================================
 def nc(porta):
@@ -782,6 +768,7 @@ def nc(porta):
     except KeyboardInterrupt:
         print('\n'+Ctrl_C)
         
+
 #=======================================================================================
 def reverse_shell():
     try:
@@ -995,10 +982,10 @@ def server_tcp():
         os.system(dir)
         server_tcp()
 
+
 #=======================================================================================
 def wifi_scan():
     os.system('sudo airmon-ng')
-
 
 
 #=======================================================================================
@@ -1068,7 +1055,7 @@ def banner():
             backup()
             pass
         elif opcao == 11:
-            input("Configurar")
+            input("(Configurar)")
             #clonar()
             pass
         elif opcao == 12:
@@ -1121,6 +1108,7 @@ def banner():
         input(press)
         main()
         
+
 #=======================================================================================
 def main():
     try:
