@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-version = "v3.3-dev"
+version = "v3.52-dev"
 
 import os                                                      
 import re
@@ -441,21 +441,29 @@ def link():
 
 
 #=======================================================================================
-def serverhttp():
-    try:
-        port = int(input('Qual porta será usada para o HTTP Server? '))
-        server = hs.SimpleHTTPRequestHandler
-        request = ss.TCPServer(("",port),server)
-        print(f"Server HTTP \033[1;32m'ONLINE'\033[m na PORTA: \033[7;33m{port}\033[m\n")
-        request.serve_forever()
-    except OverflowError:
-        print('\nDigite uma porta valida. (0 ~ 65535)')
-        serverhttp()
-    except ValueError:
-        print('\nDigite uma porta valida. (0 ~ 65535)')
-        serverhttp()
-    except KeyboardInterrupt:
-        print('\n'+Ctrl_C)
+def auto_web():
+    ips = os.popen('grep -iR -A 5 "<form" ARQ/WEB | grep -Eo "([0-9]{1,3}\.){3}[0-9]{1,3}" | sort -u').read().split()
+    for ip in ips:
+        caminho_html = f'ARQ/WEB/{ip}/index.html'
+        with open(caminho_html, 'r', encoding='utf-8') as arquivo:
+            conteudo_html = arquivo.read()
+            soup = BeautifulSoup(conteudo_html, 'html.parser')
+            formularios = soup.find_all('form', {'action': True, 'method': True})
+            
+            if ip and formularios:
+                print('---------------------------------------------------------')
+                print(f'\nAnalisando {ip}:\n')
+                soup = BeautifulSoup(conteudo_html, 'html.parser')
+                formularios = soup.find_all('form', {'action': True, 'method': True})
+    
+                for formulario in formularios:
+                    print(f'Atributo action: {formulario["action"]}')
+                    print(f'Atributo method: {formulario["method"]}')
+                    print(f'Conteúdo do formulário:')
+                    print(formulario.prettify())  # Imprime o conteúdo formatado
+                    print('---------------------------------------------------------\n')
+    input("Pressione Enter para continuar...")
+    main()
 
 
 #=======================================================================================
@@ -648,8 +656,18 @@ def infosys():
         output += '===============================================================\n'
         
         output += '\n'
+        output += 'VARIAVEIS DE AMBIENTE =========================================\n'
+        output += os.popen('env').read()
+        output += '===============================================================\n'
+        
+        output += '\n'
         output += 'PROCESSOS =====================================================\n'
         output += os.popen('ps axjf').read()
+        output += '===============================================================\n'
+        
+        output += '\n'
+        output += 'SERVIÇOS ======================================================\n'
+        output += os.popen('systemctl --type=service --state=active | grep ^').read()
         output += '===============================================================\n'
         
 
@@ -694,7 +712,7 @@ def infosys():
 def config():
     os.system('clear')
     ver = "v1.0-dev"
-    print(f'''
+    print(f'''\033[1;33m
 .d8888b.                     .d888 d8b             88888888888                888 
 d88P  Y88b                   d88P"  Y8P                 888                    888 
 888    888                   888                        888                    888 
@@ -704,7 +722,7 @@ d88P  Y88b                   d88P"  Y8P                 888                    8
 Y88b  d88P Y88..88P 888  888 888    888 Y88b 888        888  Y88..88P Y88..88P 888 
  "Y8888P"   "Y88P"  888  888 888    888  "Y88888        888   "Y88P"   "Y88P"  888 
                                              888                                   
-                                        Y8b d88P       Esta função precisa de SUDO!
+                                        Y8b d88P       \033[0;31m>Esta função precisa de SUDO!\033[m
                                          "Y88P"                            \033[7;32m{ver}\033[m''')
     print(''' MENU:
 
@@ -1103,6 +1121,24 @@ def server_tcp():
 
 
 #=======================================================================================
+def serverhttp():
+    try:
+        port = int(input('Qual porta será usada para o HTTP Server? '))
+        server = hs.SimpleHTTPRequestHandler
+        request = ss.TCPServer(("",port),server)
+        print(f"Server HTTP \033[1;32m'ONLINE'\033[m na PORTA: \033[7;33m{port}\033[m\n")
+        request.serve_forever()
+    except OverflowError:
+        print('\nDigite uma porta valida. (0 ~ 65535)')
+        serverhttp()
+    except ValueError:
+        print('\nDigite uma porta valida. (0 ~ 65535)')
+        serverhttp()
+    except KeyboardInterrupt:
+        print('\n'+Ctrl_C)
+
+
+#=======================================================================================
 def wifi_scan():
     os.system('sudo airmon-ng')
 
@@ -1121,13 +1157,13 @@ def banner():
  \033[0;34m[5]\033[m - NC GET
  \033[0;34m[6]\033[m - WebFinder
  \033[0;34m[7]\033[m - WebCrawler
- \033[0;34m[8]\033[m - ServerHTTP
+ \033[0;34m[8]\033[m - AutoWeb
  \033[0;34m[9]\033[m - Wifi Scanner
  \033[0;34m[10]\033[m- BackUp
  \033[0;34m[11]\033[m- Clonar Part|Disk
  \033[0;34m[12]\033[m- CronTab
  \033[0;34m[13]\033[m- Finder
- \033[0;34m[14]\033[m- Auditor
+ \033[0;34m[14]\033[m- EnumLinux Auditor
  \033[0;34m[15]\033[m- Config Tool
  \033[0;34m[16]\033[m- LinPeas
  \033[0;34m[17]\033[m- LinEnum
@@ -1135,7 +1171,8 @@ def banner():
  \033[0;34m[19]\033[m- NC Listen
  \033[0;34m[20]\033[m- Reverse Shell
  \033[0;34m[21]\033[m- Server TCP
- \033[0;34m[22]\033[m- Tryeres
+ \033[0;34m[22]\033[m- ServerHTTP
+ \033[0;34m[23]\033[m- Tryeres
  \033[0;34m[0]\033[m - Sair
 ''')
         opcao=int(input('Escolha uma opção: '))
@@ -1165,7 +1202,7 @@ def banner():
             link()
             pass
         elif opcao == 8:
-            serverhttp()
+            auto_web()
             pass
         elif opcao == 9:
             wifi_scan()
@@ -1208,12 +1245,15 @@ def banner():
             server_tcp()
             pass		
         elif opcao == 22:
+            serverhttp()
+            pass		
+        elif opcao == 23:
             os.system('gnome-terminal --title=Python -- sudo python Tryeres/Tryeres.py')
             main()	
         elif opcao == 0:
             print('Volte sempre! ¯\_(ツ)_/¯')
             quit()
-        elif opcao > 22:
+        elif opcao > 23:
             print('Digite uma opção válida!')
             input(press)
             main()
