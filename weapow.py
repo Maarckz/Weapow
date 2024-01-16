@@ -692,6 +692,7 @@ def infosys():
 
 #=======================================================================================
 def config():
+    os.system('clear')
     ver = "v1.0-dev"
     print(f'''
 .d8888b.                     .d888 d8b             88888888888                888 
@@ -731,7 +732,9 @@ Y88b  d88P Y88..88P 888  888 888    888 Y88b 888        888  Y88..88P Y88..88P 8
             os.system(f"sudo chmod 755 /home/{user}/.profile")
             os.system(f"sudo chmod 755 /home/{user}/.bashrc")
             print(f"Usuário '{user}' criado com sucesso, senha definida e permissões ajustadas.")
-        
+            input(press)
+            main()
+
         elif opcao == 2:
             user = input('Qual o usuário a ser configurado? ')
             os.system(f"sudo usermod --shell /bin/bash {user}")
@@ -739,35 +742,42 @@ Y88b  d88P Y88..88P 888  888 888    888 Y88b 888        888  Y88..88P Y88..88P 8
         elif opcao == 3:
             if os.path.exists('/usr/share/block'):
                 print("O script já foi executado anteriormente. Evitando repetição.")
+                input("Pressione Enter para continuar...")
                 main()
             else:
                 comandos = os.popen('apropos ""').read()
                 lines = comandos.splitlines()
                 first_names = []
+
                 for line in lines:
                     words = line.split()
                     if words:
-                        first_names.append(words[0])
+                        if any(cmd in words for cmd in ["cat","ls", "cd", "exit"]):
+                            continue
+                        else:    
+                            first_names.append(words[0])
+
                 with open('block', 'w') as block_file:
                     for name in first_names:
                         block_file.write(name + '\n')
+
                 sita = input('Deseja confirmar o bloqueio? (S/N)')
                 if sita.lower() == 's':
                     user = input('Digite o usuário: ')
-                    dir = f'/home/{user}/.bashrc'
+                    dir = f'/home/{user}/.bashrc' ###############################
                     var = '${comandos[@]}'
                     os.system('sudo mv block /usr/share/block')
-                    os.system(f'''sudo echo 'comandos=($(cat /usr/share/block))' >> {dir}''')
-                    os.system(f'''sudo echo 'for comando in "{var}"; do' >> {dir}''')
-                    os.system(f'''sudo echo '  alias "$comando"="echo '\''Comando bloqueado'\''"' >> {dir}''')
-                    os.system(f'''sudo echo 'done' >> {dir}''')
+                    os.system(f'''echo 'comandos=($(cat /usr/share/block))' | sudo tee -a {dir} > /dev/null''')
+                    os.system(f'''echo 'for comando in "{var}"; do' | sudo tee -a {dir} > /dev/null''')
+                    os.system(f'''echo '  alias "$comando"="echo '\''Comando bloqueado'\''"' | sudo tee -a {dir} > /dev/null''')
+                    os.system(f'''echo 'done' | sudo tee -a {dir} > /dev/null''')
                     print("Arquivo modificado com sucesso!")
-                    input(press)
+                    input("Pressione Enter para continuar...")
                     main()
                 else:
-                    input(press)
+                    input("Pressione Enter para continuar...")
                     main()
-                    
+                        
         elif opcao == 4:
             pass
         elif opcao == 5:
@@ -850,6 +860,8 @@ def suid():
         path = '/'
     print('Este processo pode demorar alguns segundos, aguarde ...\n')
     os.system(f'find {path} -perm -u=s -type f 2>/dev/null')
+    input(press)
+    main()
 
 
 #=======================================================================================
