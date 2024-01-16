@@ -35,6 +35,7 @@ git clone https://github.com/Maarckz/Weapow.git && cd Weapow && python weapow.py
 | socket | Permite que as aplicações possam se comunicar usando diferentes protocolos de rede |
 | requests | Permite que envie requisições / solicitações HTTP. |
 | time | Fornece funções para trabalhar com o tempo |
+| getpass | Fornece uma maneira de lidar com a entrada de senha do usuário de forma mais segura. |
 | http.server | Fornece suporte para criar servidores HTTP. |
 | socketserver | Fornece uma infraestrutura para criar servidores de rede. |
 | BeautifulSoup | Permite a extração de dados de arquivos HTML e XML. |
@@ -131,10 +132,9 @@ Esta função permite ao usuário buscar por um arquivo específico em **todo** 
 
 **14. Auditoria do Sistema:** A função `infosys()` realiza uma auditoria abrangente no sistema, coletando informações vitais em várias categorias. Os resultados são organizados em seções, incluindo ***dados do usuário, informações de sistema, detalhes da CPU, status da memória, configurações de rede, informações de dispositivos USB, detalhes de partições, programas instalados e histórico de bash.*** O relatório final é salvo no arquivo `auditoria.txt`.
 
-**15. Config IP :**
-Esta função começa mostrando as informações de rede do computador, e em seguida permite ao usuário configurar o endereço IP, gateway e servidor DNS.
->É importante notar que esta função deve ser executada com privilégios de superusuário.
-
+**15. Config Tool :**
+Uma coletanea de configuraçẽos e Hardering.
+>É importante notar que esta função requer privilégios de superusuário.
 **16. LinPeas :**
 Esta função executa o script do Marcos Polop `LinPeas.sh`
 > Essa função demora um pouco, mas é muito eficaz.
