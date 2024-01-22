@@ -151,27 +151,64 @@ def hostname_resolv():
 
 
 #=======================================================================================
+def scan(ip, port):
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.settimeout(0.5)
+    try:
+        result = s.connect_ex((ip, port))
+        if result == 0:
+            try:
+                service = socket.getservbyport(port)
+                if service:
+                    print(f"{str(port)} / TCP {service}")
+            except (socket.error, OSError):
+                print(f"{str(port)} / TCP Desconhecido")
+            except KeyboardInterrupt:
+                print("[-] Saindo!")
+                quit()
+    except (socket.timeout, ConnectionRefusedError, OSError):
+        pass
+    finally:
+        s.close()
+    return True
+
 def portscan_uniq():
     try:
-        ip = input('Digite o IP: ')
-        for port in range(1,65535):
-            s.settimeout(0.5)
-            result = s.connect_ex((ip,port))
-            if result == 0:
-                try:
-                    service = f'{socket.getservbyport(port)}'
-                    print(f'Porta Aberta: {port} / {service}')
-                except socket.error:
-                    print(f'Porta Aberta: {port} / "Desconhecido" ')
-        input(press)
-        main()
+        ip_alvo = input("Digite o IP alvo: ")
+        rang = int(input('Digite o RANGE de portas: '))
+        print("N  o aparece nada, mas est   rodando ...")
+
+        thread = 40
+        ports = range(rang)
+
+        print("[+] Host: " + ip_alvo)
+        print("PORTA          SERVI ^gO")
+
+        with e(max_workers=int(thread)) as exe:
+            try:
+                futures = [exe.submit(scan, ip_alvo, port) for port in ports]
+                for future in e.as_completed(futures):
+                    future.result()
+            except KeyboardInterrupt:
+                print("[-] Saindo!")
+                quit()
+
+        open_ports = [port for port in ports if futures[port].result()]
+
+        for port in open_ports:
+            try:
+                service = socket.getservbyport(port)
+                if service:
+                    print(f"{str(port)} / TCP {service}")
+            except (socket.error, OSError):
+                print(f"{str(port)} / TCP Desconhecido")
+
     except KeyboardInterrupt:
-        print('\n'+Ctrl_C)
+        print('\n[!] Saindo...')
     except FileNotFoundError:
         print("\nO arquivo de hosts descobertos deve ser gerado.")
-        input(press)
+        input("Pressione Enter para continuar...")
         main()
-
 
 #=======================================================================================
 def portscan():
