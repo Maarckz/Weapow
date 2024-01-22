@@ -244,7 +244,7 @@ def portscan():
                     finally:
                         s.close()
                     return True
-                thread = 40
+                thread = 400
                 ports = range(rang)
                 with open("ARQ/portscan.txt", "a") as f:
                     print("[+] Host: " + host, file=f)
