@@ -177,13 +177,10 @@ def portscan_uniq():
         ip_alvo = input("Digite o IP alvo: ")
         rang = int(input('Digite o RANGE de portas: '))
         print("N  o aparece nada, mas est   rodando ...")
-
         thread = 40
         ports = range(rang)
-
         print("[+] Host: " + ip_alvo)
         print("PORTA          SERVI ^gO")
-
         with e(max_workers=int(thread)) as exe:
             try:
                 futures = [exe.submit(scan, ip_alvo, port) for port in ports]
@@ -192,9 +189,7 @@ def portscan_uniq():
             except KeyboardInterrupt:
                 print("[-] Saindo!")
                 quit()
-
         open_ports = [port for port in ports if futures[port].result()]
-
         for port in open_ports:
             try:
                 service = socket.getservbyport(port)
@@ -202,7 +197,6 @@ def portscan_uniq():
                     print(f"{str(port)} / TCP {service}")
             except (socket.error, OSError):
                 print(f"{str(port)} / TCP Desconhecido")
-
     except KeyboardInterrupt:
         print('\n[!] Saindo...')
     except FileNotFoundError:
