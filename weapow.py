@@ -274,8 +274,7 @@ def portscan():
 def http_finder():
     def wget_pg(ip, porta):
         os.system(f"rm ARQ/WEB/{ip}.html")
-        os.system(f'wget --mirror --convert-links --adjust-extension --page-requisites --timeout=10 http://{ip}:{porta} -P ARQ/WEB/')
-
+        os.system(f'wget --no-check-certificate --mirror --convert-links --adjust-extension --page-requisites --timeout=10 http://{ip}:{porta} -P ARQ/WEB/')
     for ip in os.listdir("ARQ/HEAD"):
         arquivo = os.path.join("ARQ/HEAD", ip)
 
