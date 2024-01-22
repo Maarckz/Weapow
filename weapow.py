@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-version = "v3.52-dev"
+version = "v3.57-dev"
 
 import os                                                      
 import re
@@ -331,20 +331,21 @@ def nc_get():
     else:
         input(press)
         main()
+
 def nc():
     host_ip = input("Digite o endere  o IP do host: ")
     nome_servico = input("Digite o nome do servi  o: ")
     caminho_arquivo = f"ARQ/HEAD/{host_ip}"
-    for porta in range(1, 65536):
-        try:
-            comando = f'echo -e "\n" | nc -vn -w 1 {host_ip} {porta} 2>&1'
-            time.sleep(0.1)
+    try:
+        for porta in range(1, 65536):
+            comando = (f'echo -e "\n" | nc -vn -w 1 {host_ip} {porta} 2>&1')
+            t.sleep(0.1)
             resultado = os.popen(comando).read()
             with open(caminho_arquivo, "a") as arquivo_respostas:
-                arquivo_respostas.write(f"[+] Host: {host_ip}    Porta: {porta}    Servi  o: {nome_servico}\t\>
+                arquivo_respostas.write(f"[+] Host: {host_ip}    Porta: {porta}    Servi  o: {nome_servico}\t\>")
                 print(f"[+] Host: {host_ip}    Porta: {porta}    Servi  o: {nome_servico}\t\t\n{resultado}\n")
-        except Exception as e:
-            print(f"Erro ao executar o comando nc: {e}")
+    except Exception as e:
+        print(f"Erro ao executar o comando nc: {e}")
 
 #=======================================================================================
 def link():
