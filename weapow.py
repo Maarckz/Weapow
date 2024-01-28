@@ -59,7 +59,7 @@ def iplist():
         print('\n'+Ctrl_C)
         quit()
     os.system(dir)
-    os.system('rm ARQ/ips.txt &')
+    os.system('rm ARQ/ips.txt')
     with open("ARQ/ips.txt", "a") as f:
         if num_oct == 2:
             for i in range(0, 256):
@@ -81,7 +81,7 @@ def host_discovery():
         print('((Para cancelar segure CTRL+C))')
         sit_host_discovery = input('Dependendo da quantidade de IPs, este processo poderá demorar. Deseja continuar o \033[0;31mHostDiscover\033[m? (S/N) ')
         if(sit_host_discovery.lower() == "s"):
-            os.system('rm ARQ/hosts.txt &')
+            os.system('rm ARQ/hosts.txt')
             try:
                 def ping(host):
                     sys.stdout.write((f"Procurando Hosts: {str(host)}")+(" " * 16) +"\r")
@@ -151,7 +151,6 @@ def hostname_resolv():
 #=======================================================================================
 def bigscan():
     def scan(ip, port):
-        #s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(0.5)
         try:
             result = s.connect_ex((ip, port))
@@ -204,7 +203,7 @@ def bigscan():
             main()
 
     def portscan():
-        os.system('rm ARQ/portscan.txt &')
+        os.system('rm ARQ/portscan.txt')
         try:
             with open("ARQ/hosts.txt", "r") as f:
                 lst = f.readlines()
@@ -279,7 +278,7 @@ def bigscan():
 #=======================================================================================
 def http_finder():
     def wget_pg(ip, porta):
-        os.system(f"rm ARQ/WEB/{ip}.html &")
+        os.system(f"rm ARQ/WEB/{ip}.html")
         os.system(f'wget --no-check-certificate --mirror --convert-links --adjust-extension --page-requisites --timeout=10 http://{ip}:{porta} -P ARQ/WEB/')
     for ip in os.listdir("ARQ/HEAD"):
         arquivo = os.path.join("ARQ/HEAD", ip)
@@ -466,16 +465,16 @@ def link():
         url_process = ['http://' + target]
         url_atual = url_process.pop()
         process_url(url_atual)
-        #sit = input('\nDeseja salvar qo WebCrawl? (S/N) ')
-        #if(sit.lower() == 's'):
-        #    print('Aguarde enquanto o arquivo está sendo salvo ...')
-        #    with open('craw.txt', 'w') as f:
-        #        while url_process:
-        #            url_atual = url_process.pop()
-        #            os.dup2(f.fileno(), 1)
-        #            process_url(url_atual)
-        #            os.dup2(os.dup(2), 1) 
-        #    print("WebCrawler salvo com sucesso!")
+        sit = input('\nDeseja salvar qo WebCrawl? (S/N) ')
+        if(sit.lower() == 's'):
+            print('Aguarde enquanto o arquivo está sendo salvo ...')
+            with open('craw.txt', 'w') as f:
+                while url_process:
+                    url_atual = url_process.pop()
+                    os.dup2(f.fileno(), 1)
+                    process_url(url_atual)
+                    os.dup2(os.dup(2), 1) 
+            print("WebCrawler salvo com sucesso!")
     sit_scan = input('Deseja utilizar um (H)ost ou a (L)ista? (H/L): ')
     if (sit_scan.lower() == 'h'):
         target = input('Digite o endereço do site: (site.com)\n')
@@ -738,7 +737,7 @@ def infosys():
 
         sit_audi = input('Deseja salvar em arquivo? (S/N) ')
         if(sit_audi.lower() == "s"):
-            os.system('rm -rf ARQ/auditoria.txt &')
+            os.system('rm -rf ARQ/auditoria.txt')
             with open('ARQ/auditoria.txt', 'w') as file:
                 file.write(output)
             print('Seu Arquivo foi gerado com Sucesso!')
@@ -1128,7 +1127,7 @@ def serverhttp():
 #=======================================================================================
 def wifi_scan():
     def wps(s):
-        os.system('rm wash &')
+        os.system('rm wash')
         os.system(f'sudo wash -i {s} -s | tee wash')
         print('')
         with open('wash', 'r') as file:
