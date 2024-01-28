@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-version = "v3.59-dev"
+version = "v3.61-dev"
 
 import os                                                      
 import re
@@ -1120,31 +1120,62 @@ def serverhttp():
     except ValueError:
         print('\nDigite uma porta valida. (0 ~ 65535)')
         serverhttp()
+    except PermissionError:
+        print('Se Deseja usar uma porta baixa, execute com SUDO.')
     except KeyboardInterrupt:
         print('\n'+Ctrl_C)
-
+   
 
 #=======================================================================================
 def wifi_scan():
-    def wps(s):
+    def scan(s):
         os.system('rm wash')
-        os.system(f'sudo wash -i {s} -s | tee wash')
-        print('')
+        os.system(f'sudo wash -i {s} -s -a | tee wash ')
+        ('')
+        os.system('clear')
         with open('wash', 'r') as file:
             choose_bssid(file.read(),s)
-
+    def deauth():
+        pass
     def choose_bssid(wash_output,s):
         lines = wash_output.strip().split('\n')
-        print('BSSID               Ch  dBm  WPS  Lck  Vendor    ESSID')
+        print('\nNUM   BSSID               Ch  dBm  WPS  Lck  Vendor    ESSID')
         for i, line in enumerate(lines[2:], start=1):
-            print(f"[{i}] - {line}")
+            print(f"\033[0;34m[{i}]\033[m - {line}")
 
         selected_number = int(input("\nEscolha o número do BSSID desejado: "))
 
         if 1 <= selected_number <= len(lines) - 2:
-            selected_bssid = lines[selected_number + 1].split()[0]
-            print(f"\nBSSID escolhido: {selected_bssid}")
-            os.system(f'sudo bully -b {selected_bssid} -D -t 4 -B -d {s}')
+            bssid = lines[selected_number + 1].split()[0]
+            print(f'''\nBSSID escolhido: \033[7;33m{bssid}\033[m
+\nO que deseja fazer?
+                  
+\033[0;34m[1]\033[m - Deauth
+\033[0;34m[2]\033[m - WPSCrack
+\033[0;34m[3]\033[m - Em breve
+\033[0;34m[4]\033[m - Em breve
+\033[0;34m[5]\033[m - Em breve
+\033[0;34m[0]\033[m - Sair                  
+''')
+            options = {
+            1: deauth,
+            #2: host_discovery,
+            #6: http_finder,
+            #7: link,
+            #8: auto_web,
+            0: lambda: print('Volte sempre! ¯\_(ツ)_/¯') or quit
+            }
+
+            opcao = int(input('Escolha uma opção: '))
+            funcao = options.get(opcao)
+
+            if funcao:
+                funcao()
+            elif opcao > 24:
+                print('Digite uma opção válida!')
+                input("Pressione Enter para continuar...")
+                  
+            
         else:
             print("Número inválido. Tente novamente.")
 
@@ -1156,7 +1187,7 @@ def wifi_scan():
         ifaces = os.popen("ip a | grep BROADCAST | awk '{print $2}' | sed 's/://'").read()
         num = 1
         for iface in ifaces.split():
-            print(f' [{num}] {iface}')
+            print(f' \033[0;34m[{num}]\033[m - {iface}')
             num += 1
 
         sit_iface = int(input('\nEscolha uma interface para continuar: '))
@@ -1165,7 +1196,7 @@ def wifi_scan():
             selected_iface = ifaces.split()[sit_iface - 1]
             sit_iface = os.popen(f"iwconfig {selected_iface} | grep Monitor ").read()
             if 'Mode:Monitor' in sit_iface:
-                wps(selected_iface)
+                scan(selected_iface)
             else:
                 print('Colocando IFACE em modo Monitor.')
                 os.popen('sudo airmon-ng check kill').read()
@@ -1174,7 +1205,7 @@ def wifi_scan():
                 selected_iface = os.popen(f"ip a | grep {selected_iface} | awk {p} | sed 's/://'").read()
                 sit_iface = os.popen(f"iwconfig {selected_iface} | grep Monitor 2>/dev/null").read()
                 if 'Mode:Monitor' in sit_iface:
-                    wps(selected_iface)
+                    scan(selected_iface)
         else:
             print("Número inválido.")
     else:
@@ -1209,9 +1240,9 @@ def banner():
  \033[0;34m[19]\033[m- SUID
  \033[0;34m[20]\033[m- NC Listen
  \033[0;34m[21]\033[m- Reverse Shell
- \033[0;34m[23]\033[m- Server TCP
- \033[0;34m[24]\033[m- ServerHTTP
- \033[0;34m[25]\033[m- Tryeres
+ \033[0;34m[22]\033[m- Server TCP
+ \033[0;34m[23]\033[m- ServerHTTP
+ \033[0;34m[24]\033[m- Tryeres
  \033[0;34m[0]\033[m - Sair
 ''')
         options = {
@@ -1236,7 +1267,7 @@ def banner():
         19: suid,
         20: nc,
         21: reverse_shell,
-        22: server_tcp,
+        22: serverhttp,
         23: serverhttp,
         24: lambda: os.system('gnome-terminal --title=Python -- sudo python Tryeres/Tryeres.py') or main,
         0: lambda: print('Volte sempre! ¯\_(ツ)_/¯') or quit
