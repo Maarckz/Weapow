@@ -1589,7 +1589,7 @@ def banner():
  \033[0;34m[15]\033[m- Config Tool
  \033[0;34m[16]\033[m- LinPeas
  \033[0;34m[17]\033[m- LinEnum
- \033[0;34m[18]\033[m- Potenkin
+ \033[0;34m[18]\033[m- Potemkin
  \033[0;34m[19]\033[m- Waza
  \033[0;34m[20]\033[m- SUID
  \033[0;34m[21]\033[m- NC Listen
