@@ -1,4 +1,5 @@
 
+
 <div align="left">
   <a href="https://github.com/maarckz/weapow" target="_blank"><img height="260" width= "960" src="https://github.com/Maarckz/Maarckz/blob/main/Images/weapow.png?raw=true"/> 
 </div>
@@ -22,7 +23,7 @@ pip3 install requests
 Baixa bastar e executar:
 
 ```sh
-git clone https://github.com/Maarckz/Weapow.git && cd Weapow && python weapow.py
+git clone https://github.com/Maarckz/Weapow.git && cd Weapow && python3 weapow.py
 ```
 
 ## Bibliotecas
@@ -47,6 +48,8 @@ git clone https://github.com/Maarckz/Weapow.git && cd Weapow && python weapow.py
 ## Desenvolvimento
 Quer contribuir? Ótimo!
 Contribuições são bem-vindas! Sinta-se à vontade.
+
+## Interface
 
 ## Funcionalidades
 
@@ -143,24 +146,42 @@ Esta função executa o script do Marcos Polop `LinPeas.sh`
 Esta função executa o script do rebootuser `LinEnum.sh`
 > Essa função demora um pouco, mas é muito eficaz.
 
-**18. SUID :**
+**18. Potemkin :**
+Este é um script Python que simula serviços de porta aberta, gerando respostas falsas para várias portas TCP comuns, como FTP, SSH e HTTP. Além disso, monitora a atividade de conexão, bloqueando endereços IP que tentam se conectar com muita frequência. Requer privilégios de superusuário para interagir com o firewall do sistema operacional e realizar operações de bloqueio.
+
+>Simulação de Serviços: Responde a solicitações de conexão em várias portas TCP comuns, fornecendo respostas falsas para simular serviços reais.
+> Monitoramento de Atividade: Registra o número de solicitações de conexão de cada endereço IP e bloqueia endereços que fazem muitas solicitações em um curto período.
+>Bloqueio de Endereços IP: Utiliza o firewall do sistema operacional para bloquear endereços IP que exibem comportamento suspeito.
+
+
+
+**19. WAZA :**
+Esta é uma ferramenta de linha de comando para configurar o firewall em sistemas Linux que usam o serviço firewalld (firewall-cmd). A ferramenta é projetada para fornecer uma interface simplificada , útil para administradores de sistemas que desejam configurar rapidamente o firewall em seus servidores Linux, garantindo a segurança da rede e dos serviços executados neles. A ferramenta oferece suporte para sistemas Linux com firewalld, como Ubuntu, CentOS e RHEL. 
+> Opções avançadas estão disponíveis para usuários familiarizados com os conceitos de configuração de firewall no Linux. 
+> O script é projetado para facilitar a configuração do firewall, reduzindo a necessidade de interação manual com o firewalld.
+
+**20. SUID :**
 Esta função busca por arquivos com a permissão `setuid` ativada em um determinado caminho do sistema ou, caso nenhum caminho seja especificado, em todo o sistema.
 >Esta função executa o comando `find` com as opções `-perm -u=s -type f`.
 
-**19. NC Listen  :**
+**21. NC Listen  :**
 Esta função inicia uma "*Escuta*" na porta especificada. Quando uma conexão é estabelecida com o servidor, a função imprime o endereço IP do cliente conectado e inicia um loop para receber comandos do cliente e enviá-los de volta. 
 >O nome da função, `nc`, é para fazer uma referencia ao comando **netcat***, uma ferramenta de terminal usada para enviar e receber dados em redes de computadores.
 
-**20. Reverse Shell  :**
+**22. Reverse Shell  :**
 Esta função possui 2 funcionalidades, **Pesquisar** e **Executar**. Ela apresenta um menu ao usuário opções para executar um shell reverso em uma máquina remota. Os tipos de *shells reversos* podem ser conferidos da ferramenta, estes incluem `Bash, NC, Rust, PERL, PHP, PowerShell, Python, SoCat, Node, JavaScript, TelNet, zsh e GoLang`. O usuário seleciona uma opção e fornece o endereço IP e a porta da máquina remota à qual deseja se conectar, então gera o comando shell reverso apropriado e o executa na máquina remota.
 >**Com grandes poderes vêm grandes responsabilidades** - Lee, Stan.
 
-**21. Server TCP :**
+**23. Server TCP :**
 Esta função cria um servidor TCP que ouve em uma porta informada pelo usuário e espera por uma conexão de cliente. Esta ferramenta é muito usada para estabelecer uma SHELL REVERSA sem explorar falha.
 >**Com grandes poderes vêm grandes responsabilidades** - Lee, Stan.
 
+**24. Server HTTP :**
+Esta função cria um servidor HTTP que serve arquivos do diretório atual. Basta especificar a porta desejada. É importante ressaltar que a porta especificada deve estar disponível e, em alguns casos, pode ser necessário ter permissões de superusuário para utilizar portas abaixo de 1024.
+>**Use a imaginação para fazer M3rd@**
 
-**22. Tryeres:** 
+
+**25. Tryeres:** 
 TRYERES é uma ferramentas de teste de segurança abrangente criada para auxiliar o RECON durante um PENTEST ou BUGBOUTY. Após solicitar a URL de início, realiza diversas verificações, incluindo comandos de Whois, DNSEnum, dig, SSLScan, Nmap, WhatWeb, entre outros. Além disso, realiza um WebCrawling, identifica emails, telefones, formulários e subdomínios, fornecendo uma visão detalhada da presença online do alvo.
 
 > O script deve ser executado como superusuário para garantir permissões
