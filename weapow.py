@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-version = "v3.70-dev"
+version = "v3.63-dev"
 
 import os
 import re
@@ -119,8 +119,8 @@ def host_discovery():
             input(press)
             main()
     except KeyboardInterrupt:
-                print('\n'+Ctrl_C)
-                quit()
+        print('\n'+Ctrl_C)
+        quit()
 
 
 #=======================================================================================
@@ -177,7 +177,7 @@ def bigscan():
             rang = int(input('Digite o RANGE de portas: '))
             print("Não aparece nada, mas está rodando ...")
 
-            thread = 400
+            thread = 600
             ports = range(rang)
 
             print("[+] Host: " + ip_alvo)
@@ -279,7 +279,6 @@ def bigscan():
     sit_scan = input('Deseja utilizar um (H)ost ou a (L)ista? (H/L): ')
     if sit_scan.lower() == 'h':
         portscan_uniq()
-
     elif sit_scan.lower() == 'l':
         portscan()
     else:
@@ -999,7 +998,7 @@ E#jG#f  L#LL#G      j###DW##,      .fW##D,          j###DW##,
 E###;   L###j      G##i,,G##,    .f###D,           G##i,,G##,
 E#K:    L#W;     :K#K:   L##,  .f####Gffffffff;  :K#K:   L##,
 EG      LE.     ;##D.    L##, .fLLLLLLLLLLLLi   ;##D.    L##,
-                                                     \033[m{wversion}''')
+                                                     \033[m{version}''')
             print("Opções:\n")
             print(f"\033[0;34m[1]\033[m - Selecionar interface {'(Selecionado: ' + selected_interface + ')' if selected_interface else ''}")
             if selected_zones_str:
@@ -1022,7 +1021,6 @@ EG      LE.     ;##D.    L##, .fLLLLLLLLLLLLi   ;##D.    L##,
                 print(f"\033[0;34m[6]\033[m - Bloquear portas (Selecionados: {block_selected_ports_str})")
             else:
                 print("\033[0;34m[6]\033[m - Bloquear portas ") 
-
             print(f"\033[0;34m[7]\033[m - Remover interface da Zona")
             print(f"\033[0;34m[8]\033[m - Bloquear IP")
             print(f"\033[0;34m[9]\033[m - Bloquear IPs por Máscara")
@@ -1031,7 +1029,6 @@ EG      LE.     ;##D.    L##, .fLLLLLLLLLLLLi   ;##D.    L##,
             print(f"\033[0;34m[12]\033[m- Listar IPs bloqueados")
             print("\033[0;34m[13]\033[m- Aplicar Configurações")
             print("\033[0;34m[0]\033[m - Sair")
-
             choice = input("\nEscolha uma opção: ")
             if choice == "1": #Selecionar interface
                 interfaces = os.popen("ls /sys/class/net/").read().strip().split()
@@ -1093,7 +1090,7 @@ EG      LE.     ;##D.    L##, .fLLLLLLLLLLLLi   ;##D.    L##,
                 else:
                     print("Zona ou serviço não selecionado.")
             elif choice == "4": #Liberar portas
-                if selected_zone and selected_interface:
+                if selected_zone:
                     ports = input("Digite a(s) porta(s) desejada(s) separada(s) por vírgula: ")
                     port_list = ports.split(',')
                     for index, port in enumerate(port_list):
@@ -1101,12 +1098,11 @@ EG      LE.     ;##D.    L##, .fLLLLLLLLLLLLi   ;##D.    L##,
                             port_list[index] = port.strip()
                         except ValueError:
                             print(f"Entrada inválida para a porta: {port}")
-
                     selected_ports_str = ', '.join(port_list)
                 else:
                     print("Zona ou serviço não selecionado.")
             elif choice == "5": #Bloquear serviços
-                if selected_zone and selected_interface:
+                if selected_zone:
                     block_services = os.popen("""firewall-cmd --get-services""").read().strip().split()
                     block_services = [block_service.strip() for block_service in block_services if block_service.strip()]
                     print("Escolha os Serviços:")
@@ -1141,102 +1137,131 @@ EG      LE.     ;##D.    L##, .fLLLLLLLLLLLLi   ;##D.    L##,
             elif choice == "8": #Bloquear IP
                 ip_to_block = input("Digite o IP a ser bloqueado: ")
                 print(f"IP {ip_to_block} bloqueado.")
+                input(press)
             elif choice == "9":#Bloquear IPs por Máscara
                 ip_mask = input("Digite o range de IPs (com máscara) a ser bloqueado: ")
                 print(f"Range de IPs {ip_mask} bloqueado.")
+                input(press)
             elif choice == "10": #Listar todas as Zonas
                 os.system('firewall-cmd --list-all-zones')
                 input(press)
             elif choice == "11": #Mostrar Configuração da Zona
-               os.system(f'firewall-cmd --zone={selected_zone} --list-all')
-               input(press)
+                try:
+                    os.system(f'firewall-cmd --zone={selected_zone} --list-all')
+                    input(press)
+                except UnboundLocalError:
+                    print('Selecione uma zona.')
+                    input(press)
             elif choice == "12": #Listar IPs bloqueados
                 pass
             elif choice == "13": #Aplicar Configurações
-                if selected_zone and selected_interface:
-                    cfg_iface = os.popen(f"firewall-cmd --zone={selected_zone} --change-interface={selected_interface} --permanent").read()
-                    print(f'Configuração da INTERFACE e ZONA: {cfg_iface}')
-                    if selected_services_str != None:
-                        selected_services_list = selected_services_str.split(', ')
-                        for service in selected_services_list:
-                            cfg_service = os.popen(f"firewall-cmd --add-service={service} --permanent --zone={selected_zone}").read()
-                            print(f'Permissão do serviço {service}: {cfg_service}')
-                    if selected_ports_str != None:
-                        selected_ports_str = selected_ports_str.split(',')
-                        for port in selected_ports_str:
-                            if port != 0 or port != '':
-                                tcp_port = os.popen(f"firewall-cmd --add-port={port}/tcp --permanent --zone={selected_zone}").read()
-                                print(f'Porta {port}/tcp liberada: {tcp_port}')
-                                udp_port = os.popen(f"firewall-cmd --add-port={port}/udp --permanent --zone={selected_zone}").read()
-                                print(f'Porta {port}/udp liberada: {udp_port}')
-                    if block_selected_services_str != None:
-                        block_selected_services_list = block_selected_services_str.split(', ')
-                        for block_service in block_selected_services_list:
-                            block_cfg_service = os.popen(f"firewall-cmd --remove-service={block_service} --permanent --zone={selected_zone}").read()
-                            print(f'Bloqueio do serviço {block_service}: {block_cfg_service}')
-                    try:
-                        while True:
-                            print("\nConfiguração manual para a zona:")
-                            print("[1] Bloquear ICMP")
-                            print("[2] Configurar forward")
-                            print("[3] Configurar masquerade")
-                            print("[0] Concluir")
-                            choice = input("Escolha uma opção: ")
-                            if choice == "1":
-                                icmp_options = {
-                                    "Echo-Request": "echo-request",
-                                    "Echo-Reply": "echo-reply",
-                                    "Destination Unreachable": "destination-unreachable",
-                                    "Source Quench": "source-quench",
-                                    "Redirect": "redirect",
-                                    "Time Exceeded": "time-exceeded",
-                                    "Parameter Problem": "parameter-problem",
-                                    "Timestamp Request/Reply": "timestamp-request",
-                                    "Address Mask Request/Reply": "address-mask-request",
-                                    "Router Solicitation/Advertisement": "router-solicitation",
-                                    "Traceroute": "traceroute"
-                                }
-                                print("\nOpções de bloqueio ICMP:")
-                                for num, option in enumerate(icmp_options.keys(), start=1):
-                                    print(f"{num}. {option}")
-                                try:
-                                    option_num = int(input("Digite o número correspondente à opção de ICMP a ser bloqueada: "))
-                                    if 1 <= option_num <= len(icmp_options):
-                                        selected_icmp = list(icmp_options.keys())[option_num - 1]
-                                        icmp_type = icmp_options[selected_icmp]
-                                        os.system(f"firewall-cmd --zone={selected_zone} --add-icmp-block={icmp_type}")
-                                        os.system("firewall-cmd --reload")
-                                        print(f"Comando executado: firewall-cmd --zone={selected_zone} --add-icmp-block={icmp_type}")
-                                        print(f"ICMP tipo '{selected_icmp}' bloqueado.")
+                try:
+                    if selected_zone and selected_interface:
+                        cfg_iface = os.popen(f"firewall-cmd --zone={selected_zone} --change-interface={selected_interface} --permanent").read()
+                        print(f'Configuração da INTERFACE e ZONA: {cfg_iface}')
+                        if selected_services_str != None:
+                            selected_services_list = selected_services_str.split(', ')
+                            for service in selected_services_list:
+                                cfg_service = os.popen(f"firewall-cmd --add-service={service} --permanent --zone={selected_zone}").read()
+                                print(f'Permissão do serviço {service}: {cfg_service}')
+                        if selected_ports_str != None:
+                            selected_ports_str = selected_ports_str.split(',')
+                            for port in selected_ports_str:
+                                if port != 0 or port != '':
+                                    tcp_port = os.popen(f"firewall-cmd --add-port={port}/tcp --permanent --zone={selected_zone}").read()
+                                    print(f'Porta {port}/tcp liberada: {tcp_port}')
+                                    udp_port = os.popen(f"firewall-cmd --add-port={port}/udp --permanent --zone={selected_zone}").read()
+                                    print(f'Porta {port}/udp liberada: {udp_port}')
+                        if block_selected_services_str != None:
+                            block_selected_services_list = block_selected_services_str.split(', ')
+                            for block_service in block_selected_services_list:
+                                block_cfg_service = os.popen(f"firewall-cmd --remove-service={block_service} --permanent --zone={selected_zone}").read()
+                                print(f'Bloqueio do serviço {block_service}: {block_cfg_service}')
+                        try:
+                            while True:
+                                print("Configuração manual para a zona:")
+                                print('[1] Defina o Target')
+                                print("[2] Bloquear ICMP")
+                                print("[3] Configurar forward")
+                                print("[4] Configurar masquerade")
+                                print("[0] Concluir")
+                                choice = input("Escolha uma opção: ")
+                                if choice == "1":
+                                    print('[1] Default')
+                                    print("[2] ACCEPT")
+                                    print("[3] REJECT")
+                                    print("[4] DROP")
+                                    print("[0] Concluir")
+                                    target = int(input('Escolha a opção do Target: '))
+                                    if target == 1:
+                                        os.system(f"firewall-cmd --zone={selected_zone} --set-target=default")
+                                    if target == 2:
+                                        os.system(f"firewall-cmd --zone={selected_zone} --set-target=ACCEPT")
+                                    if target == 3:
+                                        os.system(f"firewall-cmd --zone={selected_zone} --set-target=REJECT")  
+                                    if target == 4:
+                                        os.system(f"firewall-cmd --zone={selected_zone} --set-target=DROP")
+                                    if target == 0:
+                                        pass
                                     else:
-                                        print("Número de opção inválido.")
-                                except ValueError:
-                                    print("Entrada inválida. O número da opção deve ser um número inteiro.")
-                            elif choice == "2":
-                                forward_value = input("Deseja habilitar o Forward? (S/N) ")
-                                if forward_value.lower() =='s':
-                                    os.system(f"firewall-cmd --zone={selected_zone} --add-forward")
+                                        print('Digite uma opção válida')
+                                if choice == "2":
+                                    icmp_options = {
+                                        "Echo-Request": "echo-request",
+                                        "Echo-Reply": "echo-reply",
+                                        "Destination Unreachable": "destination-unreachable",
+                                        "Source Quench": "source-quench",
+                                        "Redirect": "redirect",
+                                        "Time Exceeded": "time-exceeded",
+                                        "Parameter Problem": "parameter-problem",
+                                        "Timestamp Request/Reply": "timestamp-request",
+                                        "Address Mask Request/Reply": "address-mask-request",
+                                        "Router Solicitation/Advertisement": "router-solicitation",
+                                        "Traceroute": "traceroute"
+                                    }
+                                    print("\nOpções de bloqueio ICMP:")
+                                    for num, option in enumerate(icmp_options.keys(), start=1):
+                                        print(f"{num}. {option}")
+                                    try:
+                                        option_num = int(input("Digite o número correspondente à opção de ICMP a ser bloqueada: "))
+                                        if 1 <= option_num <= len(icmp_options):
+                                            selected_icmp = list(icmp_options.keys())[option_num - 1]
+                                            icmp_type = icmp_options[selected_icmp]
+                                            os.system(f"firewall-cmd --zone={selected_zone} --add-icmp-block={icmp_type}")
+                                            os.system("firewall-cmd --reload")
+                                            print(f"Comando executado: firewall-cmd --zone={selected_zone} --add-icmp-block={icmp_type}")
+                                            print(f"ICMP tipo '{selected_icmp}' bloqueado.")
+                                        else:
+                                            print("Número de opção inválido.")
+                                    except ValueError:
+                                        print("Entrada inválida. O número da opção deve ser um número inteiro.")
+                                elif choice == "3":
+                                    forward_value = input("Deseja habilitar o Forward? (S/N) ")
+                                    if forward_value.lower() =='s':
+                                        os.system(f"firewall-cmd --zone={selected_zone} --add-forward")
+                                        print(f"Forward configurado para {forward_value}.")
+                                    elif forward_value.lower() =='n':
+                                        os.system(f"firewall-cmd --zone={selected_zone} --remove-forward")
+                                        print(f"Forward configurado para {forward_value}.")
                                     os.system("firewall-cmd --reload")
-                                    print(f"Forward configurado para {forward_value}.")
-                                elif forward_value.lower() =='n':
-                                    os.system(f"firewall-cmd --zone={selected_zone} --remove-forward")
+                                elif choice == "4":
+                                    masquerade_value = input("Deseja habilitar o Masquerade? (S/N) ")
+                                    os.system(f"firewall-cmd --zone={selected_zone} --add-option=masquerade --value={masquerade_value}")
                                     os.system("firewall-cmd --reload")
-                                    print(f"Forward configurado para {forward_value}.")
-                            elif choice == "3":
-                                masquerade_value = input("Deseja habilitar o Masquerade? (S/N) ")
-                                os.system(f"firewall-cmd --zone={selected_zone} --add-option=masquerade --value={masquerade_value}")
-                                os.system("firewall-cmd --reload")
-                                print(f"Comando executado: firewall-cmd --zone={selected_zone} --add-option=masquerade --value={masquerade_value}")
-                                print(f"Masquerade configurado para {masquerade_value}.")
-                            elif choice == "0":
-                                break
-                            else:
-                                print("Escolha inválida. Tente novamente.")
-                    except KeyboardInterrupt:
-                        print("\nPrograma encerrado.")
-                        os.system('clear')
-                    os.system("firewall-cmd --reload")
-                else:
+                                    print(f"Comando executado: firewall-cmd --zone={selected_zone} --add-option=masquerade --value={masquerade_value}")
+                                    print(f"Masquerade configurado para {masquerade_value}.")
+                                elif choice == "0":
+                                    break
+                                else:
+                                    print("Escolha inválida. Tente novamente.")
+                        except KeyboardInterrupt:
+                            print("\nPrograma encerrado.")
+                            os.system('clear')
+                        
+                        os.system("firewall-cmd --reload")
+                    else:
+                        print("Zona ou serviço não selecionado.")
+                except UnboundLocalError:
                     print("Zona ou serviço não selecionado.")
             elif choice == "0":
                 print("Até a próxima! (ツ)")
