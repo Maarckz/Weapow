@@ -1,20 +1,22 @@
-#!/usr/bin/env python
-version = "v3.63-dev"
+#!/usr/bin/env python3
+version = "v3.71-dev"
 
 import os
 import re
 import sys
 import socket
 import requests
+import ipaddress
 import threading
 import time as t
 import getpass as g
 import http.server as hs
 import socketserver as ss
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup 
 from requests.exceptions import SSLError
 from urllib.parse import urlparse, urljoin
-from concurrent.futures import ThreadPoolExecutor as e
+from concurrent.futures import ThreadPoolExecutor as exx
+
 
 bann = '''\033[1;33m
 888  888  888  .d88b.   8888b.  88888b.   .d88b.  888  888  888
@@ -31,303 +33,449 @@ Y88b 888 d88P Y8b.     888  888 888 d88P Y88..88P Y88b 888 d88P
 ####################################################
 ## GRUPO DE VARIÁVEIS QUE SÃO REPETIDAS NO CODIGO ##
 ####################################################
-press = '(Pressione qualquer tecla para voltar ao menu inicial)'
+press = '\033[7;31m(Pressione qualquer tecla para voltar ao menu inicial)\033[m'
 Ctrl_C = 'Você pressionou Ctrl+C para interromper o programa!'
-dir = 'mkdir -p ARQ'
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+dir = 'mkdir -p ARQ'
+list_ip = []
 
+def interfaces():
 
-#=======================================================================================
-def iplist():
+    ########################################
+    ## CRIA UM MENU DE INTERFACES DE REDE ##
+    ########################################
     try:
-        num_oct = int(input('Deseja informar 2 ou 3 octetos? (2/3) '))
-        if num_oct == 2:
-            octetos = str(input('Digite os dois primeiros octetos (Ex: 192.168):'))
-            mask = 16
-        elif num_oct == 3:
-            octetos = str(input('Digite os três primeiros octetos (Ex: 192.168.204):'))
-            mask = 24
-        else:
-            print('Digite a opção correta.')
-            input(press)
-            iplist()
-    except ValueError:
-        print('Digite a opção correta.')
-        input(press)
-        iplist()
-    except KeyboardInterrupt:
-        print('\n'+Ctrl_C)
-        quit()
-    os.system(dir)
-    os.system('rm ARQ/ips.txt')
-    with open("ARQ/ips.txt", "a") as f:
-        if num_oct == 2:
-            for i in range(0, 256):
-                for p in range(0, 256):
-                    ip = f"{octetos}.{i}.{p}"
-                    print(ip, file=f)
-        elif num_oct == 3:
-            for p in range(0, 256):
-                ip = f"{octetos}.{p}"
-                print(ip, file=f)
-    print(f'Seu Arquivo foi gerado com Sucesso! ==> ({octetos}/{mask})')
-    input(press)
-    main()
-
-
-#=======================================================================================
-def host_discovery():
-    try:
-        print('((Para cancelar segure CTRL+C))')
-        sit_host_discovery = input('Dependendo da quantidade de IPs, este processo poderá demorar. Deseja continuar o \033[0;31mHostDiscover\033[m? (S/N) ')
-        if(sit_host_discovery.lower() == "s"):
-            os.system('rm ARQ/hosts.txt')
-            try:
-                def ping(host):
-                    sys.stdout.write((f"Procurando Hosts: {str(host)}")+(" " * 16) +"\r")
-                    sys.stdout.flush()
-                    result = os.system(f'ping -c 3 -W 1 {host} > /dev/null')
-                    if (result == 0):
-                        with open('ARQ/hosts.txt','a') as h:
-                            print(host, file=h)
-                        print('\n',host)
-                def threading():
-                    with open('ARQ/ips.txt','r') as f:
-                        content = f.read()
-                        hosts = tuple(content.splitlines())
-                    thread = 800
-                    try:
-                        with e(max_workers=int(thread)) as exe:
-                            for host in hosts:
-                                exe.submit(ping, host)
-                                t.sleep(0.05)
-                    except KeyboardInterrupt:
-                                print('\n'+Ctrl_C)
-                                quit()
-                threading()
-                input(press)
-                main()
-            except RuntimeError as er:
-                print(er)
-                quit()
-            except FileNotFoundError:
-                print("\nO arquivo de IPs descobertos deve ser gerado.")
-            except KeyboardInterrupt:
-                print('\n'+Ctrl_C)
-                quit()
-        else:
+        
+        interfaces = []
+        for interface_name in os.listdir('/sys/class/net'): 
+            
+            if interface_name == 'lo':
+                continue
+            interfaces.append(interface_name)
+       
+        if not interfaces:
+            print("Nenhuma interface de rede encontrada.")
             input(press)
             main()
+
+        print("\nSelecione a interface de rede:")
+        for i, interface in enumerate((interfaces), 1):
+            print(f"\033[0;34m[{i}]\033[m - {interface}")
+
+        while True:
+
+            try:
+                escolha = int(input("Digite a opção: "))
+                if escolha < 0 or escolha > len(interfaces):
+                    raise ValueError
+                break
+
+            except ValueError:
+                print("Opção inválida.")
+        
+        ###################################
+        ## CASO SEJA "0" RETORNA AO MENU ##
+        ###################################
+        if escolha == 0:
+            main()
+        
+        selected_interface = interfaces[escolha - 1]
+
+        return selected_interface
+
     except KeyboardInterrupt:
         print('\n'+Ctrl_C)
         quit()
 
+#=======================================================================================
+#############################################
+## FUNÇÃO PARA DESCOBERTA DE HOSTS NA REDE ##
+#############################################
+def host_discovery():
+
+    ##########################################################
+    ## CRIA UMA LISTA DE IP DE ACORDO COM A FAIXA FORNECIDA ##
+    ##########################################################
+    vrf_ip = input('Digite a faixa de IP (Ex: xx.xx.xx.xx/xx): ')
+    mask = vrf_ip.split('/')
+    regex = re.compile(r"^(\d{1,3}\.)\d{1,3}\.\d{1,3}\.\d{1,3}$")
+
+    try:
+
+        if regex.match(mask[0]) is not None and int(mask[1]) <= 32:
+                
+            try:
+
+                rede = ipaddress.ip_network(vrf_ip, strict=False)
+
+                ips = list(map(str, rede.hosts()))
+                if ips:
+
+                    for ip in ips:
+                        list_ip.append(ip)
+                else:
+                    print("Não foi possível gerar a lista de IPs.")
+
+            except ValueError as e:
+                print("Erro:", e)
+
+        else:
+            print('\nDigite uma Faixa válida (Ex: 192.168.0.0/16).')
+            host_discovery()
+
+    except IndexError as e:
+        print("Digite o /xx da Rede.")
+        input(press)
+        host_discovery()
+
+                        ############
+                        ## ALERTA ##
+                        ############
+    print('\n\033[7;31m((Para cancelar segure CTRL+C))\033[m')
+
+    interface = interfaces()
+    os.system(dir)
+    os.popen('rm ARQ/hosts.txt 2>/dev/null')
+    print('\n\033[7;32mAguarde ...\033[m')
+    #########################################################
+    ## REALIZA UM PING EM CADA IP NA INTERFACE SELECIONADA ##
+    #########################################################
+    try:
+
+        def ping(interface,host):
+            result = os.system(f'ping -c 3 -W 1 -I {interface} {host} > /dev/null')
+            if (result == 0):
+
+                with open('ARQ/hosts.txt','a') as h:
+                    print(host, file=h)
+                print(host)
+        
+        #####################################################
+        ## CRIA UMA POOL DE THREADING PARA A FUNÇÃO "PING" ##
+        #####################################################
+        thread = 800
+        try:
+            with exx(max_workers=int(thread)) as exe:
+                for host in list_ip:
+                    exe.submit(ping,interface, host)
+                    t.sleep(0.05)
+            
+        except KeyboardInterrupt:
+                    print('\n'+Ctrl_C)
+                    quit()
+        
+        input(press)
+        main()
+    
+    except RuntimeError as er:
+        print(er)
+        quit()
+    
+    except FileNotFoundError:
+        print("\nO arquivo de IPs descobertos deve ser gerado.")
+
+
 
 #=======================================================================================
+##########################################
+## FAZ RESOLUÇÃO DE HOSTNAME VIA SOCKET ##
+##########################################
 def hostname_resolv():
-    with open("ARQ/hosts.txt", "r") as f:
-        lst = f.readlines()
-    remove = '\n'
-    lst = [l.replace(remove, "") for l in lst]
-    print('Hosts descobertos:')
-    for host in lst:
-        try:
-            socket.setdefaulttimeout(5)
-            hostname = socket.gethostbyaddr(host)[0]
-            print(f'[+] {host} - ({hostname})')
-            with open("ARQ/hostname.txt", "a") as f:
-                print(f'{host} - ({hostname})', file=f)
-        except socket.timeout:
-            print(f'[+] {host}')
-        except socket.herror:
-            print(f'[+] {host}')
-        except KeyboardInterrupt:
-            print("[-] Saindo!")
-            quit()
+    try:
+        with open("ARQ/hosts.txt", "r") as f:
+            lst = f.readlines()
+        remove = '\n'
+        lst = [l.replace(remove, "") for l in lst]
+        print('Hosts descobertos:')
+        for host in lst:
+            try:
+                socket.setdefaulttimeout(5)
+                ttl = s.getsockopt(socket.IPPROTO_IP, socket.IP_TTL)
+                if ttl >= 64:
+                    OS = 'LinuxLike'
+                if ttl < 64:
+                    OS = 'WindowsLike'
+                if ttl == 255:
+                    OS = 'UnixLike'
+                hostname = socket.gethostbyaddr(host)[0]
+                print(f'[+] {host} - ({hostname} - {OS})')
+                with open("ARQ/hostname.txt", "a") as f:
+                    print(f'{host} - ({hostname})', file=f)
+            except socket.timeout:
+                print(f'[+] {host}')
+            except socket.herror:
+                print(f'[+] {host}')
+            except KeyboardInterrupt:
+                print("[-] Saindo!")
+                quit()
+    except FileNotFoundError:
+        print('O arquivo hosts.txt deve ser gerado.')
     input(press)
     main()
 
 
 #=======================================================================================
+##################################################################################
+## ESTA FUNÇÃO FAZ UM PORTSCAN DE ACORDO COM A LISTA GERADO PELO HOST DISCOVERY ##
+##################################################################################
 def bigscan():
+
+    #########################################################################################
+    ## CRIA UM PACOTE SOCKET QUE SE CONECTA NA PORTA, E SE O RESULTADO "0", RETORNA ABERTA ##
+    #########################################################################################
     def scan(ip, port):
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(1.5)
+
         try:
             result = s.connect_ex((ip, port))
             if result == 0:
                 try:
                     service = socket.getservbyport(port)
                     if service:
-                        print(f"{str(port)} / TCP {service}")
+                        print(f"{str(port)} / TCP - {service}")
+
                 except (socket.error, OSError):
                     print(f"{str(port)} / TCP Desconhecido")
+
                 except KeyboardInterrupt:
                     print("[-] Saindo!")
                     quit()
+
         except (socket.timeout, ConnectionRefusedError, OSError):
             pass
+
         finally:
             s.close()
+
         return True
 
     def portscan_uniq():
+        ##########################################
+        ## CRIA UM MENU DAS INTERFACES  DE REDE ##
+        ##########################################
+        interfaces = []
+
+        for interface_name in os.listdir('/sys/class/net'):
+
+            if interface_name == 'lo':
+                continue
+            
+            try:
+                with open(f'/sys/class/net/{interface_name}/operstate', 'r') as f:
+                    if f.read().strip() == 'up':
+                        interfaces.append(interface_name)
+
+            except Exception as err:
+                print(f"Error accessing interface {interface_name}: {err}")
+
+        if not interfaces:
+            print("Nenhuma interface de rede encontrada.")
+            main()
+
+        print("\nSelecione a interface de rede:")
+        for i, interface in enumerate(sorted(interfaces), 1):
+            print(f"\033[0;34m[{i}]\033[m - {interface}")
+
+        while True:
+            try:
+                choice = int(input("Digite a opção: "))
+                if choice < 0 or choice > len(interfaces):
+                    raise ValueError
+                break
+
+            except ValueError:
+                print("Opção inválida.")
+
+        if choice == 0:
+            main()
+
+        selected_interface = interfaces[choice - 1]
+
+        #######################################
+        ## SOLICITA O IP E O RANGE DE PORTAS ##
+        #######################################
         try:
             ip_alvo = input("Digite o IP alvo: ")
             rang = int(input('Digite o RANGE de portas: '))
             print("Não aparece nada, mas está rodando ...")
 
+            ########################################################
+            ## ATRIBUI A QUANTIDADE DE THREADS USADAS NO PORTSCAN ##
+            ########################################################
             thread = 600
             ports = range(rang)
 
             print("[+] Host: " + ip_alvo)
-            print("PORTA          SERVIÇO")
-            with e(max_workers=int(thread)) as exe:
+            print("  PORTA          SERVIÇO")
+            
+            with exx(max_workers=int(thread)) as exe:
+            
                 try:
                     futures = [exe.submit(scan, ip_alvo, port) for port in ports]
-                    for future in e.as_completed(futures):
+                    for future in exx.as_completed(futures):
                         future.result()
+            
                 except KeyboardInterrupt:
                     print("[-] Saindo!")
                     quit()
 
             open_ports = [port for port in ports if futures[port].result()]
-
+            
+            #########################################################
+            ## EXIBE AS PORTAS ABERTAS E QUAL SERVIÇO ESTÁ RODANDO ##
+            #########################################################
             for port in open_ports:
                 try:
                     service = socket.getservbyport(port)
                     if service:
                         print(f"{str(port)} / TCP {service}")
+                        
                 except (socket.error, OSError):
                     print(f"{str(port)} / TCP Desconhecido")
                     
         except KeyboardInterrupt:
             print('\n[!] Saindo...')
+        
         except FileNotFoundError:
             print("\nO arquivo de hosts descobertos deve ser gerado.")
             input("Pressione Enter para continuar...")
             main()
+        
         except AttributeError:
             print("[!] Varredura concluída.")
             input(press)
             main()
 
+    #################################################### 
+    ## PORTSCANNER COM SOCKET TCP, NO RANGE INFORMADO ##
+    ####################################################
     def portscan():
-        os.system('rm ARQ/portscan.txt')
+        os.popen('rm ARQ/portscan.txt 2>/dev/null')
         try:
             with open("ARQ/hosts.txt", "r") as f:
                 lst = f.readlines()
+
             remove = '\n'
             lst = [l.replace(remove, "") for l in lst]
         
             sit_h = input('\nDependendo da quantidade de hosts, este processo poderá demorar. Deseja continuar o \033[0;31mPortScanner\033[m? (S/N) ')
+
+
             if sit_h.lower() == "s":
                 rang = int(input('Digite o RANGE de portas: '))
                 print("Não aparece nada, mas está rodando ...")
+                
+                ###########################################################
+                ## PERCORRE A LISTA DE HOSTDISCOVERY E FAZ O PORTSCANNER ##
+                ###########################################################
                 for host in lst:
                     def scan(ip, port, l):
                         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                         s.settimeout(1)  
                         t.sleep(0.02)
+
                         try:
                             result = s.connect_ex((ip, port))
                             espaco = 10 - l
                             espaco = " " * espaco
+                            
                             if result == 0: 
                                 with open("ARQ/portscan.txt", "a") as f:
+
+                                    ####################################################
+                                    ## VERIFICA SE EXISTE UM SERVIÇO RODANDO NA PORTA ##
+                                    ####################################################
                                     try:
                                         service = f"{socket.getservbyport(port)}"
                                         t.sleep(0.1)
                                         print(f"{str(port)} / TCP {espaco} {service}", file=f)
                                         print(str(port) + " / TCP" + espaco + f"{service}       ")
+
                                     except socket.error:
                                         print(str(port) + " / TCP" + espaco + "Desconhecido", file=f)
                                         print(str(port) + " / TCP" + espaco + "Desconhecido")
+
                                     except KeyboardInterrupt:
                                         print("[-] Saindo!")
                                         quit()
-                        except (socket.timeout, ConnectionRefusedError, OSError):
-                            print(f"Erro ao verificar porta {port} em {ip}: {e}")
+
+                        except (socket.timeout, ConnectionRefusedError, OSError) as err:
+                            print(f"Erro ao verificar porta {port} em {ip}: {err}")
+
                         finally:
                             s.close()
                         return True
+
                     thread = 400
                     ports = range(rang)
+
+                    ######################################################
+                    ## SALVA O PORTSCANNER EM UM ARQUIVO "portscan.txt" ##
+                    ######################################################
                     with open("ARQ/portscan.txt", "a") as f:
                         print("[+] Host: " + host, file=f)
                         print("\n[+] Host: " + host)
                         print("PORTA          SERVIÇO")
-                    with e(max_workers=int(thread)) as exe:
+                    
+                    with exx(max_workers=int(thread)) as exe:
+                      
                         try:
                             for port in ports:
                                 exe.submit(scan, host, port, len(str(port)))
+                      
                         except KeyboardInterrupt:
                             print("[-] Saindo!")
                             quit()
             else:
                 input(press)
                 main()
+
             if KeyboardInterrupt:
                 print('')
+
         except KeyboardInterrupt:
             print('\n' + Ctrl_C)
+
         except FileNotFoundError:
             print("\nO arquivo de hosts descobertos deve ser gerado.")
             input(press)
             main()
 
+    #####################################################################
+    ## SOLICITA UMA ENTRADA PARA EXECUTAR O PORTSCAN POR HOST OU LISTA ##
+    #####################################################################
     sit_scan = input('Deseja utilizar um (H)ost ou a (L)ista? (H/L): ')
     if sit_scan.lower() == 'h':
         portscan_uniq()
+
     elif sit_scan.lower() == 'l':
         portscan()
+
     else:
         print('Opção inválida.')            
             
 
-
 #=======================================================================================
-def http_finder():
-    def wget_pg(ip, porta):
-        os.system(f"rm ARQ/WEB/{ip}.html")
-        os.system(f'wget --no-check-certificate --mirror --convert-links --adjust-extension --page-requisites --timeout=10 http://{ip}:{porta} -P ARQ/WEB/')
-    for ip in os.listdir("ARQ/HEAD"):
-        arquivo = os.path.join("ARQ/HEAD", ip)
-
-        if os.path.isfile(arquivo):
-            with open(arquivo, 'r') as arquivo:
-                conteudo = arquivo.readlines()
-                servico_web_encontrado = False
-                porta = None
-                for linha in conteudo:
-                    match = re.search(r'Porta: (\d+)', linha)
-                    if match:
-                        porta = match.group(1)
-                    if "http" in linha.lower() or "https" in linha.lower():
-                        servico_web_encontrado = True
-                        break
-                if servico_web_encontrado:
-                    thread = threading.Thread(target=wget_pg, args=(ip, porta))
-                    thread.start()
-    for thread in threading.enumerate():
-        if thread != threading.current_thread():
-            thread.join()
-
-
-#=======================================================================================
+######################################################################
+## ENVIA UMA CONEXÃO VIA NETCAT PARA RETORNAR UM POSSÍVEL CABEÇALHO ##
+######################################################################
 def nc_get():
-    os.system('rm ARQ/HEAD/*')
+    os.popen('rm ARQ/HEAD/* 2>/dev/null')
     os.makedirs("ARQ/HEAD", exist_ok=True)
+
     print('No código, existe a função nc(), mais lenta e verifica todas as portas.')
+
     def get(host, porta, servico):
         try:
             comando = f'echo -e "\n" | nc -vn -w 10 {host} {porta} 2>&1 | tee'
             t.sleep(0.6)
             resultado = os.popen(comando).read()
             caminho_arquivo = f"ARQ/HEAD/{host}"
+
             with open(caminho_arquivo, "a") as arquivo_respostas:
                 arquivo_respostas.write(f"[+] Host: {host}    Porta: {porta}    Serviço: {servico}\t\t\n{resultado}\n")
                 print(f"[+] Host: {host}    Porta: {porta}    Serviço: {servico}\t\t\n{resultado}\n")
+
         except Exception as e:
             print(f"Erro ao executar o comando nc: {e}")
 
@@ -350,7 +498,7 @@ def nc_get():
 
 def nc():
     host_ip = input("Digite o endere  o IP do host: ")
-    nome_servico = input("Digite o nome do servi  o: ")
+    nome_servico = input("Digite o nome do serviço: ")
     caminho_arquivo = f"ARQ/HEAD/{host_ip}"
     try:
         for porta in range(1, 65536):
@@ -362,6 +510,44 @@ def nc():
                 print(f"[+] Host: {host_ip}    Porta: {porta}    Servi  o: {nome_servico}\t\t\n{resultado}\n")
     except Exception as e:
         print(f"Erro ao executar o comando nc: {e}")
+
+
+#=======================================================================================
+###########################################################################
+## VERIFICA SE EXISTE RESPOSTA "HTTP" OU "HTTPS" APOS O COMANDO "nc -vz" ##
+###########################################################################
+def http_finder():
+
+    ###################################################
+    ## ESTA FUNÇÃO FAZ O DOWNLOAD DO SITE ENCONTRADO ##
+    ###################################################
+    def wget_pg(ip, porta):
+        os.system(f"rm ARQ/WEB/{ip}.html")
+        os.system(f'wget --no-check-certificate --mirror --convert-links --adjust-extension --page-requisites --timeout=10 http://{ip}:{porta} -P ARQ/WEB/')
+    
+    
+    for ip in os.listdir("ARQ/HEAD"):
+        arquivo = os.path.join("ARQ/HEAD", ip)
+
+        if os.path.isfile(arquivo):
+            with open(arquivo, 'r') as arquivo:
+                conteudo = arquivo.readlines()
+                servico_web_encontrado = False
+                porta = None
+                for linha in conteudo:
+                    match = re.search(r'Porta: (\d+)', linha)
+                    if match:
+                        porta = match.group(1)
+                    if "http" in linha.lower() or "https" in linha.lower():
+                        servico_web_encontrado = True
+                        break
+                if servico_web_encontrado:
+                    thread = threading.Thread(target=wget_pg, args=(ip, porta))
+                    thread.start()
+    for thread in threading.enumerate():
+        if thread != threading.current_thread():
+            thread.join()
+
 
 #=======================================================================================
 def link():
@@ -893,10 +1079,10 @@ Você deseja configurar Servidor ou Client?
             print('Digite uma opção válida!')
             input(press)
 
-    except ValueError as e:
+    except ValueError:
         print('Digite uma opção válida!')
         input(press)
-    except NameError as e:
+    except NameError:
         print('Digite uma opção válida!')
         input(press)
 
@@ -947,47 +1133,79 @@ def linenum():
         print('\n'+Ctrl_C)
 
 
-#=======================================================================================
-def waza():
-    wversion = '\033[7;32mv1.2dev\033[m'
 
-    def check_firewalld():
-        with open("/etc/os-release", "r") as file:
-            for line in file:
-                if line.startswith("ID="):
-                    distro_id = line.split("=")[1].strip().strip('"')
-        if distro_id in ["ubuntu", "centos", "rhel"]:
-            install_firewalld(distro_id)
+#=======================================================================================
+####################################################################
+## FUNÇÃO QUE CRIA UM CONFIGURADOR DE FIREWALL COM "firewall-cmd" ##
+####################################################################
+def waza():
+    wversion = '\033[7;32mv2.1dev\033[m'
+    
+    #############################################################
+    ## VERIFICA A DISTRO LINUX, INSTALA E HABILITA O FIREWALLD ##
+    #############################################################
+    def verifica_distro_e_firewall():
+        with open("/etc/os-release", "r") as arquivo: 
+            
+            for linha in arquivo:
+            
+                if linha.startswith("ID="):
+                    distro_id = linha.split("=")[1].strip().strip('"')
+        
+        ##############################
+        ## DISTROS A SER VERIFICADA ##
+        ##############################
+        if distro_id in ["ubuntu", "oracle", "rhel"]:
+            status = os.system("sudo systemctl status firewalld >/dev/null 2>&1")
+        
+            if status == 0:
+                print("Firewalld está instalado e em execução.")
+        
+            else:
+                intalar_firewalld = input(f"O firewalld não está instalado. Deseja instalar o firewalld no {distro_id}? (S/N): ").lower()
+            
+                if intalar_firewalld == "s":
+                    package_manager = "apt" if distro_id == "ubuntu" else "yum"
+
+                    #############################################
+                    ## INSTALA, INICIA, E HABILITA O FIREWALLD ##
+                    #############################################
+                    os.system(f"sudo {package_manager} install firewalld -y")
+                    os.system("sudo systemctl start firewalld")
+                    os.system("sudo systemctl enable firewalld")
+                    print("Firewalld instalado e iniciado com sucesso.")
+            
+                else:
+                    print("Firewalld não instalado. Instale manualmente e tente novamente!")
+    
         else:
             print("Distribuição não suportada.")
+            main()
 
-    def install_firewalld(distro_id):
-        status = os.system("sudo systemctl status firewalld >/dev/null 2>&1")
-        if status == 0:
-            print("Firewalld está instalado e em execução.")
-        else:
-            install_firewalld = input(f"O firewalld não está instalado. Deseja instalar o firewalld no {distro_id}? (S/N): ").lower()
-            if install_firewalld == "s":
-                package_manager = "apt" if distro_id == "ubuntu" else "yum"
-                os.system(f"sudo {package_manager} install firewalld -y")
-                os.system("sudo systemctl start firewalld")
-                os.system("sudo systemctl enable firewalld")
-                print("Firewalld instalado e iniciado com sucesso.")
-            else:
-                print("Firewalld não instalado. Instale manualmente e tente novamente!")
+    #######################################
+    ## FUNÇÃO PARA CONFIGURAR O FIREWALL ##
+    #######################################
+    verifica_distro_e_firewall()
 
-    check_firewalld() 
-    selected_interface = None
-    selected_zones_str = None
+    ##############################################################
+    ## DEFINE UMA SEQUENCIA DE VARIÁVEIS PARA INTERAÇÃO DO MENU ##
+    ############################################################## 
+    seleciona_interface = None
+    seleciona_zonas_str = None
     selected_services_str = None
     block_selected_services_str = None
     selected_ports_str = None
     block_selected_ports_str = None
     port_list = None
     press = '(Pressione qualquer tecla para voltar ao menu inicial)'
+    
     os.system('clear')
+
     try:
         while True:
+            ###########################
+            ## BANNER PRA FICAR COOL ##
+            ###########################
             print(f'''\033[1;91m
         .DL               ;W,      ,##############Wf.     ;W,
 f.     :K#L     LWL      j##,       ........jW##Wt       j##,
@@ -998,27 +1216,48 @@ E#jG#f  L#LL#G      j###DW##,      .fW##D,          j###DW##,
 E###;   L###j      G##i,,G##,    .f###D,           G##i,,G##,
 E#K:    L#W;     :K#K:   L##,  .f####Gffffffff;  :K#K:   L##,
 EG      LE.     ;##D.    L##, .fLLLLLLLLLLLLi   ;##D.    L##,
-                                                     \033[m{version}''')
+                                                    \033[m{wversion}''')
+            
             print("Opções:\n")
-            print(f"\033[0;34m[1]\033[m - Selecionar interface {'(Selecionado: ' + selected_interface + ')' if selected_interface else ''}")
-            if selected_zones_str:
-                print(f"\033[0;34m[2]\033[m - Selecionar zona (Selecionado:  {selected_zones_str})")
+
+            #######################################################
+            ## LISTAGEM DE OPÇÕES PARA FACILITAR O USUÁRIO.      ##
+            ## A LÓGICA É FAZER O USUÁRIO SELECIONAR A INTERFACE ##
+            ## E A ZONA E DEPOIS PENSAR EM CONFIGURAR.           ##
+            ##                                                   ##
+            ## NESTE TRECHO TAMBÉM HÁ ALGUMAS CONDICIONAIS PARA  ##
+            ## EXIBIR FEEDBACK DO QUE ESTÁ ACONTECENDO APOS O    ##
+            ## USUÁRIO FAZER A SELEÇÃO DAS CONFIGURAÇÕES         ##
+            #######################################################
+            print(f"\033[0;34m[1]\033[m - Selecionar interface {'(Selecionado: ' + seleciona_interface + ')' if seleciona_interface else ''}")
+        
+            if seleciona_zonas_str:
+                print(f"\033[0;34m[2]\033[m - Selecionar zona (Selecionado:  {seleciona_zonas_str})")
+        
             else:
                 print(f"\033[0;34m[2]\033[m - Selecionar zona")
+        
             if selected_services_str:
                 print(f"\033[0;34m[3]\033[m - Liberar serviços (Selecionados: {selected_services_str})")
+        
             else:
                 print("\033[0;34m[3]\033[m - Liberar serviços")            
+        
             if selected_ports_str:
                 print(f"\033[0;34m[4]\033[m - Liberar portas (Selecionados: {selected_ports_str})")
+        
             else:
                 print("\033[0;34m[4]\033[m - Liberar portas ")
+        
             if block_selected_services_str:
                 print(f"\033[0;34m[5]\033[m - Bloquear serviços (Selecionados: {block_selected_services_str})")
+        
             else:
                 print("\033[0;34m[5]\033[m - Bloquear serviços")            
+        
             if block_selected_ports_str:
                 print(f"\033[0;34m[6]\033[m - Bloquear portas (Selecionados: {block_selected_ports_str})")
+        
             else:
                 print("\033[0;34m[6]\033[m - Bloquear portas ") 
             print(f"\033[0;34m[7]\033[m - Remover interface da Zona")
@@ -1029,163 +1268,300 @@ EG      LE.     ;##D.    L##, .fLLLLLLLLLLLLi   ;##D.    L##,
             print(f"\033[0;34m[12]\033[m- Listar IPs bloqueados")
             print("\033[0;34m[13]\033[m- Aplicar Configurações")
             print("\033[0;34m[0]\033[m - Sair")
-            choice = input("\nEscolha uma opção: ")
-            if choice == "1": #Selecionar interface
+
+
+            opcao = input("\nEscolha uma opção: ")
+
+            ###########################################################
+            ## EXIBE UM MENU PARA SELEÇÃO DAS INTERFACES DISPONÍVEIS ##
+            ###########################################################
+            if opcao == "1":
                 interfaces = os.popen("ls /sys/class/net/").read().strip().split()
                 print("Interfaces disponíveis:")
+            
                 for i, iface in enumerate(interfaces, start=1):
-                    if iface != 'lo':
-                        print(f"[{i}] {iface}")
+                    print(f"[{i}] {iface}")
+            
                 try:
                     print("[0] Voltar ao Menu")
                     interface_index = int(input("Escolha a interface (número): "))
+                
                     if interface_index == 0:
-                        selected_interface = None
+                        seleciona_interface = None
+                
                     elif 1 <= interface_index <= len(interfaces):
-                        selected_interface = interfaces[interface_index - 1]
+                        seleciona_interface = interfaces[interface_index - 1]
+            
                 except (ValueError, IndexError):
                     print("Escolha inválida.")
-            elif choice == "2": # Selecionar zona
-                    zones = os.popen("firewall-cmd --get-zones").read().strip().split()
+
+            ######################################################### 
+            ## EXIBE UM MENU PARA SELEÇÃO DAS ZONAS DISPONÍVEIS    ##
+            ## AQUI ELE PERMITE MULTISELEÇÃO DAS ZONAS DISPONÍVEIS ##
+            #########################################################                  
+            elif opcao == "2": 
+                    zonas = os.popen("firewall-cmd --get-zones").read().strip().split()
                     print("Zonas disponíveis:")
-                    for i, zone in enumerate(zones, start=1):
+                
+                    for i, zone in enumerate(zonas, start=1):
                         print(f"[{i}] {zone}")
+                
                     try:
                         print("[0] Voltar ao Menu")
-                        selected_zones = []
+                        seleciona_zonas = []
+                    
                         while True:
                             zone_index = int(input("Escolha a zona (número): "))
+                        
                             if zone_index == 0:
                                 break
-                            elif 1 <= zone_index <= len(zones):
-                                selected_zone = zones[zone_index - 1]
-                                selected_zones.append(selected_zone)  # Adiciona a zona selecionada à lista
+                        
+                            elif 1 <= zone_index <= len(zonas):
+                                seleciona_zona = zonas[zone_index - 1]
+                                seleciona_zonas.append(seleciona_zona)  
+                        
                             else:
                                 print("Escolha inválida.")
-                            selected_zones_str = ', '.join(selected_zones)
+                            seleciona_zonas_str = ', '.join(seleciona_zonas)
+                
                     except (ValueError, IndexError):
                         print("Escolha inválida.")
-            elif choice == "3": #Liberar serviços
-                if selected_zone and selected_interface:
+
+            #########################################################
+            ## EXIBE UM MENU PARA SELEÇÃO DOS SERVIÇOS DISPONÍVEIS ##
+            ## AQUI ELE PERMITE MULTISELEÇÃO DOS SERVIÇOS          ##
+            #########################################################                        
+            elif opcao == "3": 
+                if seleciona_zona and seleciona_interface:
                     services = os.popen("""firewall-cmd --get-services""").read().strip().split()
                     services = [service.strip() for service in services if service.strip()]
                     print("Escolha os Serviços:")
+                
                     for i, service in enumerate(services, start=1):
                         print(f"[{i}] {service}")
                     try:
                         print("[0] Voltar ao Menu")
                         selected_services = []
+                        
                         while True:
                             service_index = int(input("Escolha o serviço (número): "))
+                        
                             if service_index == 0:
                                 break
+                        
                             elif 1 <= service_index <= len(services):
                                 selected_service = services[service_index - 1]
                                 selected_services.append(selected_service)
+                            
                             else:
                                 print("Escolha inválida.")
                         selected_services_str = ', '.join(selected_services)
+                    
                     except (ValueError, IndexError):
                         print("Escolha inválida.")
+            
                 else:
                     print("Zona ou serviço não selecionado.")
-            elif choice == "4": #Liberar portas
-                if selected_zone:
+        
+            ###########################################################
+            ## PEDE UMA ENTRADA DAS PORTAS QUE DESEJA PERMITIR.      ##
+            ## AS PORTAS SÃO SEPARADAS POR "," E SENDO ENVIADAS PARA ##
+            ## UMA LISTA QUE SERÁ CONFIGURADA MAIS PARA FRENTE       ##
+            ###########################################################         
+            elif opcao == "4":
+                if seleciona_zona:
                     ports = input("Digite a(s) porta(s) desejada(s) separada(s) por vírgula: ")
                     port_list = ports.split(',')
+                
                     for index, port in enumerate(port_list):
                         try:
                             port_list[index] = port.strip()
                         except ValueError:
                             print(f"Entrada inválida para a porta: {port}")
                     selected_ports_str = ', '.join(port_list)
+                
                 else:
                     print("Zona ou serviço não selecionado.")
-            elif choice == "5": #Bloquear serviços
-                if selected_zone:
+
+            #########################################################
+            ## EXIBE UM MENU PARA SELEÇÃO DOS SERVIÇOS DISPONÍVEIS ##
+            ## AQUI ELE PERMITE MULTISELEÇÃO DOS SERVIÇOS          ##
+            #########################################################              
+            elif opcao == "5":
+                if seleciona_zona:
                     block_services = os.popen("""firewall-cmd --get-services""").read().strip().split()
                     block_services = [block_service.strip() for block_service in block_services if block_service.strip()]
                     print("Escolha os Serviços:")
+                
                     for i, block_service in enumerate(block_services, start=1):
                         print(f"[{i}] {block_service}")
                     try:
                         print("[0] Voltar ao Menu")
                         block_selected_services = []
+                    
                         while True:
                             block_service_index = int(input("Escolha o serviço (número): "))
+                        
                             if block_service_index == 0:
                                 break
+                        
                             elif 1 <= block_service_index <= len(block_services):
                                 block_selected_service = block_services[block_service_index - 1]
                                 block_selected_services.append(block_selected_service)
+                        
                             else:
                                 print("Escolha inválida.")
                         block_selected_services_str = ', '.join(block_selected_services)
+                
                     except (ValueError, IndexError):
                         print("Escolha inválida.")
+            
                 else:
                     print("Zona ou serviço não selecionado.")
-            elif choice == "7": #Remover interface de uma Zona
-                if selected_zone and selected_interface:
-                    sit_remove = input(f"Deseja remover a interface {selected_interface} da zona {selected_zone}. (S/N) ")
+            
+            ##############################################################
+            ## A OPÇÃO 6 SERÁ O PROCESSO INVERSO DA PERMISSÃO DE PORTAS ##
+            ##############################################################
+            elif opcao == '6':
+                pass
+            
+            #################################################################
+            ## PERMITE REMOVER DA ZONA SELECIONADA A INTERFACE SELECIONADA ##
+            #################################################################
+            elif opcao == "7": 
+                if seleciona_zona and seleciona_interface:
+                    sit_remove = input(f"Deseja remover a interface {seleciona_interface} da zona {seleciona_zona}. (S/N) ")
+                    
                     if sit_remove.lower() == 's':
-                        os.system(f"firewall-cmd --zone={selected_zone} --permanent --remove-interface={selected_interface}")
+                        os.system(f"firewall-cmd --zone={seleciona_zona} --permanent --remove-interface={seleciona_interface}")
                         os.system("firewall-cmd --reload")
-                        print(f"Interface {selected_interface}removida da zona {selected_zone}.")
+                        print(f"Interface {seleciona_interface}removida da zona {seleciona_zona}.")
+            
                 else:
                     print("Selecione a Interface a ser removida e a Zona a ser configurada.")
-            elif choice == "8": #Bloquear IP
-                ip_to_block = input("Digite o IP a ser bloqueado: ")
-                print(f"IP {ip_to_block} bloqueado.")
+
+            ############################################################################
+            ## PERMITE BLOQUEAR IP INDIVIDUALMENTE, AINDA NÃO TEM TRATAMENTO COM "RE" ##
+            ############################################################################        
+            elif opcao == "8":
+                bloquear_ip = input("Digite o IP a ser bloqueado: ")
+                os.system(f"firewall-cmd --permanent --zone={seleciona_zona} --add-rich-rule='rule family=ipv4 source address={bloquear_ip} drop'")
+                print(f"IP {bloquear_ip} bloqueado.")
                 input(press)
-            elif choice == "9":#Bloquear IPs por Máscara
-                ip_mask = input("Digite o range de IPs (com máscara) a ser bloqueado: ")
+
+            ########################################
+            ##   PERMITE BLOQUEAR A FAIXA DE IP   ##
+            ########################################
+            elif opcao == "9":
+                ip_mask = input("Digite a faixa de IP a ser bloqueado: ")
+                os.system(f"firewall-cmd --permanent --zone={seleciona_zona} --add-rich-rule='rule family=ipv4 source address={ip_mask} drop'")
                 print(f"Range de IPs {ip_mask} bloqueado.")
                 input(press)
-            elif choice == "10": #Listar todas as Zonas
+
+            ##########################
+            ## LISTA TODAS AS ZONAS ##
+            ##########################
+            elif opcao == "10":
                 os.system('firewall-cmd --list-all-zones')
                 input(press)
-            elif choice == "11": #Mostrar Configuração da Zona
+
+            ##############################################
+            ## LISTA A CONFIGURAÇÃO DA ZONA SELECIONADA ##
+            ##############################################
+            elif opcao == "11":
                 try:
-                    os.system(f'firewall-cmd --zone={selected_zone} --list-all')
+                    os.system(f'firewall-cmd --zone={seleciona_zona} --list-all')
                     input(press)
                 except UnboundLocalError:
                     print('Selecione uma zona.')
                     input(press)
-            elif choice == "12": #Listar IPs bloqueados
-                pass
-            elif choice == "13": #Aplicar Configurações
+            
+            #############################
+            ## LISTA OS IPS BLOQUEADOS ##
+            #############################
+            elif opcao == "12":
+                os.system('sudo iptables -L -n')
+                input(press)
+
+            ##################################################################################################
+            ## A MAGICA ACONTECE AQUI! AQUI ESTÁ A CONFIGURAÇÃO FINAL DE TUDO QUE FOI SELECIONADO NO SCRIPT ##
+            ##################################################################################################    
+            ## ESTA OPÇÃO CONFIRMA AS ALTERAÇÕES SELECIONADAS, E FAZ ABRE POSSIBILIDADE DE NOVOS AJUSTES ##
+            ###############################################################################################
+            elif opcao == "13":
                 try:
-                    if selected_zone and selected_interface:
-                        cfg_iface = os.popen(f"firewall-cmd --zone={selected_zone} --change-interface={selected_interface} --permanent").read()
+                    ########################################################
+                    ## FAZ A ALTERAÇÃO DA INTERFACE PARA ZONA SELECIONADA ##
+                    ########################################################
+                    if seleciona_zona and seleciona_interface:
+                        cfg_iface = os.popen(f"firewall-cmd --zone={seleciona_zona} --change-interface={seleciona_interface} --permanent").read()
                         print(f'Configuração da INTERFACE e ZONA: {cfg_iface}')
+                        
+                        ##############################################################
+                        ## SE O SERVIÇO ESTIVER SELECIONADO, ELE FAZ A CONFIGURAÇÃO ##
+                        ##############################################################
                         if selected_services_str != None:
                             selected_services_list = selected_services_str.split(', ')
+                        
                             for service in selected_services_list:
-                                cfg_service = os.popen(f"firewall-cmd --add-service={service} --permanent --zone={selected_zone}").read()
+                                cfg_service = os.popen(f"firewall-cmd --add-service={service} --permanent --zone={seleciona_zona}").read()
                                 print(f'Permissão do serviço {service}: {cfg_service}')
+                        
+                        ############################################################
+                        ## SE A PORTA ESTIVER SELECIONADA, ELE FAZ A CONFIGURAÇÃO ##
+                        ############################################################
                         if selected_ports_str != None:
                             selected_ports_str = selected_ports_str.split(',')
+                        
                             for port in selected_ports_str:
+                                
                                 if port != 0 or port != '':
-                                    tcp_port = os.popen(f"firewall-cmd --add-port={port}/tcp --permanent --zone={selected_zone}").read()
+                                    tcp_port = os.popen(f"firewall-cmd --add-port={port}/tcp --permanent --zone={seleciona_zona}").read()
                                     print(f'Porta {port}/tcp liberada: {tcp_port}')
-                                    udp_port = os.popen(f"firewall-cmd --add-port={port}/udp --permanent --zone={selected_zone}").read()
+                                    udp_port = os.popen(f"firewall-cmd --add-port={port}/udp --permanent --zone={seleciona_zona}").read()
                                     print(f'Porta {port}/udp liberada: {udp_port}')
+                        
+                        ##########################################################################
+                        ## SE O BLOQUEIO DE SERVIÇO ESTIVER SELECIONADO, ELE FAZ A CONFIGURAÇÃO ##
+                        ##########################################################################
                         if block_selected_services_str != None:
                             block_selected_services_list = block_selected_services_str.split(', ')
+                            
                             for block_service in block_selected_services_list:
-                                block_cfg_service = os.popen(f"firewall-cmd --remove-service={block_service} --permanent --zone={selected_zone}").read()
+                                block_cfg_service = os.popen(f"firewall-cmd --remove-service={block_service} --permanent --zone={seleciona_zona}").read()
                                 print(f'Bloqueio do serviço {block_service}: {block_cfg_service}')
+                    
+                        ##########################################################################
+                        ## SE O BLOQUEIO DE SERVIÇO ESTIVER SELECIONADO, ELE FAZ A CONFIGURAÇÃO ##
+                        ##########################################################################
+                        '''
+                        if block_selected_ports_str != None:
+                            block_selected_ports_str = block_selected_ports_str.split(',')
+                        
+                            for block_port in block_selected_ports_str:
+                                
+                                if block_port != 0 or block_port != '':
+                                    block_tcp_port = os.popen(f"firewall-cmd --remove-port={block_port}/tcp --permanent --zone={seleciona_zona}").read()
+                                    print(f'Porta {block_port}/tcp bloqueada: {block_tcp_port}')
+                                    block_udp_port = os.popen(f"firewall-cmd --remove-port={block_port}/udp --permanent --zone={seleciona_zona}").read()
+                                    print(f'Porta {block_port}/udp bloqueada: {block_udp_port}')
+                        '''
+                        #########################################
+                        ## ABRE O MENU DE CONFIGURAÇÕES EXTRAS ##
+                        #########################################
                         try:
                             while True:
                                 print("Configuração manual para a zona:")
                                 print('[1] Defina o Target')
                                 print("[2] Bloquear ICMP")
-                                print("[3] Configurar forward")
+                                print("[3] Configurar PortForward")
                                 print("[4] Configurar masquerade")
                                 print("[0] Concluir")
                                 choice = input("Escolha uma opção: ")
+                                
+                                #############################################
+                                ## ABRE O MENU DE CONFIGURAÇÃO DE "TARGET" ##
+                                #############################################
                                 if choice == "1":
                                     print('[1] Default')
                                     print("[2] ACCEPT")
@@ -1193,18 +1569,28 @@ EG      LE.     ;##D.    L##, .fLLLLLLLLLLLLi   ;##D.    L##,
                                     print("[4] DROP")
                                     print("[0] Concluir")
                                     target = int(input('Escolha a opção do Target: '))
+                                    
                                     if target == 1:
-                                        os.system(f"firewall-cmd --zone={selected_zone} --set-target=default")
+                                        os.system(f"firewall-cmd --zone={seleciona_zona} --set-target=default")
+                                
                                     if target == 2:
-                                        os.system(f"firewall-cmd --zone={selected_zone} --set-target=ACCEPT")
+                                        os.system(f"firewall-cmd --zone={seleciona_zona} --set-target=ACCEPT")
+                                
                                     if target == 3:
-                                        os.system(f"firewall-cmd --zone={selected_zone} --set-target=REJECT")  
+                                        os.system(f"firewall-cmd --zone={seleciona_zona} --set-target=REJECT")  
+                                
                                     if target == 4:
-                                        os.system(f"firewall-cmd --zone={selected_zone} --set-target=DROP")
+                                        os.system(f"firewall-cmd --zone={seleciona_zona} --set-target=DROP")
+                                
                                     if target == 0:
                                         pass
+                                
                                     else:
                                         print('Digite uma opção válida')
+
+                                #################################################
+                                ## ABRE O MENU DE CONFIGURAÇÃO DE "ICMP_BLOCK" ##
+                                #################################################
                                 if choice == "2":
                                     icmp_options = {
                                         "Echo-Request": "echo-request",
@@ -1220,58 +1606,78 @@ EG      LE.     ;##D.    L##, .fLLLLLLLLLLLLi   ;##D.    L##,
                                         "Traceroute": "traceroute"
                                     }
                                     print("\nOpções de bloqueio ICMP:")
+                                    
                                     for num, option in enumerate(icmp_options.keys(), start=1):
                                         print(f"{num}. {option}")
+                                
                                     try:
                                         option_num = int(input("Digite o número correspondente à opção de ICMP a ser bloqueada: "))
+                                    
                                         if 1 <= option_num <= len(icmp_options):
                                             selected_icmp = list(icmp_options.keys())[option_num - 1]
                                             icmp_type = icmp_options[selected_icmp]
-                                            os.system(f"firewall-cmd --zone={selected_zone} --add-icmp-block={icmp_type}")
+                                            os.system(f"firewall-cmd --zone={seleciona_zona} --add-icmp-block={icmp_type}")
                                             os.system("firewall-cmd --reload")
-                                            print(f"Comando executado: firewall-cmd --zone={selected_zone} --add-icmp-block={icmp_type}")
+                                            print(f"Comando executado: firewall-cmd --zone={seleciona_zona} --add-icmp-block={icmp_type}")
                                             print(f"ICMP tipo '{selected_icmp}' bloqueado.")
+                                    
                                         else:
                                             print("Número de opção inválido.")
                                     except ValueError:
                                         print("Entrada inválida. O número da opção deve ser um número inteiro.")
+                            
+                            ###############################################################################
+                            ## CONFIGURA O PORTFORWARD, DIRECIONANDO O TRAFEGO DE UMA PORTA PARA A OUTRA ##
+                            ###############################################################################
                                 elif choice == "3":
-                                    forward_value = input("Deseja habilitar o Forward? (S/N) ")
-                                    if forward_value.lower() =='s':
-                                        os.system(f"firewall-cmd --zone={selected_zone} --add-forward")
-                                        print(f"Forward configurado para {forward_value}.")
-                                    elif forward_value.lower() =='n':
-                                        os.system(f"firewall-cmd --zone={selected_zone} --remove-forward")
-                                        print(f"Forward configurado para {forward_value}.")
+                                    forward_sit = input("Deseja configurar o PortForward? (S/N) ")
+                                    if forward_sit.lower() =='s':
+                                        porta_entrada = int(input('Digite a porta de Entrada: '))
+                                        porta_destino = int(input('Digite a porta de Destino: '))
+                                        os.system(f"firewall-cmd --zone={seleciona_zona} --add-forward-port=port={porta_entrada}:proto=tcp:toport={porta_destino}")
+                                        os.system('firewall-cmd --runtim-to-permanent')
+                                        print(f"PortForward configurado ({porta_entrada} >> {porta_destino}).")
+                                
+                                    elif forward_sit.lower() =='n':
+                                        os.system(f"firewall-cmd --zone={seleciona_zona} --remove-forward")
+                                        print(f"PortForward removido.")
                                     os.system("firewall-cmd --reload")
+
                                 elif choice == "4":
                                     masquerade_value = input("Deseja habilitar o Masquerade? (S/N) ")
-                                    os.system(f"firewall-cmd --zone={selected_zone} --add-option=masquerade --value={masquerade_value}")
+                                    os.system(f"firewall-cmd --zone={seleciona_zona} --add-option=masquerade --value={masquerade_value}")
                                     os.system("firewall-cmd --reload")
-                                    print(f"Comando executado: firewall-cmd --zone={selected_zone} --add-option=masquerade --value={masquerade_value}")
+                                    print(f"Comando executado: firewall-cmd --zone={seleciona_zona} --add-option=masquerade --value={masquerade_value}")
                                     print(f"Masquerade configurado para {masquerade_value}.")
+
                                 elif choice == "0":
                                     break
+
                                 else:
                                     print("Escolha inválida. Tente novamente.")
+
                         except KeyboardInterrupt:
                             print("\nPrograma encerrado.")
                             os.system('clear')
                         
                         os.system("firewall-cmd --reload")
+
                     else:
                         print("Zona ou serviço não selecionado.")
+
                 except UnboundLocalError:
                     print("Zona ou serviço não selecionado.")
-            elif choice == "0":
+
+            elif opcao == "0":
                 print("Até a próxima! (ツ)")
                 break
+
             else:
                 print("Opção inválida. Tente novamente.")
             os.system('clear')
+
     except KeyboardInterrupt:
-        print(Ctrl_C)
-        input(press)
+        print("\nPrograma encerrado.")
 
 #=======================================================================================
 def suid():
@@ -1307,11 +1713,7 @@ def nc(porta):
     except KeyboardInterrupt:
         print('\n'+Ctrl_C)
 
-
-#=======================================================================================
 def reverse_shell():
-    def execute_command(command):
-        os.system(command)
 
     def display_reverse_shell_options(options):
         for idx, option in options.items():
@@ -1480,151 +1882,247 @@ def serverhttp():
 
 
 #=======================================================================================
-def wifi_scan():
-    def scan(s):
-        os.system('rm wash')
-        os.system(f'sudo wash -i {s} -s -a | tee wash ')
-        ('')
-        os.system('clear')
-        with open('wash', 'r') as file:
-            choose_bssid(file.read(),s)
-    def deauth():
-        pass
-    def choose_bssid(wash_output,s):
-        lines = wash_output.strip().split('\n')
-        print('\nNUM   BSSID               Ch  dBm  WPS  Lck  Vendor    ESSID')
-        for i, line in enumerate(lines[2:], start=1):
-            print(f"\033[0;34m[{i}]\033[m - {line}")
+def wifi_hacking():
 
-        selected_number = int(input("\nEscolha o número do BSSID desejado: "))
+    def wifi_crack():
+        ################################
+        ## EXCLUI O CONTEUDO ANTERIOR ##
+        ################################
+        os.popen('sudo rm -rf WifiCrack 2>/dev/null')
 
-        if 1 <= selected_number <= len(lines) - 2:
-            bssid = lines[selected_number + 1].split()[0]
-            print(f'''\nBSSID escolhido: \033[7;33m{bssid}\033[m
-\nO que deseja fazer?
+        ###########################
+        ## VERIFICA DEPENDENCIAS ##
+        ###########################
+        dependencias = ["hcxdumptool", "hcxpcapngtool", "hashcat", 'xterm']
 
-\033[0;34m[1]\033[m - Deauth
-\033[0;34m[2]\033[m - WPSCrack
-\033[0;34m[3]\033[m - Em breve
-\033[0;34m[4]\033[m - Em breve
-\033[0;34m[5]\033[m - Em breve
-\033[0;34m[0]\033[m - Sair
-''')
-            options = {
-            1: deauth,
-            #2: host_discovery,
-            #6: http_finder,
-            #7: link,
-            #8: auto_web,
-            0: lambda: print('Volte sempre! ¯\_(ツ)_/¯') or quit
-            }
-
-            opcao = int(input('Escolha uma opção: '))
-            funcao = options.get(opcao)
-
-            if funcao:
-                funcao()
-            elif opcao > 24:
-                print('Digite uma opção válida!')
-                input("Pressione Enter para continuar...")
+        for programa in dependencias:
+            if not os.popen(f'which {programa}').read():
+                os.system(f"sudo apt install {programa}")
 
 
-        else:
-            print("Número inválido. Tente novamente.")
+        ##################################
+        ## DESABILITA O SERVIÇO DE REDE ##
+        ##################################
+        interface = interfaces()
+        
+        os.system('mkdir WifiCrack')
 
-    print('\nEste codigo irá usar SUDO algumas vezes ...\n')
-    aircrack = os.popen("dpkg -l | grep aircrack | awk '{print $2}'").read()
-    bully = os.popen("dpkg -l | grep bully | awk '{print $2}'").read()
-    os.system('sudo systemctl restart NetworkManager.service')
-    if "aircrack" in aircrack and "bully" in bully:
-        ifaces = os.popen("ip a | grep BROADCAST | awk '{print $2}' | sed 's/://'").read()
-        num = 1
-        for iface in ifaces.split():
-            print(f' \033[0;34m[{num}]\033[m - {iface}')
-            num += 1
+        print('\033[7;31mDEIXE ESTE COMANDO EXECUTANDO POR ALGUNS MINUTOS\033[m')
+        input(press)
 
-        sit_iface = int(input('\nEscolha uma interface para continuar: '))
-        p = "'{print $2}'"
-        if 1 <= sit_iface <= len(ifaces.split()):
-            selected_iface = ifaces.split()[sit_iface - 1]
-            sit_iface = os.popen(f"iwconfig {selected_iface} | grep Monitor ").read()
-            if 'Mode:Monitor' in sit_iface:
-                scan(selected_iface)
+        ################################
+        ## EXCLUI O CONTEUDO ANTERIOR ##
+        ################################
+        os.popen('sudo rm dumpfile* essidlist hash.hc22000 2>/dev/null')
+
+        ####################################
+        ## INTERROMPE OS SERVIÇOS DE REDE ##
+        ####################################
+        os.system('sudo systemctl stop NetworkManager.service')
+        os.system('sudo systemctl stop wpa_supplicant.service')
+        
+        try:
+            #####################################
+            ## CAPTURA DADOS DURANTE 5 MINUTOS ##
+            #####################################
+            t.sleep(2)
+            os.system(f'sudo hcxdumptool -i {interface} -o dumpfile.pcapng --active_beacon --enable_status=15 --tot=5 ')
+        except KeyboardInterrupt:
+            pass
+        
+        #############################################################################
+        ## CASO CANCELE ANTES DO TERMINO DO PROCESSO, RESTAURA OS SERVIÇOS DE REDE ##
+        #############################################################################
+        if KeyboardInterrupt:
+            os.system('sudo systemctl start NetworkManager.service')
+            os.system('sudo systemctl start wpa_supplicant.service')
+
+        
+        ##################################
+        ## RESTAURA OS SERVIÇOS DE REDE ##
+        ##################################
+        os.system('sudo systemctl start NetworkManager.service')
+        os.system('sudo systemctl start wpa_supplicant.service')
+        input('Pressione para continuar')
+
+        try:
+            #######################
+            #CONVERTE PARA HASHCAT#
+            #######################
+            os.system('hcxpcapngtool -o WifiCrack/hash.hc22000 -E essidlist dumpfile.pcapng')
+
+            with open('WifiCrack/hash.hc22000','r') as f:
+                dump = f.read()
+            
+        except FileNotFoundError:
+            print('\033[7;31mO arquivo "WifiCrack/*.hc22000" não foi gerado, deixe o DUMP por mais tempo.\033[m')
+            exit()
+
+
+        ## implementaçao definir a forma de quebra de hash
+
+        for hash in dump.splitlines():
+            nome_hash = hash.split('*')
+            with open(f'WifiCrack/{nome_hash[3]}.hc22000','w') as f:
+                f.write(hash)
+            print(nome_hash[3])
+            print('#################################################################################################################')
+            os.system(f"hashcat -m 22000 WifiCrack/{nome_hash[3]}.hc22000 -a 3 ?d?d?d?d?d?d?d?d | tee WifiCrack/{nome_hash[3]}.result")
+            
+            '''
+            hashcat -m 22000 hash.hc22000 wordlist.txt
+            hashcat -m 22000 hash.hc22000 -a 3 --increment --increment-min 8 --increment-max 18 ?d?d?d?d?d?d?d?d?d?d?d?d?d?d?d?d?d?d
+
+            em caso de erro:
+            sudo ifconfig wlxd03745fbcadc down && sudo iwconfig wlxd03745fbcadc mode managed && sudo ifconfig wlxd03745fbcadc up
+            sudo ifconfig wlp4s0 down && sudo iwconfig wlp4s0 mode managed && sudo ifconfig wlp4s0 up
+
+            '''
+    def wifi_scan():
+        def scan(s):
+            os.system('rm wash')
+            os.system(f'sudo wash -i {s} -s -a | tee wash ')
+            ('')
+            os.system('clear')
+            with open('wash', 'r') as file:
+                choose_bssid(file.read(),s)
+        def deauth():
+            pass
+        def choose_bssid(wash_output,s):
+            lines = wash_output.strip().split('\n')
+            print('\nNUM   BSSID               Ch  dBm  WPS  Lck  Vendor    ESSID')
+            for i, line in enumerate(lines[2:], start=1):
+                print(f"\033[0;34m[{i}]\033[m - {line}")
+
+            selected_number = int(input("\nEscolha o número do BSSID desejado: "))
+
+            if 1 <= selected_number <= len(lines) - 2:
+                bssid = lines[selected_number + 1].split()[0]
+                print(f'''\nBSSID escolhido: \033[7;33m{bssid}\033[m
+    \nO que deseja fazer?
+
+    \033[0;34m[1]\033[m - Deauth
+    \033[0;34m[2]\033[m - WPSCrack
+    \033[0;34m[3]\033[m - Em breve
+    \033[0;34m[4]\033[m - Em breve
+    \033[0;34m[5]\033[m - Em breve
+    \033[0;34m[0]\033[m - Sair
+    ''')
+                options = {
+                1: deauth,
+                #2: host_discovery,
+                #6: http_finder,
+                #7: link,
+                #8: auto_web,
+                0: lambda: print('Volte sempre! ¯\_(ツ)_/¯') or quit
+                }
+
+                opcao = int(input('Escolha uma opção: '))
+                funcao = options.get(opcao)
+
+                if funcao:
+                    funcao()
+                elif opcao > 24:
+                    print('Digite uma opção válida!')
+                    input("Pressione Enter para continuar...")
+
+
             else:
-                print('Colocando IFACE em modo Monitor.')
-                os.popen('sudo airmon-ng check kill').read()
-                os.popen(f'sudo airmon-ng start {selected_iface}')
-                t.sleep(2)
-                selected_iface = os.popen(f"ip a | grep {selected_iface} | awk {p} | sed 's/://'").read()
-                sit_iface = os.popen(f"iwconfig {selected_iface} | grep Monitor 2>/dev/null").read()
+                print("Número inválido. Tente novamente.")
+
+        print('\nEste codigo irá usar SUDO algumas vezes ...\n')
+        aircrack = os.popen("dpkg -l | grep aircrack | awk '{print $2}'").read()
+        bully = os.popen("dpkg -l | grep bully | awk '{print $2}'").read()
+        os.system('sudo systemctl restart NetworkManager.service')
+        if "aircrack" in aircrack and "bully" in bully:
+            ifaces = os.popen("ip a | grep BROADCAST | awk '{print $2}' | sed 's/://'").read()
+            num = 1
+            for iface in ifaces.split():
+                print(f' \033[0;34m[{num}]\033[m - {iface}')
+                num += 1
+
+            sit_iface = int(input('\nEscolha uma interface para continuar: '))
+            p = "'{print $2}'"
+            if 1 <= sit_iface <= len(ifaces.split()):
+                selected_iface = ifaces.split()[sit_iface - 1]
+                sit_iface = os.popen(f"iwconfig {selected_iface} | grep Monitor ").read()
                 if 'Mode:Monitor' in sit_iface:
                     scan(selected_iface)
+                else:
+                    print('Colocando IFACE em modo Monitor.')
+                    os.popen('sudo airmon-ng check kill').read()
+                    os.popen(f'sudo airmon-ng start {selected_iface}')
+                    t.sleep(2)
+                    selected_iface = os.popen(f"ip a | grep {selected_iface} | awk {p} | sed 's/://'").read()
+                    sit_iface = os.popen(f"iwconfig {selected_iface} | grep Monitor 2>/dev/null").read()
+                    if 'Mode:Monitor' in sit_iface:
+                        scan(selected_iface)
+            else:
+                print("Número inválido.")
         else:
-            print("Número inválido.")
-    else:
-        os.system('sudo apt install aircrack-ng bully -y')
-
-
-#=======================================================================================
+            os.system('sudo apt install aircrack-ng bully -y')
+    wifi_crack()
+    
+#################################################
+## CRIA UM BANNER COM MENU DAS OPÇÕES DE TESTE ##
+#################################################
 def banner():
     try:
         os.system("clear")
         print(bann)
         print(''' MENU:
 
- \033[0;34m[1]\033[m - Criar lista de IPs
- \033[0;34m[2]\033[m - Host Discovery
- \033[0;34m[3]\033[m - Hostname Resolve
- \033[0;34m[4]\033[m - Port Scanner
- \033[0;34m[5]\033[m - NC GET
- \033[0;34m[6]\033[m - WebFinder
- \033[0;34m[7]\033[m - WebCrawler
- \033[0;34m[8]\033[m - AutoWeb
- \033[0;34m[9]\033[m - Wifi Scanner
- \033[0;34m[10]\033[m- BackUp
- \033[0;34m[11]\033[m- Clonar Part|Disk
- \033[0;34m[12]\033[m- CronTab
- \033[0;34m[13]\033[m- Finder
- \033[0;34m[14]\033[m- EnumLinux Auditor
- \033[0;34m[15]\033[m- Config Tool
- \033[0;34m[16]\033[m- LinPeas
- \033[0;34m[17]\033[m- LinEnum
- \033[0;34m[18]\033[m- Potemkin
- \033[0;34m[19]\033[m- Waza
- \033[0;34m[20]\033[m- SUID
- \033[0;34m[21]\033[m- NC Listen
- \033[0;34m[22]\033[m- Reverse Shell
- \033[0;34m[23]\033[m- Server TCP
- \033[0;34m[24]\033[m- ServerHTTP
- \033[0;34m[25]\033[m- Tryeres
+ \033[0;34m[1]\033[m - Host Discovery
+ \033[0;34m[2]\033[m - Hostname Resolve
+ \033[0;34m[3]\033[m - Port Scanner
+ \033[0;34m[4]\033[m - NC GET
+ \033[0;34m[5]\033[m - WebFinder
+ \033[0;34m[6]\033[m - WebCrawler
+ \033[0;34m[7]\033[m - AutoWeb
+ \033[0;34m[8]\033[m - WifiHacking
+ \033[0;34m[9]\033[m - BackUp
+ \033[0;34m[10]\033[m- Clonar Part|Disk
+ \033[0;34m[11]\033[m- CronTab
+ \033[0;34m[12]\033[m- Finder
+ \033[0;34m[13]\033[m- EnumLinux Auditor
+ \033[0;34m[14]\033[m- Config Tool
+ \033[0;34m[15]\033[m- LinPeas
+ \033[0;34m[16]\033[m- LinEnum
+ \033[0;34m[17]\033[m- Potemkin
+ \033[0;34m[18]\033[m- Waza
+ \033[0;34m[19]\033[m- SUID
+ \033[0;34m[20]\033[m- NC Listen
+ \033[0;34m[21]\033[m- Reverse Shell
+ \033[0;34m[22]\033[m- Server TCP
+ \033[0;34m[23]\033[m- ServerHTTP
+ \033[0;34m[24]\033[m- Tryeres
  \033[0;34m[0]\033[m - Sair
 ''')
         options = {
-        1: iplist,
-        2: host_discovery,
-        3: hostname_resolv,
-        4: bigscan,
-        5: nc_get,
-        6: http_finder,
-        7: link,
-        8: auto_web,
-        9: wifi_scan,
-        10: backup,
-        11: clonar,
-        12: cron,
-        13: finder,
-        14: infosys,
-        15: config,
-        16: linpeas,
-        17: linenum,
-        #18: Potenkin,  # Adicione a função correspondente à opção 18
-        19: waza,
-        20: suid,
-        21: nc,
-        22: reverse_shell,
+        1: host_discovery,
+        2: hostname_resolv,
+        3: bigscan,
+        4: nc_get,
+        5: http_finder,
+        6: link,
+        7: auto_web,
+        8: wifi_hacking,
+        9: backup,
+        10: clonar,
+        11: cron,
+        12: finder,
+        13: infosys,
+        14: config,
+        15: linpeas,
+        16: linenum,
+        #17: Potenkin,
+        18: waza,
+        19: suid,
+        20: nc,
+        21: reverse_shell,
+        22: serverhttp,
         23: serverhttp,
-        24: serverhttp,
-        25: lambda: os.system('gnome-terminal --title=Python -- sudo python Tryeres/Tryeres.py') or main,
+        24: lambda: os.system('gnome-terminal --title=Python -- sudo python Tryeres/Tryeres.py') or main,
         0: lambda: print('Volte sempre! ¯\_(ツ)_/¯') or quit
         }
 
@@ -1633,30 +2131,28 @@ def banner():
 
         if funcao:
             funcao()
+
         elif opcao > 24:
             print('Digite uma opção válida!')
             input("Pressione Enter para continuar...")
             main()
 
-    except ValueError as e:
+    except ValueError:
         print('Digite uma opção válida!')
         input(press)
         main()
-    except NameError:
-        print('Digite uma opção válida!')
-        input(press)
-        main()
+    #except NameError as err:
+    #    print('Digite uma opção válida!', err)
+    #    input(press)
+    #    main()
 
-
-#=======================================================================================
 def main():
     try:
         banner()
     except (KeyboardInterrupt):
         print('\n'+Ctrl_C)
-    except ValueError as e:
+    except ValueError:
             print('Digite a opção correta.')
             input('(Pressione qualquer tecla para continuar)')
             main()
 main()
-
