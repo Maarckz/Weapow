@@ -1907,8 +1907,7 @@ def wifi_hacking():
         
         os.system('mkdir WifiCrack')
 
-        print('\033[7;31mDEIXE ESTE COMANDO EXECUTANDO POR ALGUNS MINUTOS\033[m')
-        input(press)
+        minutos = int(input('\033[7;31mQuantos minutos deseja realizar o DUMP? \033[m'))
 
         ################################
         ## EXCLUI O CONTEUDO ANTERIOR ##
@@ -1926,7 +1925,7 @@ def wifi_hacking():
             ## CAPTURA DADOS DURANTE 5 MINUTOS ##
             #####################################
             t.sleep(2)
-            os.system(f'sudo hcxdumptool -i {interface} -o dumpfile.pcapng --active_beacon --enable_status=15 --tot=5 ')
+            os.system(f'sudo hcxdumptool -i {interface} -o dumpfile.pcapng --active_beacon --enable_status=15 --tot={minutos} ')
         except KeyboardInterrupt:
             pass
         
