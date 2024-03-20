@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-version = "v3.72-dev"
+version = "v3.71-dev"
 
 import os
 import re
@@ -135,7 +135,6 @@ def host_discovery():
     os.popen('rm ARQ/hosts.txt 2>/dev/null')
 
     sit_discovery = input('Deseja executar o Hostdiscovery [Menos Acertivo]? (S/N) ')
-
     print('\n\033[7;32mAguarde ...\033[m')
 
     if sit_discovery.lower() == 'n':
@@ -145,8 +144,10 @@ def host_discovery():
         try:
             def ping(interface,host):
                 result = os.system(f'ping -c 3 -W 1 -I {interface} {host} > /dev/null')
-                if (result == 0):
-
+                print(host)
+                print(result)
+                print()
+                if result == 0:
                     with open('ARQ/hosts.txt','a') as h:
                         print(host, file=h)
                     print(host)
@@ -155,6 +156,7 @@ def host_discovery():
             ## CRIA UMA POOL DE THREADING PARA A FUNÇÃO "PING" ##
             #####################################################
             thread = 800
+
             try:
                 with exx(max_workers=int(thread)) as exe:
                     for host in list_ip:
