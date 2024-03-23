@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-version = "v3.71-dev"
+version = "v3.72-dev"
 
 import os
 import re
@@ -91,7 +91,7 @@ def interfaces():
 ## FUNÇÃO PARA DESCOBERTA DE HOSTS NA REDE ##
 #############################################
 def host_discovery():
-
+    
     ##########################################################
     ## CRIA UMA LISTA DE IP DE ACORDO COM A FAIXA FORNECIDA ##
     ##########################################################
@@ -144,9 +144,6 @@ def host_discovery():
         try:
             def ping(interface,host):
                 result = os.system(f'ping -c 3 -W 1 -I {interface} {host} > /dev/null')
-                print(host)
-                print(result)
-                print()
                 if result == 0:
                     with open('ARQ/hosts.txt','a') as h:
                         print(host, file=h)
