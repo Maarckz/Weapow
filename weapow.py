@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-version = "v3.8-dev"
+version = "v3.81-dev"
 
 import os
 import re
@@ -462,12 +462,10 @@ def nc_get():
                     porta, servico = map(str.strip, linha.split('/')[0:2])
                     t = threading.Thread(target=get, args=(host, porta, servico))
                     t.start()
-    sit = input("O Programa irá salvar os cabeçalhos das conexões em ./ARQ/HEAD. Deseja continuar (S/N): ")
-    if(sit.lower() == 's'):
-        get_parse()
-    else:
-        input(press)
-        main()
+
+    get_parse()
+    input(press)
+    main()
 
 def nc():
     host_ip = input("Digite o endere  o IP do host: ")
@@ -520,7 +518,8 @@ def http_finder():
     for thread in threading.enumerate():
         if thread != threading.current_thread():
             thread.join()
-
+    input(press)
+    main()
 
 #=======================================================================================          
 def cert_subdomain():
@@ -663,14 +662,18 @@ def link():
                     process_url(url_atual)
                     os.dup2(os.dup(2), 1)
             print("WebCrawler salvo com sucesso!")
+    interface = interfaces()
     sit_scan = input('Deseja utilizar um (H)ost ou a (L)ista? (H/L): ')
     if (sit_scan.lower() == 'h'):
         target = input('Digite o endereço do site: (site.com)\n')
         links(target)
     elif (sit_scan.lower() == 'l'):
         for ip in os.listdir("ARQ/WEB"):
-            links(ip)
-            nsit = input('A busca neste host terminou. Deseja continuar? (S/N):  ')
+            parse_ip = ip.split(':')
+            result = os.system(f'ping -c 3 -W 1 -I {interface} {parse_ip[0]} > /dev/null')
+            if result == 0:
+                links(ip)
+            nsit = input(f'A busca em {ip} terminou. Deseja continuar? (S/N):  ')
             if nsit.lower() == 's':
                 pass
             else:
@@ -678,28 +681,39 @@ def link():
 
 
 #=======================================================================================
+##################################################################
+## FAZ UMA VERIFICAÇÃO NOS SITES BAIXADOS, BUSCANDO FORMULÁRIOS ##
+##################################################################            
 def auto_web():
     ips = os.popen('grep -iR -A 5 "<form" ARQ/WEB | grep -Eo "([0-9]{1,3}\.){3}[0-9]{1,3}" | sort -u').read().split()
-    for ip in ips:
-        caminho_html = f'ARQ/WEB/{ip}/index.html'
-        with open(caminho_html, 'r', encoding='utf-8') as arquivo:
-            conteudo_html = arquivo.read()
-            soup = BeautifulSoup(conteudo_html, 'html.parser')
-            formularios = soup.find_all('form', {'action': True, 'method': True})
 
-            if ip and formularios:
-                print('---------------------------------------------------------')
-                print(f'\nAnalisando {ip}:\n')
+    try:
+        #########################################################
+        ## FAZ UMA VARREDURA NO ARQUIVO QUE TIVER "index.html" ##
+        #########################################################
+        for ip in ips:
+            caminho_html = f'ARQ/WEB/{ip}/index.html'
+            with open(caminho_html, 'r', encoding='utf-8') as arquivo:
+                conteudo_html = arquivo.read()
                 soup = BeautifulSoup(conteudo_html, 'html.parser')
                 formularios = soup.find_all('form', {'action': True, 'method': True})
 
-                for formulario in formularios:
-                    print(f'Atributo action: {formulario["action"]}')
-                    print(f'Atributo method: {formulario["method"]}')
-                    print(f'Conteúdo do formulário:')
-                    print(formulario.prettify())
-                    print('---------------------------------------------------------\n')
-    try:
+                if ip and formularios:
+                    print('---------------------------------------------------------')
+                    print(f'\nAnalisando {ip}:\n')
+                    soup = BeautifulSoup(conteudo_html, 'html.parser')
+                    formularios = soup.find_all('form', {'action': True, 'method': True})
+
+                    for formulario in formularios:
+                        print(f'Atributo action: {formulario["action"]}')
+                        print(f'Atributo method: {formulario["method"]}')
+                        print(f'Conteúdo do formulário:')
+                        print(formulario.prettify())
+                        print('---------------------------------------------------------\n')
+
+        ########################################################
+        ## FAZ UMA VARREDURA NO ARQUIVO QUE TIVER "index.php" ##
+        ########################################################
         for ip in ips:
             caminho_html = f'ARQ/WEB/{ip}/index.php'
             with open(caminho_html, 'r', encoding='utf-8') as arquivo:
@@ -719,6 +733,7 @@ def auto_web():
                         print(f'Conteúdo do formulário:')
                         print(formulario.prettify())
                         print('---------------------------------------------------------\n')
+
     except FileNotFoundError:
         pass
     input("Pressione Enter para continuar...")
@@ -2104,8 +2119,8 @@ def banner():
  \033[0;34m[3]\033[m - Port Scanner
  \033[0;34m[4]\033[m - NC GET
  \033[0;34m[5]\033[m - WebFinder
- \033[0;34m[6]\033[m - WebCrawler
- \033[0;34m[7]\033[m - AutoWeb
+ \033[0;34m[6]\033[m - WebCrawler (Bugs)
+ \033[0;34m[7]\033[m - FormWeb
  \033[0;34m[8]\033[m - WifiHacking
  \033[0;34m[9]\033[m - BackUp
  \033[0;34m[10]\033[m- Clonar Part|Disk
