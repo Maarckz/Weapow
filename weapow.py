@@ -150,55 +150,44 @@ def host_discovery():
     os.system(dir)
     os.popen('rm ARQ/hosts.txt 2>/dev/null')
 
-    sit_discovery = input('Deseja executar o Hostdiscovery [Menos Acertivo]? (S/N) ')
     print('\n\033[7;32mAguarde ...\033[m')
 
-    if sit_discovery.lower() == 'n':
-        #########################################################
-        ## REALIZA UM PING EM CADA IP NA INTERFACE SELECIONADA ##
-        #########################################################
-        try:
-            def ping(interface,host):
-                result = os.system(f'ping -c 3 -W 1 -I {interface} {host} > /dev/null')
-                if result == 0:
-                    with open('ARQ/hosts.txt','a') as h:
-                        print(host, file=h)
-                    print(host)
-            
-            #####################################################
-            ## CRIA UMA POOL DE THREADING PARA A FUNÇÃO "PING" ##
-            #####################################################
-            thread = 800
+    #########################################################
+    ## REALIZA UM PING EM CADA IP NA INTERFACE SELECIONADA ##
+    #########################################################
+    try:
+        def ping(interface,host):
+            result = os.system(f'ping -c 3 -W 1 -I {interface} {host} > /dev/null')
+            if result == 0:
+                with open('ARQ/hosts.txt','a') as h:
+                    print(host, file=h)
+                print(host)
+        
+        #####################################################
+        ## CRIA UMA POOL DE THREADING PARA A FUNÇÃO "PING" ##
+        #####################################################
+        thread = 800
 
-            try:
-                with exx(max_workers=int(thread)) as exe:
-                    for host in list_ip:
-                        exe.submit(ping,interface, host)
-                        t.sleep(0.05)
-                
-            except KeyboardInterrupt:
-                        print('\n'+Ctrl_C)
-                        quit()
+        try:
+            with exx(max_workers=int(thread)) as exe:
+                for host in list_ip:
+                    exe.submit(ping,interface, host)
+                    t.sleep(0.05)
             
-            input(press)
-            main()
+        except KeyboardInterrupt:
+                    print('\n'+Ctrl_C)
+                    quit()
         
-        except RuntimeError as er:
-            print(er)
-            quit()
-        
-        except FileNotFoundError:
-            print("\nO arquivo de IPs descobertos deve ser gerado.")
+        input(press)
+        main()
     
-    ############################################################################
-    ## CASO DECIDA USAR O NETDISCOVERY GERA UM ARQUIVO COM OS IPS ENCONTRADOS ##
-    ############################################################################
-    if sit_discovery.lower() == 's':
-        os.popen('sudo apt install netdiscovery -y 2>/dev/null')
-        os.popen('rm .discovery.txt 2>/dev/null ')
-        os.system(f"sudo netdiscover -i {interface} -r {vrf_ip} -P | tee .discovery.txt")
-        os.popen("tail -n +4 .discovery.txt | head -n -1 | awk '{print $1}' > ARQ/discovery.txt")
-        
+    except RuntimeError as er:
+        print(er)
+        quit()
+    
+    except FileNotFoundError:
+        print("\nO arquivo de IPs descobertos deve ser gerado.")
+
     else:
         input(press)
         main()
@@ -275,8 +264,6 @@ def bigscan():
 
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(2)  
-        print(f'{ip} - {port}')
-
         try:
             result = s.connect_ex((ip, port))
             espaco = 10 - l
@@ -373,19 +360,7 @@ def bigscan():
         os.popen('rm ARQ/portscan.txt 2>/dev/null')
 
         try:
-            ##############################################
-            ## QUESTIONA QUAL O HOSTDISCOVERY FOI FEITO ##
-            ##############################################
-            sit_port = input('Deseja você usou o PADRÃO ou HOSTDISCOVERY? (P/H)')
-
-            if sit_port.lower() == 'p':
-                arquivo = 'hosts'
-
-            if sit_port.lower() == 'h':
-                arquivo = 'discovery'
-
-
-            with open(f"ARQ/{arquivo}.txt", "r") as f:
+            with open(f"ARQ/hosts.txt", "r") as f:
                 lst = f.readlines()
 
             remove = '\n'
