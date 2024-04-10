@@ -8,7 +8,7 @@ import socket
 import struct
 import requests
 import ipaddress
-import threading
+import threading as th
 import time as t
 import getpass as g
 import http.server as hs
@@ -140,12 +140,14 @@ def host_discovery():
     ########################################
     def ping(addr, timeout=1):
         try:
-            my_socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)
+            ## CRIA UM SOCKET ICMP E ESTABELECE UMA CONEXÃO ##
+            s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)
             packet_id = 1
             packet = create_packet(packet_id)
-            my_socket.connect((addr, 80))
-            my_socket.sendall(packet)
-            my_socket.close()
+            s.connect((addr, 80))
+            s.sendall(packet)
+            s.close()
+            return True 
         except PermissionError:
             pass
         except Exception as e:
@@ -156,25 +158,30 @@ def host_discovery():
     #####################
     def envio(addr, responses):
         print("Iniciando Envio de Pacotes:", t.strftime("%X %x"))
-        for ip in addr:
-            ping(str(ip))
-            t.sleep(0.0001)
+        try:
+            for ip in addr:
+                ping(str(ip))
+                t.sleep(0.0002)
+                
+            print("Todos os Pacotes Foram Enviados:", t.strftime("%X %x"))
+            t.sleep(2)
 
-        print("Todos os Pacotes Foram Enviados:", t.strftime("%X %x"))
-        t.sleep(2)
+            global SIGNAL
 
-        global SIGNAL
+            SIGNAL = False
+            ping('127.0.0.1')
+            for response in sorted(responses):
+                ip = struct.unpack('BBBB', response)
+                ip = f"{ip[0]}.{ip[1]}.{ip[2]}.{ip[3]}"
+                
+                with open('ARQ/hosts.txt', 'a') as file:
+                    file.write(f'{ip}\n')
+            print(f'\033[7;31m[+] {len(responses)} Hosts-UP!\033[m')
+            print("Terminado", t.strftime("%X %x"))
+        except KeyboardInterrupt:
+            print('\n'+Ctrl_C)
+            quit()
 
-        SIGNAL = False
-        ping('127.0.0.1')
-        for response in sorted(responses):
-            ip = struct.unpack('BBBB', response)
-            ip = f"{ip[0]}.{ip[1]}.{ip[2]}.{ip[3]}"
-            print(f'[+] {ip}')
-            with open('ARQ/hosts.txt', 'a') as file:
-                file.write(f'{ip}\n')
-        print(f'\033[7;31m[+] {len(responses)} Hosts-UP!\033[m')
-        print("Terminado", t.strftime("%X %x"))
         
         input(press)
         main()
@@ -211,80 +218,40 @@ def host_discovery():
 
     if ips:
         for ip in ips:
-            lista_ips.append(ip)
+            #lista_ips.append(ip)
+            ###############################
+            ## TENTA RESOLVER O HOSTNAME ##
+            ###############################
+            try:
+                socket.setdefaulttimeout(4)
+                hostname = socket.gethostbyaddr(ip)
+                print(f'[+] {ip} - {hostname[0]}')
+            except Exception:
+                pass
+            except socket.timeout:
+                pass
     else:
         print("Não foi possível gerar a lista de IPs.")
     
     #################################
     ## PRIMEIRA FUNÇÃO (ESCUTANDO) ##
     #################################
-    t_server = threading.Thread(target=listen, args=[responses, rede])
+    t_server = th.Thread(target=listen, args=[responses, rede])
     t_server.start()
 
     ###############################
     ## SEGUNDA FUNÇÃO (ENVIANDO) ##
     ###############################
-    t_ping = threading.Thread(target=envio, args=[rede, responses])
+    t_ping = th.Thread(target=envio, args=[rede, responses])
     t_ping.start()
-
+    
 
 #=======================================================================================
 ##########################################
 ## FAZ RESOLUÇÃO DE HOSTNAME VIA SOCKET ##
 ##########################################
 def hostname_resolv():
-
-    try:
-        with open("ARQ/hosts.txt", "r") as f:
-            lst = f.readlines()
-        remove = '\n'
-        lst = [l.replace(remove, "") for l in lst]
-        print('Hosts descobertos:')
-        
-        #################################################################
-        ## VERIFICA O TTL DA RESPOSTA E "DEFINE" O SISTEMA OPERACIONAL ##
-        #################################################################
-        for host in lst:
-            try:
-                socket.setdefaulttimeout(5)
-                ttl = s.getsockopt(socket.IPPROTO_IP, socket.IP_TTL)
-
-                if ttl >= 64:
-                    OS = 'LinuxLike'
-
-                if ttl == 128:
-                    OS = 'WindowsLike'
-
-                if ttl == 255:
-                    OS = 'UnixLike'
-                if ttl == None:
-                    OS = ''
-
-                #########################################
-                ## TENTA FAZER A RESOLUÇÃO DE HOSTNAME ##
-                #########################################
-                hostname = socket.gethostbyaddr(host)[0]
-                print(f'[+] {host} - ({hostname})')
-
-                with open("ARQ/hostname.txt", "a") as f:
-                    print(f'{host} - ({hostname})', file=f)
-
-            except socket.timeout:
-                print(f'[+] {host}')
-
-            except socket.herror:
-                print(f'[+] {host}')
-                
-            except KeyboardInterrupt:
-                print("[-] Saindo!")
-                quit()
-
-    except FileNotFoundError:
-        print('O arquivo hosts.txt deve ser gerado.')
-    except OSError:
-        pass
-    input(press)
-    main()
+    pass
 
 
 #=======================================================================================
@@ -496,18 +463,16 @@ def nc_get():
 
         except Exception as e:
             print(f"Erro ao executar o comando nc: {e}")
-    def get_parse():
-        with open("ARQ/portscan.txt", "r") as arquivo:
-            linhas = arquivo.read().strip().split('\n')
-            for linha in linhas:
-                if '[+] Host:' in linha:
-                    host = linha.split(':')[-1].strip()
-                elif 'PORTA' not in linha and '/' in linha:
-                    porta, servico = map(str.strip, linha.split('/')[0:2])
-                    t = threading.Thread(target=get, args=(host, porta, servico))
-                    t.start()
+    with open("ARQ/portscan.txt", "r") as arquivo:
+        linhas = arquivo.read().strip().split('\n')
+        for linha in linhas:
+            if '[+] Host:' in linha:
+                host = linha.split(':')[-1].strip()
+            elif 'PORTA' not in linha and '/' in linha:
+                porta, servico = map(str.strip, linha.split('/')[0:2])
+                t = th.Thread(target=get, args=(host, porta, servico))
+                t.start()
 
-    get_parse()
     input(press)
     main()
 
@@ -542,10 +507,10 @@ def http_finder():
                         servico_web_encontrado = True
                         break
                 if servico_web_encontrado:
-                    thread = threading.Thread(target=wget_pg, args=(ip, porta))
+                    thread = th.Thread(target=wget_pg, args=(ip, porta))
                     thread.start()
-    for thread in threading.enumerate():
-        if thread != threading.current_thread():
+    for thread in th.enumerate():
+        if thread != th.current_thread():
             thread.join()
     input(press)
     main()
@@ -1770,7 +1735,8 @@ def suid():
 
 
 #=======================================================================================
-def nc(porta):
+def nc():
+    porta = int(input('Digite a porta a ser utilizada: '))
     try:
         s.bind(("", porta))
         s.listen(1)
@@ -2040,7 +2006,6 @@ def banner():
         print(''' MENU:
 
  \033[0;34m[1]\033[m - Host Discovery
- \033[0;34m[2]\033[m - Hostname Resolve
  \033[0;34m[3]\033[m - Port Scanner
  \033[0;34m[4]\033[m - NC GET
  \033[0;34m[5]\033[m - WebFinder
@@ -2067,7 +2032,6 @@ def banner():
 ''')
         options = {
         1: host_discovery,
-        2: hostname_resolv,
         3: bigscan,
         4: nc_get,
         5: http_finder,
@@ -2129,7 +2093,6 @@ def vrf_requisites():
 ################################
 def main():
 
-    vrf_requisites()       
     if os.geteuid() == 0:
         try:
             banner()
@@ -2147,5 +2110,6 @@ def main():
 
 ##############
 ## EXECUÇÃO ##
-##############     
+##############
+vrf_requisites()       
 main()
