@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-version = "v3.92-dev"
+version = "v3.93-dev"
 
 import os
 import re
@@ -161,7 +161,7 @@ def host_discovery():
         try:
             for ip in addr:
                 ping(str(ip))
-                t.sleep(0.0002)
+                t.sleep(0.00015)
                 
             print("Todos os Pacotes Foram Enviados:", t.strftime("%X %x"))
             t.sleep(2)
@@ -173,18 +173,14 @@ def host_discovery():
             for response in sorted(responses):
                 ip = struct.unpack('BBBB', response)
                 ip = f"{ip[0]}.{ip[1]}.{ip[2]}.{ip[3]}"
-                
                 with open('ARQ/hosts.txt', 'a') as file:
                     file.write(f'{ip}\n')
-            print(f'\033[7;31m[+] {len(responses)} Hosts-UP!\033[m')
-            print("Terminado", t.strftime("%X %x"))
+            print(f'\033[7;31m[+] {len(responses)} Hosts-UP! Verifique o arquivo "hosts.txt"\033[m')
+            print("Terminando, Fazendo Resolução de HostName.", t.strftime("%X %x"))
         except KeyboardInterrupt:
             print('\n'+Ctrl_C)
             quit()
 
-        
-        input(press)
-        main()
 
     #########################
     ## FUNÇÃO PARA ESCUTAR ##
@@ -198,6 +194,21 @@ def host_discovery():
             if packet not in responses and ipaddress.ip_address(packet) in ip_network:
                 responses.append(packet)
         s.close()
+
+    def hostname_resolv(ips):
+        for ip in ips:
+            if ip:
+                try:
+                    socket.setdefaulttimeout(4)
+                    hostname = socket.gethostbyaddr(ip)
+                    with open('ARQ/hostnames.txt','a') as f:
+                        f.write(f'[+] {ip} - {hostname[0]}\n')
+                except Exception:
+                    pass
+                except socket.timeout:
+                    pass
+        print("Terminado", t.strftime("%X %x"))
+
 
     #################################
     ## ENTRADA DO IPADRESS NETWORK ##
@@ -214,25 +225,19 @@ def host_discovery():
     ###################################################
     os.system(dir)
     os.popen('rm ARQ/hosts.txt 2>/dev/null')
+    os.popen('rm ARQ/hostnames.txt 2>/dev/null')
     print('\n\033[7;32mAguarde ...\033[m')
 
     if ips:
-        for ip in ips:
-            #lista_ips.append(ip)
-            ###############################
-            ## TENTA RESOLVER O HOSTNAME ##
-            ###############################
-            try:
-                socket.setdefaulttimeout(4)
-                hostname = socket.gethostbyaddr(ip)
-                print(f'[+] {ip} - {hostname[0]}')
-            except Exception:
-                pass
-            except socket.timeout:
-                pass
+        lista_ips.append(ips)
+        ###############################
+        ## TENTA RESOLVER O HOSTNAME ##
+        ###############################
+        t_hostname = th.Thread(target=hostname_resolv, args=[ips])
+        t_hostname.start()
     else:
         print("Não foi possível gerar a lista de IPs.")
-    
+
     #################################
     ## PRIMEIRA FUNÇÃO (ESCUTANDO) ##
     #################################
@@ -244,15 +249,8 @@ def host_discovery():
     ###############################
     t_ping = th.Thread(target=envio, args=[rede, responses])
     t_ping.start()
+
     
-
-#=======================================================================================
-##########################################
-## FAZ RESOLUÇÃO DE HOSTNAME VIA SOCKET ##
-##########################################
-def hostname_resolv():
-    pass
-
 
 #=======================================================================================
 ##################################################################################
@@ -2006,54 +2004,54 @@ def banner():
         print(''' MENU:
 
  \033[0;34m[1]\033[m - Host Discovery
- \033[0;34m[3]\033[m - Port Scanner
- \033[0;34m[4]\033[m - NC GET
- \033[0;34m[5]\033[m - WebFinder
- \033[0;34m[6]\033[m - WebCrawler (Bugs)
- \033[0;34m[7]\033[m - FormWeb
- \033[0;34m[8]\033[m - WifiHacking
- \033[0;34m[9]\033[m - BackUp
- \033[0;34m[10]\033[m- Clonar Part|Disk
- \033[0;34m[11]\033[m- CronTab
- \033[0;34m[12]\033[m- Finder
- \033[0;34m[13]\033[m- EnumLinux Auditor
- \033[0;34m[14]\033[m- Config Tool
- \033[0;34m[15]\033[m- LinPeas
- \033[0;34m[16]\033[m- LinEnum
- \033[0;34m[17]\033[m- Potemkin
- \033[0;34m[18]\033[m- Waza
- \033[0;34m[19]\033[m- SUID
- \033[0;34m[20]\033[m- NC Listen
- \033[0;34m[21]\033[m- Reverse Shell
- \033[0;34m[22]\033[m- Server TCP
- \033[0;34m[23]\033[m- ServerHTTP
- \033[0;34m[24]\033[m- Tryeres
+ \033[0;34m[2]\033[m - Port Scanner
+ \033[0;34m[3]\033[m - NC GET
+ \033[0;34m[4]\033[m - WebFinder
+ \033[0;34m[5]\033[m - WebCrawler (Bugs)
+ \033[0;34m[6]\033[m - FormWeb
+ \033[0;34m[7]\033[m - WifiHacking
+ \033[0;34m[8]\033[m - BackUp
+ \033[0;34m[9]\033[m- Clonar Part|Disk
+ \033[0;34m[10]\033[m- CronTab
+ \033[0;34m[11]\033[m- Finder
+ \033[0;34m[12]\033[m- EnumLinux Auditor
+ \033[0;34m[13]\033[m- Config Tool
+ \033[0;34m[14]\033[m- LinPeas
+ \033[0;34m[15]\033[m- LinEnum
+ \033[0;34m[16]\033[m- Potemkin
+ \033[0;34m[17]\033[m- Waza
+ \033[0;34m[18]\033[m- SUID
+ \033[0;34m[19]\033[m- NC Listen
+ \033[0;34m[20]\033[m- Reverse Shell
+ \033[0;34m[21]\033[m- Server TCP
+ \033[0;34m[22]\033[m- ServerHTTP
+ \033[0;34m[23]\033[m- Tryeres
  \033[0;34m[0]\033[m - Sair
 ''')
         options = {
         1: host_discovery,
-        3: bigscan,
-        4: nc_get,
-        5: http_finder,
-        6: link,
-        7: auto_web,
-        8: wifi_hacking,
-        9: backup,
-        10: clonar,
-        11: cron,
-        12: finder,
-        13: infosys,
-        14: config,
-        15: linpeas,
-        16: linenum,
-        #17: Potenkin,
-        18: waza,
-        19: suid,
-        20: nc,
-        21: reverse_shell,
+        2: bigscan,
+        3: nc_get,
+        4: http_finder,
+        5: link,
+        6: auto_web,
+        7: wifi_hacking,
+        8: backup,
+        9: clonar,
+        10: cron,
+        11: finder,
+        12: infosys,
+        13: config,
+        14: linpeas,
+        15: linenum,
+        #16: Potenkin,
+        17: waza,
+        18: suid,
+        19: nc,
+        20: reverse_shell,
+        21: serverhttp,
         22: serverhttp,
-        23: serverhttp,
-        24: lambda: os.system('gnome-terminal --title=Python -- sudo python Tryeres/Tryeres.py') or main,
+        23: lambda: os.system('gnome-terminal --title=Python -- sudo python Tryeres/Tryeres.py') or main,
         0: lambda: print('Volte sempre! ¯\_(ツ)_/¯') or quit
         }
 
