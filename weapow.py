@@ -8,9 +8,9 @@ import socket
 import struct
 import requests
 import ipaddress
-import threading as th
 import time as t
 import getpass as g
+import threading as th
 import http.server as hs
 import socketserver as ss
 from bs4 import BeautifulSoup 
@@ -176,7 +176,7 @@ def host_discovery():
                 with open('ARQ/hosts.txt', 'a') as file:
                     file.write(f'{ip}\n')
             print(f'\033[7;31m[+] {len(responses)} Hosts-UP! Verifique o arquivo "hosts.txt"\033[m')
-            print("Terminando, Fazendo Resolução de HostName.", t.strftime("%X %x"))
+            print("Terminando, tentando fazer resolução de HostName.", t.strftime("%X %x"))
         except KeyboardInterrupt:
             print('\n'+Ctrl_C)
             quit()
