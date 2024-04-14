@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-version = "v3.93-dev"
+version = "v3.94-dev"
 
 import os
 import re
@@ -173,7 +173,7 @@ def host_discovery():
             for response in sorted(responses):
                 ip = struct.unpack('BBBB', response)
                 ip = f"{ip[0]}.{ip[1]}.{ip[2]}.{ip[3]}"
-                with open('ARQ/hosts.txt', 'a') as file:
+                with open('ARQ/discovery.txt', 'a') as file:
                     file.write(f'{ip}\n')
             print(f'\033[7;31m[+] {len(responses)} Hosts-UP! Verifique o arquivo "hosts.txt"\033[m')
             print("Terminando, tentando fazer resolução de HostName.", t.strftime("%X %x"))
@@ -188,10 +188,18 @@ def host_discovery():
     def listen(responses, ip_network):
         global SIGNAL
         s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)
+        s.settimeout(5)
         s.bind(('', 1))
         while SIGNAL:
-            packet = s.recv(1024)[:20][-8:-4]
-            if packet not in responses and ipaddress.ip_address(packet) in ip_network:
+            try:
+                packet = s.recv(2048)[:20][-8:-4]  
+            except TimeoutError:
+                packet = None  
+
+            if packet is not None and ipaddress.ip_address(packet) in ip_network:
+                print(ipaddress.ip_address(packet))
+                with open('ARQ/hosts.txt', 'a') as file:
+                    file.write(f'{ipaddress.ip_address(packet)}\n')
                 responses.append(packet)
         s.close()
 
@@ -255,66 +263,51 @@ def host_discovery():
 #=======================================================================================
 ##################################################################################
 ## ESTA FUNÇÃO FAZ UM PORTSCAN DE ACORDO COM A LISTA GERADO PELO HOST DISCOVERY ##
-##################################################################################
+###################################`###############################################
 def bigscan():
 
     #########################################################################################
     ## CRIA UM PACOTE SOCKET QUE SE CONECTA NA PORTA, E SE O RESULTADO "0", RETORNA ABERTA ##
     #########################################################################################
     def scan(ip, port, l):
-
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimeout(2)  
         try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(1)
             result = s.connect_ex((ip, port))
             espaco = 10 - l
             espaco = " " * espaco
-            
-            if result != 0: 
-                pass
 
+            if result != 0:
+                pass
             else:
                 with open("ARQ/portscan.txt", "a") as f:
-
-                        ####################################################
-                        ## VERIFICA SE EXISTE UM SERVIÇO RODANDO NA PORTA ##
-                        ####################################################
-                        try:
-                            service = f"{socket.getservbyport(port)}"
-                            print(f"{str(port)} / TCP {espaco} {service}", file=f)
-                            print(str(port) + " / TCP" + espaco + f"{service}       ")
-
-                        ############################################
-                        ## EM CASO DE ERRO RETORNA "DESCONHECIDO" ##
-                        ############################################
-                        except socket.error:
-                            print(str(port) + " / TCP" + espaco + "Desconhecido", file=f)
-                            print(str(port) + " / TCP" + espaco + "Desconhecido")
-
-                        except KeyboardInterrupt:
-                            print("[-] Saindo!")
-                            quit()
-
-        ##############################################
-        ## EM CASO DE DE COMUNICAÇÃO, EXIBE UM ERRO ##
-        ##############################################
-        except (socket.timeout) as err:
-            print(f"Timeout: Porta {port} em {ip}: {err}")
-
-        except ConnectionRefusedError as err:
-            print(f"Conexão recusada: Porta {port} em {ip}: {err}")
-
-        except OSError as err:
-            print(f"Erro ao verificar porta {port} em {ip}: {err}")
-
+                    try:
+                        print("[+] Host: " + ip, file=f)
+                        print("\n[+] Host: " + ip)
+                        print("PORTA          SERVIÇO")
+                        service = f"{socket.getservbyport(port)}"
+                        print(f"{str(port)} / TCP {espaco} {service}", file=f)
+                        print(str(port) + " / TCP" + espaco + f"{service}       ")
+                    except socket.error:
+                        print(str(port) + " / TCP" + espaco + "Desconhecido", file=f)
+                        print(str(port) + " / TCP" + espaco + "Desconhecido")
+                    except KeyboardInterrupt:
+                        print("[-] Saindo!")
+                        quit()
+        except (socket.timeout, ConnectionRefusedError, OSError) as err:
+            # print(f"Erro ao verificar porta {port} em {ip}: {err}")
+            pass
         finally:
-            s.close()
+            if 's' in locals():
+                s.close()
 
         return True
+
 
     def portscan_uniq():
       
         interface = interfaces()
+        futures = []
 
         #######################################
         ## SOLICITA O IP E O RANGE DE PORTAS ##
@@ -327,7 +320,7 @@ def bigscan():
             ########################################################
             ## ATRIBUI A QUANTIDADE DE THREADS USADAS NO PORTSCAN ##
             ########################################################
-            thread = 1600
+            thread = 16000
             ports = range(rang)
 
             print("\n[+] Host: " + ip_alvo)
@@ -337,16 +330,17 @@ def bigscan():
             ## EXECUTA O PORTSCAN COM THREADS ##
             ####################################
             with exx(max_workers=int(thread)) as exe:
-                
+
                 try:
                     for port in ports:
-                        exe.submit(scan, ip_alvo, port, len(str(port)))
+                        future = exe.submit(scan, ip_alvo, port, len(str(port)))
+                        futures.append(future)
                 
                 except KeyboardInterrupt:
                     print("[-] Saindo!")
                     quit()
 
-            open_ports = [port for port in ports if futures[port].result()]
+                open_ports = [port for port, future in zip(ports, futures) if future.result()]        
         
         except KeyboardInterrupt:
             print('\n[!] Saindo...')
@@ -383,16 +377,16 @@ def bigscan():
             ###########################################################
             for host in lst:
 
-                thread = 400
+                thread = 16000
                 ports = range(rang)
 
                 ######################################################
                 ## SALVA O PORTSCANNER EM UM ARQUIVO "portscan.txt" ##
                 ######################################################
-                with open("ARQ/portscan.txt", "a") as f:
-                    print("[+] Host: " + host, file=f)
-                    print("\n[+] Host: " + host)
-                    print("PORTA          SERVIÇO")
+                #with open("ARQ/portscan.txt", "a") as f:
+                #    print("[+] Host: " + host, file=f)
+                #    print("\n[+] Host: " + host)
+                #    print("PORTA          SERVIÇO")
                 
                 ####################################
                 ## EXECUTA O PORTSCAN COM THREADS ##
@@ -402,7 +396,6 @@ def bigscan():
                     try:
                         for port in ports:
                             exe.submit(scan, host, port, len(str(port)))
-                            t.sleep(0.4)
                     except RuntimeError as err:
                         print(err)
                     except KeyboardInterrupt:
@@ -429,6 +422,7 @@ def bigscan():
     sit_scan = input('Deseja utilizar um (H)ost ou a (L)ista? (H/L): ')
 
     if sit_scan.lower() == 'h':
+        os.popen('rm ARQ/portscan.txt 2>/dev/null')
         portscan_uniq()
 
     elif sit_scan.lower() == 'l':
@@ -488,7 +482,7 @@ def http_finder():
         os.system(f"rm ARQ/WEB/{ip}.html")
         os.system(f'wget --no-check-certificate --mirror --convert-links --adjust-extension --page-requisites --timeout=10 http://{ip}:{porta} -P ARQ/WEB/')
         os.system(f'chmod 777 -R ARQ/WEB/{ip}')
-    
+
     for ip in os.listdir("ARQ/HEAD"):
         arquivo = os.path.join("ARQ/HEAD", ip)
 
@@ -2011,7 +2005,7 @@ def banner():
  \033[0;34m[6]\033[m - FormWeb
  \033[0;34m[7]\033[m - WifiHacking
  \033[0;34m[8]\033[m - BackUp
- \033[0;34m[9]\033[m- Clonar Part|Disk
+ \033[0;34m[9]\033[m - Clonar Part|Disk
  \033[0;34m[10]\033[m- CronTab
  \033[0;34m[11]\033[m- Finder
  \033[0;34m[12]\033[m- EnumLinux Auditor
