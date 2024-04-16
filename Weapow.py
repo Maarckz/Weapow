@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-version = "v3.945-dev"
+version = "v4.0-dev"
 
 import os
 import re
@@ -45,6 +45,16 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 dir = 'mkdir -p ARQ'
 SIGNAL = True
 
+def handler(signum, frame):
+        global pool
+        try:
+            pool.terminate()
+        except Exception as e:
+            pass
+        finally:
+            exit(0)
+
+signal.signal(signal.SIGINT, handler)
 
 def interfaces():
 
@@ -326,7 +336,7 @@ def scan(host, porta):
         except Exception as e:
             pass
 
-def bigscan():
+def big_scan():
 
     def uniq(host):
         try:
@@ -361,6 +371,76 @@ def bigscan():
         with open('ARQ/hosts.txt','r') as file:
             for line in file:
                 uniq(line.strip())
+
+#===============================================================================
+#===============================================================================
+#===============================================================================
+#===============================================================================
+#===============================================================================
+def world_scan():
+    
+    # Defina o número máximo de threads simultâneas
+    MAX_THREADS = 600
+    thread_semaphore = threading.Semaphore(MAX_THREADS)
+
+    def scan(ip,porta):
+        try:
+            host = str(ip)
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(1)
+            result = sock.connect_ex((host, porta))
+            if result == 0:
+                print(f"Port {porta} is open on {host}")
+                with open(f'World_Port_{porta}.txt','a') as f:
+                    print(host, file=f)
+            sock.close()
+        except Exception as e:
+            print(f"Error scanning {ip}: {e}")
+        finally:
+            # Sempre libere o semáforo, mesmo se ocorrer uma exceção
+            thread_semaphore.release()
+
+    def worker(ips,porta):
+        threads = []
+        for ip in ips:
+            thread_semaphore.acquire()  # Adquire o semáforo antes de criar uma nova thread
+            t = threading.Thread(target=scan, args=(ip,porta))
+            t.start()
+            threads.append(t)
+        
+        # Aguardar todas as threads terminarem
+        for t in threads:
+            t.join()
+
+    ips = input('Digite a faixa de IP (Ex: xx.xx.xx.xx/xx): ')
+    porta = int(input('Qual porta? '))
+    network = ipaddress.ip_network(ips, strict=False)
+    ips_list = list(map(str, network.hosts()))
+
+    # Dividindo a lista de IPs em partes para cada processo
+    num_processes = multiprocessing.cpu_count()
+    chunk_size = len(ips_list) // num_processes
+    chunks = []
+    for i in range(0, len(ips_list), chunk_size):
+        chunks.append(ips_list[i:i+chunk_size])
+
+    # Iniciando a barra de progresso fora do loop de chunks
+    total_ips = 0
+    for chunk in chunks:
+        total_ips += len(chunk)
+
+
+    # Iniciando processos para escanear em paralelo
+    processes = []
+    for chunk in chunks:
+        p = multiprocessing.Process(target=worker, args=(chunk,porta))
+        p.start()
+        processes.append(p)
+
+    # Aguardando todos os processos terminarem
+    for p in processes:
+        p.join()
+
 
 
 #=======================================================================================
@@ -397,6 +477,7 @@ def nc_get():
 
     input(press)
     main()
+
 
 
 #=======================================================================================
@@ -1929,53 +2010,55 @@ def banner():
 
  \033[0;34m[1]\033[m - Host Discovery
  \033[0;34m[2]\033[m - Port Scanner
- \033[0;34m[3]\033[m - NC GET
- \033[0;34m[4]\033[m - WebFinder
- \033[0;34m[5]\033[m - WebCrawler (Bugs)
- \033[0;34m[6]\033[m - FormWeb
- \033[0;34m[7]\033[m - WifiHacking
- \033[0;34m[8]\033[m - BackUp
- \033[0;34m[9]\033[m - Clonar Part|Disk
- \033[0;34m[10]\033[m- CronTab
- \033[0;34m[11]\033[m- Finder
- \033[0;34m[12]\033[m- EnumLinux Auditor
- \033[0;34m[13]\033[m- Config Tool
- \033[0;34m[14]\033[m- LinPeas
- \033[0;34m[15]\033[m- LinEnum
- \033[0;34m[16]\033[m- Potemkin
- \033[0;34m[17]\033[m- Waza
- \033[0;34m[18]\033[m- SUID
- \033[0;34m[19]\033[m- NC Listen
- \033[0;34m[20]\033[m- Reverse Shell
- \033[0;34m[21]\033[m- Server TCP
- \033[0;34m[22]\033[m- ServerHTTP
- \033[0;34m[23]\033[m- Tryeres
+ \033[0;34m[3]\033[m - World Scanner
+ \033[0;34m[4]\033[m - NC GET
+ \033[0;34m[5]\033[m - WebFinder
+ \033[0;34m[6]\033[m - WebCrawler (Bugs)
+ \033[0;34m[7]\033[m - FormWeb
+ \033[0;34m[8]\033[m - WifiHacking
+ \033[0;34m[9]\033[m - BackUp
+ \033[0;34m[10]\033[m - Clonar Part|Disk
+ \033[0;34m[11]\033[m- CronTab
+ \033[0;34m[12]\033[m- Finder
+ \033[0;34m[13]\033[m- EnumLinux Auditor
+ \033[0;34m[14]\033[m- Config Tool
+ \033[0;34m[15]\033[m- LinPeas
+ \033[0;34m[16]\033[m- LinEnum
+ \033[0;34m[17]\033[m- Potemkin
+ \033[0;34m[18]\033[m- Waza
+ \033[0;34m[19]\033[m- SUID
+ \033[0;34m[20]\033[m- NC Listen
+ \033[0;34m[21]\033[m- Reverse Shell
+ \033[0;34m[22]\033[m- Server TCP
+ \033[0;34m[23]\033[m- ServerHTTP
+ \033[0;34m[24]\033[m- Tryeres
  \033[0;34m[0]\033[m - Sair
 ''')
         options = {
         1: host_discovery,
-        2: bigscan,
-        3: nc_get,
-        4: http_finder,
-        5: link,
-        6: auto_web,
-        7: wifi_hacking,
-        8: backup,
-        9: clonar,
-        10: cron,
-        11: finder,
-        12: infosys,
-        13: config,
-        14: linpeas,
-        15: linenum,
-        #16: Potenkin,
-        17: waza,
-        18: suid,
-        19: nc,
-        20: reverse_shell,
-        21: serverhttp,
+        2: big_scan,
+        3: world_scan,
+        4: nc_get,
+        5: http_finder,
+        6: link,
+        7: auto_web,
+        8: wifi_hacking,
+        9: backup,
+        10: clonar,
+        11: cron,
+        12: finder,
+        13: infosys,
+        14: config,
+        15: linpeas,
+        16: linenum,
+        #17: Potenkin,
+        18: waza,
+        19: suid,
+        20: nc,
+        21: reverse_shell,
         22: serverhttp,
-        23: lambda: os.system('gnome-terminal --title=Python -- sudo python Tryeres/Tryeres.py') or main,
+        23: serverhttp,
+        24: lambda: os.system('gnome-terminal --title=Python -- sudo python Tryeres/Tryeres.py') or main,
         0: lambda: print('Volte sempre! ¯\_(ツ)_/¯') or quit
         }
 
