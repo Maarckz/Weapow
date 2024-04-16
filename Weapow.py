@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-version = "v4.0-dev"
+version = "v4.1-dev"
 
 import os
 import re
@@ -56,6 +56,9 @@ def handler(signum, frame):
 
 signal.signal(signal.SIGINT, handler)
 
+#############################################################
+## FUNÇÃO QUE BUSCA INTERFACES E CRIA UMA LISTA DE SELEÇÃO ##
+#############################################################
 def interfaces():
 
     ########################################
@@ -74,6 +77,7 @@ def interfaces():
             print("Nenhuma interface de rede encontrada.")
             input(press)
             main()
+
         ###################################################    
         ## PARA CADA INTERFACE, E CRIADO UM ITEM NO MENU ##
         ###################################################
@@ -119,9 +123,9 @@ def host_discovery():
     lista_ips = []
     hosts = []
 
-    ######################################
-    ## CRIAÇÃO DE PACOTES E FUNÇÃO PING ##
-    ######################################
+    ########################
+    ## CRIAÇÃO DE PACOTES ##
+    ########################
     def checksum(source_string):
         sum = 0
         count_to = (len(source_string) // 2) * 2
@@ -140,7 +144,7 @@ def host_discovery():
         answer &= 0xffff
         answer = answer >> 8 | (answer << 8 & 0xff00)
         return answer
-
+    
     def create_packet(id):
         header = struct.pack('bbHHh', 8, 0, 0, id, 1)
         data = 192 * 'Q'
@@ -216,6 +220,9 @@ def host_discovery():
                 responses.append(packet)
         s.close()
 
+    ########################################################
+    ## FUNÇÃO PARA FAZER RESOLUÇÃO DE HOSTNAME VIA SOCKET ##
+    ########################################################
     def hostname_resolv(ips):
         for ip in ips:
             if ip:
@@ -275,9 +282,9 @@ def host_discovery():
     
 
 #=======================================================================================
-##################################################################################
-## ESTA FUNÇÃO FAZ UM PORTSCAN DE ACORDO COM A LISTA GERADO PELO HOST DISCOVERY ##
-##################################################################################
+############################################
+## PORTAS A SEREM VERIFICADAS NO PORTSCAN ##
+############################################
 PORTAS_PRINCIPAIS = [
     1, 3, 4, 6, 7, 9, 13, 17, 19, 20, 21, 22, 23, 24, 25, 26, 30, 32, 33, 37, 42, 43, 49, 53, 70, 79, 80, 81, 82, 83, 84, 85, 88, 89, 90, 99, 100, 106, 109, 110, 111, 113, 119, 125, 135, 139, 143, 144, 146, 161, 163, 179, 199, 211,
     212, 222, 254, 255, 256, 259, 264, 280, 301, 306, 311, 340, 366, 389, 406, 407, 416, 417, 425, 427, 443, 444, 445, 458, 464, 465, 481, 497, 500, 512, 513, 514, 515, 524, 541, 543, 544, 545, 548, 554, 555, 563, 587, 593, 616, 617,
@@ -307,17 +314,9 @@ PORTAS_PRINCIPAIS = [
     64623, 64680, 65000, 65129, 65389
 ]
 
-def handler(signum, frame):
-        global pool
-        try:
-            pool.terminate()
-        except Exception as e:
-            pass
-        finally:
-            exit(0)
-
-signal.signal(signal.SIGINT, handler)
-
+########################################################################
+## FUNÇÃO QUE REALIZA A TENTATIVA DE CONEXÃO DE ACORDO COM HOST/PORTA ##
+########################################################################
 def scan(host, porta):
         try:
             l = len(str(porta))
@@ -336,8 +335,14 @@ def scan(host, porta):
         except Exception as e:
             pass
 
+##################################################################################
+## ESTA FUNÇÃO FAZ UM PORTSCAN DE ACORDO COM A LISTA GERADO PELO HOST DISCOVERY ##
+##################################################################################
 def big_scan():
 
+    ##############################################################
+    ## FUNÇÃO PRINCIPAL QUE REALIZA O GERENCIAMENTO DO PORTSCAN ##
+    ##############################################################
     def uniq(host):
         try:
             with open("ARQ/portscan.txt", "a") as f:
@@ -346,21 +351,27 @@ def big_scan():
                 print("PORTA          SERVIÇO")
                 print("PORTA          SERVIÇO", file=f)
             host_ip = socket.gethostbyname(host)
+
         except socket.gaierror:
             return
 
         global pool
         pool = multiprocessing.Pool(processes=220)
+
         try:
             for porta in PORTAS_PRINCIPAIS:
                 pool.apply_async(scan, args=(host_ip, porta))
 
             pool.close()
             pool.join()
+        
         except Exception as e:
             pool.terminate()
             pool.join()
 
+    ###########################################################
+    ## INTERAÇÃO COM O USUÁRIO PARA DIRECIONAMENTO DA FUNÇÃO ##
+    ###########################################################
     os.popen('rm ARQ/portscan.txt 2>/dev/null')
     sit_scan = input('Deseja utilizar um (H)ost ou a (L)ista? (H/L): ')
 
@@ -378,11 +389,15 @@ def big_scan():
 #===============================================================================
 #===============================================================================
 def world_scan():
-    
-    # Defina o número máximo de threads simultâneas
+    #####################################################
+    ## DEFINE O NÚMERO DE THREADS E CRIA UM "SEMAFORO" ##
+    #####################################################
     MAX_THREADS = 600
     thread_semaphore = threading.Semaphore(MAX_THREADS)
 
+    ########################################################################
+    ## FUNÇÃO QUE REALIZA A TENTATIVA DE CONEXÃO DE ACORDO COM HOST/PORTA ##
+    ########################################################################
     def scan(ip,porta):
         try:
             host = str(ip)
@@ -397,13 +412,16 @@ def world_scan():
         except Exception as e:
             print(f"Error scanning {ip}: {e}")
         finally:
-            # Sempre libere o semáforo, mesmo se ocorrer uma exceção
+            ############################################################
+            ## Sempre libere o semáforo, mesmo se ocorrer uma exceção ##
+            ############################################################
             thread_semaphore.release()
 
     def worker(ips,porta):
         threads = []
         for ip in ips:
-            thread_semaphore.acquire()  # Adquire o semáforo antes de criar uma nova thread
+            ## Adquire o semáforo antes de criar uma nova thread ##
+            thread_semaphore.acquire()
             t = threading.Thread(target=scan, args=(ip,porta))
             t.start()
             threads.append(t)
@@ -414,6 +432,8 @@ def world_scan():
 
     ips = input('Digite a faixa de IP (Ex: xx.xx.xx.xx/xx): ')
     porta = int(input('Qual porta? '))
+
+    # CRIA A REDE DE ACORDO COM A ENTRADA DO USUÁRIO
     network = ipaddress.ip_network(ips, strict=False)
     ips_list = list(map(str, network.hosts()))
 
@@ -1940,8 +1960,8 @@ def wifi_hacking():
 
     \033[0;34m[1]\033[m - Deauth
     \033[0;34m[2]\033[m - WPSCrack
-    \033[0;34m[3]\033[m - Em breve
-    \033[0;34m[4]\033[m - Em breve
+    \033[0;34m[3]\033[m - WifiHashCat
+    \033[0;34m[4]\033[m - FLo0dBeacon
     \033[0;34m[5]\033[m - Em breve
     \033[0;34m[0]\033[m - Sair
     ''')
@@ -2017,7 +2037,7 @@ def banner():
  \033[0;34m[7]\033[m - FormWeb
  \033[0;34m[8]\033[m - WifiHacking
  \033[0;34m[9]\033[m - BackUp
- \033[0;34m[10]\033[m - Clonar Part|Disk
+ \033[0;34m[10]\033[m- Clonar Part|Disk
  \033[0;34m[11]\033[m- CronTab
  \033[0;34m[12]\033[m- Finder
  \033[0;34m[13]\033[m- EnumLinux Auditor
@@ -2082,16 +2102,43 @@ def banner():
 ## VERIFICA SE AS BIBLIOTECAS NECESSÁRIAS ##
 ############################################
 def vrf_requisites():
-    pip3 = ['beautifulsoup4','requests']
-    awk = "awk '{print $1}'"
-    beautifulsoup4 = os.popen(f"sudo pip3 list | grep {pip3[0]} | {awk}").read()
-    requests = os.popen(f'sudo pip3 list | grep {pip3[1]} | {awk}').read()
+    # Verificar se o pip3 está instalado
+    pip_installed = os.system('pip3 --version >/dev/null 2>&1') == 0
+    if not pip_installed:
+        print('Algumas dependências serão instaladas')
+        input('Pressione Enter para continuar...')
+        print("pip3 não está instalado. Instalando...")
+        os.system('sudo apt-get update')
+        os.system('sudo apt-get install -y python3-pip')
+    else:
+        print("pip3 já está instalado.")
 
-    if 'beautifulsoup4' not in beautifulsoup4:
-        os.system('pip3 install bs4 --break-system-packages')
-    
-    if 'requests' not in requests:
-        os.system('pip3 install requests --break-system-packages')
+    # Instalar bibliotecas Python se necessário
+    packages = {
+        'requests': 'requests',
+        'ipaddress': 'ipaddress',
+        'scapy': 'scapy',
+        'beautifulsoup4': 'bs4',
+        'urllib3': 'urllib3'
+    }
+
+    for package_name, package_module in packages.items():
+        try:
+            __import__(package_module)
+        except ImportError:
+            print(f"{package_name} não está instalado. Instalando...")
+            os.system(f'sudo pip3 install {package_module}')
+
+    # Verificar se os pacotes foram instalados corretamente
+    print("Verificando instalação dos pacotes:")
+    for package_name, package_module in packages.items():
+        try:
+            __import__(package_module)
+            print(f"    {package_name}: OK")
+        except ImportError:
+            print(f"    {package_name}: Falha")
+
+    print("Instalação e verificação concluídas.")
 
 ################################
 ## FUNÇÃO PRINCIPAL DO CÓDIGO ##
@@ -2116,5 +2163,5 @@ def main():
 ##############
 ## EXECUÇÃO ##
 ##############
-vrf_requisites()       
+vrf_requisites()
 main()
