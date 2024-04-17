@@ -227,16 +227,24 @@ def host_discovery():
         for ip in ips:
             if ip:
                 try:
-                    socket.setdefaulttimeout(4)
+                    socket.setdefaulttimeout(4)  # Set timeout for socket operations
                     hostname = socket.gethostbyaddr(ip)
-                    t.sleep(0.3)
-                    with open('ARQ/hostnames.txt','a') as f:
-                        f.write(f'[+] {ip} - {hostname[0]}\n')
-                except Exception:
+                    with open('ARQ/hostnames.txt', 'a') as f:
+                        f.write(f'+ {ip} - {hostname[0]}\n')
+                    socket.setdefaulttimeout(None)  # Reset timeout after successful resolution
+                except (socket.gaierror, OSError, Exception) as e:
                     pass
-                except socket.timeout:
-                    pass
-        print("Terminado", t.strftime("%X %x"))
+                    # Alternative methods (try reverse DNS or hostname library if available)
+                    try:
+                        # Implement reverse DNS or hostname library lookup here (if applicable)
+                        pass
+                    except Exception as e2:
+                        pass
+                finally:
+                    socket.setdefaulttimeout(None)  # Always reset timeout to avoid unintended effects
+
+        print("Terminado:", datetime.now().strftime("%X %x"))  # Use datetime for timestamp
+
 
 
     #################################
@@ -2108,18 +2116,18 @@ def vrf_requisites():
         print('Algumas dependências serão instaladas')
         input('Pressione Enter para continuar...')
         print("pip3 não está instalado. Instalando...")
-        os.system('sudo apt-get update')
-        os.system('sudo apt-get install -y python3-pip')
+        os.system('apt-get update')
+        os.system('apt-get install -y python3-pip')
     else:
         print("pip3 já está instalado.")
 
     # Instalar bibliotecas Python se necessário
     packages = {
-        'requests': 'requests',
-        'ipaddress': 'ipaddress',
         'scapy': 'scapy',
+        'urllib3': 'urllib3',
+        'requests': 'requests',
         'beautifulsoup4': 'bs4',
-        'urllib3': 'urllib3'
+        'ipaddress': 'ipaddress',
     }
 
     for package_name, package_module in packages.items():
@@ -2127,7 +2135,7 @@ def vrf_requisites():
             __import__(package_module)
         except ImportError:
             print(f"{package_name} não está instalado. Instalando...")
-            os.system(f'sudo pip3 install {package_module}')
+            os.system(f'pip3 install {package_module}')
 
     # Verificar se os pacotes foram instalados corretamente
     print("Verificando instalação dos pacotes:")
@@ -2137,6 +2145,7 @@ def vrf_requisites():
             print(f"    {package_name}: OK")
         except ImportError:
             print(f"    {package_name}: Falha")
+
 
     print("Instalação e verificação concluídas.")
 
