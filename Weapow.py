@@ -235,11 +235,6 @@ def host_discovery():
                 except (socket.gaierror, OSError, Exception) as e:
                     pass
                     # Alternative methods (try reverse DNS or hostname library if available)
-                    try:
-                        # Implement reverse DNS or hostname library lookup here (if applicable)
-                        pass
-                    except Exception as e2:
-                        pass
                 finally:
                     socket.setdefaulttimeout(None)  # Always reset timeout to avoid unintended effects
 
