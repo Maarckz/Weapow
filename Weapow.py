@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-version = "v4.1-dev"
+version = "v4.11-dev"
 
 import os
 import re
@@ -43,7 +43,7 @@ press = '\033[7;31m(Pressione qualquer tecla para voltar ao menu inicial)\033[m'
 Ctrl_C = 'Você pressionou Ctrl+C para interromper o programa!'
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 dir = 'mkdir -p ARQ'
-SIGNAL = True
+SIGNALHOSTDISCOVERY = True
 
 def handler(signum, frame):
         global pool
@@ -119,13 +119,9 @@ def host_discovery():
     #######################
     ## VARIAVEIS GLOBAIS ##
     #######################
-    responses = []
-    lista_ips = []
-    hosts = []
+    responses = set()  # Usar um conjunto para evitar duplicações
+    existing_hosts = set() 
 
-    ########################
-    ## CRIAÇÃO DE PACOTES ##
-    ########################
     def checksum(source_string):
         sum = 0
         count_to = (len(source_string) // 2) * 2
@@ -144,7 +140,8 @@ def host_discovery():
         answer &= 0xffff
         answer = answer >> 8 | (answer << 8 & 0xff00)
         return answer
-    
+
+# Função para criar um pacote ICMP
     def create_packet(id):
         header = struct.pack('bbHHh', 8, 0, 0, id, 1)
         data = 192 * 'Q'
@@ -152,135 +149,120 @@ def host_discovery():
         header = struct.pack('bbHHh', 8, 0, socket.htons(my_checksum), id, 1)
         return header + data.encode()
 
-    ########################################
-    ## FUNÇÃO PING (EXTRAÍDO DO "ping.c") ##
-    ########################################
+    # Função ping (extraído do "ping.c")
     def ping(addr, timeout=1):
         try:
-            ## CRIA UM SOCKET ICMP E ESTABELECE UMA CONEXÃO ##
+            # Cria um socket ICMP e estabelece uma conexão
             s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)
             packet_id = 1
             packet = create_packet(packet_id)
             s.connect((addr, 80))
             s.sendall(packet)
             s.close()
-            return True 
+            return True
         except PermissionError:
             pass
         except Exception as e:
             print(e)
 
-    #####################
-    ## FUNÇÃO DE ENVIO ##
-    #####################
-    def envio(addr, responses):
+    # Função de envio
+    def envio(addr):
         print("Iniciando Envio de Pacotes:", t.strftime("%X %x"))
         try:
             for ip in addr:
                 ping(str(ip))
                 t.sleep(0.00015)
-                
-            #print("Todos os Pacotes Foram Enviados:", t.strftime("%X %x"))
+            
             t.sleep(2)
-
-            global SIGNAL
-
-            SIGNAL = False
+            
+            global SIGNALHOSTDISCOVERY
+            
+            SIGNALHOSTDISCOVERY = False
             ping('127.0.0.1')
+            
             for response in sorted(responses):
                 ip = struct.unpack('BBBB', response)
                 ip = f"{ip[0]}.{ip[1]}.{ip[2]}.{ip[3]}"
-                with open('ARQ/discovery.txt', 'a') as file:
-                    file.write(f'{ip}\n')
-            print(f'\033[7;31m[+] {len(responses)} Hosts-UP! Verifique o arquivo "hosts.txt"\033[m')
+                
+                if ip not in existing_hosts:  # Verifica se o IP não está em existing_hosts
+                    with open('ARQ/discovery.txt', 'a') as file:
+                        file.write(f'{ip}\n')
+                    existing_hosts.add(ip)  # Adiciona IP descoberto a existing_hosts
+                    
+            print(f'\033[7;31m[+] {len(responses)} Hosts-UP! Verifique o arquivo "discovery.txt"\033[m')
             print("Terminando, tentando fazer resolução de HostName.", t.strftime("%X %x"))
         except KeyboardInterrupt:
-            print('\n'+Ctrl_C)
+            print('\n' + Ctrl_C)
             quit()
 
-
-    #########################
-    ## FUNÇÃO PARA ESCUTAR ##
-    #########################
+    # Função para escutar respostas ICMP
     def listen(responses, ip_network):
-        global SIGNAL
+        global SIGNALHOSTDISCOVERY
         s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)
-        s.settimeout(5)
-        s.bind(('', 1))
-        while SIGNAL:
+        s.settimeout(10)
+        s.bind(('', 0))
+        while SIGNALHOSTDISCOVERY:
             try:
                 packet = s.recv(2048)[:20][-8:-4]  
             except TimeoutError:
                 packet = None  
 
             if packet is not None and ipaddress.ip_address(packet) in ip_network:
-                print(ipaddress.ip_address(packet))
-                with open('ARQ/hosts.txt', 'a') as file:
-                    file.write(f'{ipaddress.ip_address(packet)}\n')
-                responses.append(packet)
+                ip = ipaddress.ip_address(packet)
+                
+                if ip not in existing_hosts:  # Verifica se o IP não está em existing_hosts
+                    print(ip)
+                    responses.add(packet)
+                    existing_hosts.add(ip)  # Adiciona IP descoberto a existing_hosts
+                    
+                    with open('ARQ/hosts.txt', 'a') as file:
+                        file.write(f'{ip}\n')
+            
         s.close()
 
-    ########################################################
-    ## FUNÇÃO PARA FAZER RESOLUÇÃO DE HOSTNAME VIA SOCKET ##
-    ########################################################
+    # Função para resolver hostname via socket
     def hostname_resolv(ips):
         for ip in ips:
-            if ip:
-                try:
-                    socket.setdefaulttimeout(4)  # Set timeout for socket operations
-                    hostname = socket.gethostbyaddr(ip)
-                    with open('ARQ/hostnames.txt', 'a') as f:
-                        f.write(f'+ {ip} - {hostname[0]}\n')
-                    socket.setdefaulttimeout(None)  # Reset timeout after successful resolution
-                except (socket.gaierror, OSError, Exception) as e:
-                    pass
-                    # Alternative methods (try reverse DNS or hostname library if available)
-                finally:
-                    socket.setdefaulttimeout(None)  # Always reset timeout to avoid unintended effects
+            try:
+                socket.setdefaulttimeout(5)  # Define timeout para operações de socket
+                hostname = socket.gethostbyaddr(ip)
+                with open('ARQ/hostnames.txt', 'a') as f:
+                    f.write(f'+ {ip} - {hostname[0]}\n')
+                socket.setdefaulttimeout(None)  # Reseta timeout após resolução bem-sucedida
+            except (socket.gaierror, OSError, Exception):
+                pass
+            finally:
+                socket.setdefaulttimeout(None)  # Sempre reseta o timeout para evitar efeitos indesejados
 
-        print("Terminado:", datetime.now().strftime("%X %x"))  # Use datetime for timestamp
+        print("Terminado:", t.strftime("%X %x"))
 
-
-
-    #################################
-    ## ENTRADA DO IPADRESS NETWORK ##
-    #################################
+    # Entrada do endereço de IP
     ips = input('Digite a faixa de IP (Ex: xx.xx.xx.xx/xx): ')
-    mask = ips.split('/')
 
     rede = ipaddress.ip_network(ips, strict=False)
     ips = list(map(str, rede.hosts()))
 
+    # Cria pasta "ARQ" e remove arquivos antigos
+    os.system('mkdir -p ARQ')
+    os.system('rm ARQ/hosts.txt 2>/dev/null')
+    os.system('rm ARQ/hostnames.txt 2>/dev/null')
+    os.system('rm ARQ/discovery.txt 2>/dev/null')
 
-    ###################################################
-    ## CRIA PASTA "ARQ" E REMOVE OS ARQUIVOS ANTIGOS ##
-    ###################################################
-    os.system(dir)
-    os.popen('rm ARQ/hosts.txt 2>/dev/null')
-    os.popen('rm ARQ/hostnames.txt 2>/dev/null')
     print('\n\033[7;32mAguarde ...\033[m')
 
+    # Thread para escutar pacotes ICMP
+    t_server = th.Thread(target=listen, args=[responses, rede])
+    t_server.start()
+
+    # Thread para enviar pacotes ICMP
+    t_ping = th.Thread(target=envio, args=[rede])
+    t_ping.start()
+
     if ips:
-        lista_ips.append(ips)
-        ###############################
-        ## TENTA RESOLVER O HOSTNAME ##
-        ###############################
         t_hostname = th.Thread(target=hostname_resolv, args=[ips])
         t_hostname.start()
     else:
         print("Não foi possível gerar a lista de IPs.")
-
-    #################################
-    ## PRIMEIRA FUNÇÃO (ESCUTANDO) ##
-    #################################
-    t_server = th.Thread(target=listen, args=[responses, rede])
-    t_server.start()
-
-    ###############################
-    ## SEGUNDA FUNÇÃO (ENVIANDO) ##
-    ###############################
-    t_ping = th.Thread(target=envio, args=[rede, responses])
-    t_ping.start()
 
     
 
