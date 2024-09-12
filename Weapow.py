@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-version = "v4.11-dev"
+version = "v4.12-dev"
 
 import os
 import re
@@ -21,35 +21,39 @@ from requests.exceptions import SSLError
 from urllib.parse import urlparse, urljoin
 from concurrent.futures import ThreadPoolExecutor as exx
 
+
 ###########################################################
 ## BANNER PRINCIPAL DO PROGRAMA, EXIBINDO A VERSÃO ATUAL ##
 ###########################################################
-bann = '''\033[1;33m
+bann = f'''\033[1;33m
 888  888  888  .d88b.   8888b.  88888b.   .d88b.  888  888  888
 888  888  888 d8P  Y8b     "88b 888 "88b d88""88b 888  888  888
 888  888  888 88888888 .d888888 888  888 888  888 888  888  888
 Y88b 888 d88P Y8b.     888  888 888 d88P Y88..88P Y88b 888 d88P
  "Y8888888P"   "Y8888  "Y888888 88888P"   "Y88P"   "Y8888888P"
-                                \033[1;33m888\033[m'''f''' \033[1;30m  __ _  ___ ____ _________/ /_____\033[m
- (\ (\ \033[1;35m                         \033[m\033[1;33m888\033[m \033[1;30m /  ' \/ _ `/ _ `/ __/ __/  '_/_ /\033[m
- ( ^.^)\033[1;35m-------------------------\033[m\033[1;33m888\033[m \033[1;30m/_/_/_/\_,_/\_,_/_/  \__/_/\_\/__/\033[m
- O_(")(")                       \033[1;33m888\033[m \033[0;31m>DefCyberTool\033[m             \033[7;32m{version}\033[m
- '''
+\033[0;31m (\\ (\\\033[m \033[1;35m                         \033[m\033[1;33m888\033[m                 \033[7;32m{version}\033[m
+\033[0;31m ( ^.^)\033[m\033[1;35m-------------------------\033[m\033[1;33m888\033[m 
+\033[0;31m O_(")(")  \033[m                     \033[1;33m888\033[m\n           '''
+
 
 ####################################################
 ## GRUPO DE VARIÁVEIS QUE SÃO REPETIDAS NO CODIGO ##
 ####################################################
 press = '\033[7;31m(Pressione qualquer tecla para voltar ao menu inicial)\033[m'
 Ctrl_C = 'Você pressionou Ctrl+C para interromper o programa!'
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 dir = 'mkdir -p ARQ'
 SIGNALHOSTDISCOVERY = True
 
+#########################################
+## FUNÇÃO PARA INTERRUPÇÃO DO PROGRAMA ##
+#########################################
 def handler(signum, frame):
         global pool
         try:
             pool.terminate()
         except Exception as e:
+            pass
+        except KeyboardInterrupt:
             pass
         finally:
             exit(0)
@@ -164,6 +168,22 @@ def host_discovery():
             pass
         except Exception as e:
             print(e)
+            
+    # Função para resolver hostname via socket
+    def hostname_resolv(ips):
+        for ip in ips:
+            try:
+                socket.setdefaulttimeout(5)  # Define timeout para operações de socket
+                hostname = socket.gethostbyaddr(ip)
+                with open('ARQ/hostnames.txt', 'a') as f:
+                    f.write(f'+ {ip} - {hostname[0]}\n')
+                socket.setdefaulttimeout(None)  # Reseta timeout após resolução bem-sucedida
+            except (socket.gaierror, OSError, Exception):
+                pass
+            finally:
+                socket.setdefaulttimeout(None)  # Sempre reseta o timeout para evitar efeitos indesejados
+
+        print("Terminado:", t.strftime("%X %x"))
 
     # Função de envio
     def envio(addr):
@@ -191,6 +211,11 @@ def host_discovery():
                     
             print(f'\033[7;31m[+] {len(responses)} Hosts-UP! Verifique o arquivo "discovery.txt"\033[m')
             print("Terminando, tentando fazer resolução de HostName.", t.strftime("%X %x"))
+            if ips:
+                t_hostname = th.Thread(target=hostname_resolv, args=[ips])
+                t_hostname.start()
+            else:
+                print("Não foi possível gerar a lista de IPs.")
         except KeyboardInterrupt:
             print('\n' + Ctrl_C)
             quit()
@@ -198,44 +223,29 @@ def host_discovery():
     # Função para escutar respostas ICMP
     def listen(responses, ip_network):
         global SIGNALHOSTDISCOVERY
-        s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)
-        s.settimeout(10)
-        s.bind(('', 0))
-        while SIGNALHOSTDISCOVERY:
-            try:
-                packet = s.recv(2048)[:20][-8:-4]  
-            except TimeoutError:
-                packet = None  
+        with socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP) as s:
+            s.settimeout(10)
+            s.bind(('', 0))
+            while SIGNALHOSTDISCOVERY:
+                try:
+                    packet = s.recv(2048)[:20][-8:-4]  
+                except TimeoutError:
+                    packet = None  
 
-            if packet is not None and ipaddress.ip_address(packet) in ip_network:
-                ip = ipaddress.ip_address(packet)
-                
-                if ip not in existing_hosts:  # Verifica se o IP não está em existing_hosts
-                    print(ip)
-                    responses.add(packet)
-                    existing_hosts.add(ip)  # Adiciona IP descoberto a existing_hosts
+                if packet is not None and ipaddress.ip_address(packet) in ip_network:
+                    ip = ipaddress.ip_address(packet)
                     
-                    with open('ARQ/hosts.txt', 'a') as file:
-                        file.write(f'{ip}\n')
-            
-        s.close()
+                    if ip not in existing_hosts:  # Verifica se o IP não está em existing_hosts
+                        print(ip)
+                        responses.add(packet)
+                        existing_hosts.add(ip)  # Adiciona IP descoberto a existing_hosts
+                        
+                        with open('ARQ/hosts.txt', 'a') as file:
+                            file.write(f'{ip}\n')
+                
+            s.close()
 
-    # Função para resolver hostname via socket
-    def hostname_resolv(ips):
-        for ip in ips:
-            try:
-                socket.setdefaulttimeout(5)  # Define timeout para operações de socket
-                hostname = socket.gethostbyaddr(ip)
-                with open('ARQ/hostnames.txt', 'a') as f:
-                    f.write(f'+ {ip} - {hostname[0]}\n')
-                socket.setdefaulttimeout(None)  # Reseta timeout após resolução bem-sucedida
-            except (socket.gaierror, OSError, Exception):
-                pass
-            finally:
-                socket.setdefaulttimeout(None)  # Sempre reseta o timeout para evitar efeitos indesejados
-
-        print("Terminado:", t.strftime("%X %x"))
-
+    
     # Entrada do endereço de IP
     ips = input('Digite a faixa de IP (Ex: xx.xx.xx.xx/xx): ')
 
@@ -258,11 +268,7 @@ def host_discovery():
     t_ping = th.Thread(target=envio, args=[rede])
     t_ping.start()
 
-    if ips:
-        t_hostname = th.Thread(target=hostname_resolv, args=[ips])
-        t_hostname.start()
-    else:
-        print("Não foi possível gerar a lista de IPs.")
+
 
     
 
@@ -289,7 +295,7 @@ PORTAS_PRINCIPAIS = [
     5925, 5950, 5952, 5959, 5960, 5961, 5962, 5963, 5987, 5988, 5989, 5998, 5999, 6000, 6001, 6002, 6003, 6004, 6005, 6006, 6007, 6009, 6025, 6059, 6100, 6101, 6106, 6112, 6123, 6129, 6156, 6346, 6389, 6502, 6510, 6543, 6547, 6565, 6566, 6567,
     6580, 6646, 6666, 6667, 6668, 6669, 6689, 6692, 6699, 6779, 6788, 6789, 6792, 6839, 6881, 6901, 6969, 7000, 7001, 7002, 7004, 7007, 7019, 7025, 7070, 7100, 7103, 7106, 7200, 7201, 7402, 7435, 7443, 7496, 7512, 7625, 7627, 7676, 7741, 7777,
     7778, 7800, 7911, 7920, 7921, 7937, 7938, 7999, 8000, 8001, 8002, 8007, 8008, 8009, 8010, 8011, 8021, 8022, 8031, 8042, 8045, 8080, 8081, 8082, 8083, 8084, 8085, 8086, 8087, 8088, 8089, 8090, 8093, 8099, 8100, 8180, 8181, 8192, 8193, 8194,
-    8200, 8222, 8254, 8290, 8291, 8292, 8300, 8333, 8383, 8400, 8402, 8443, 8500, 8600, 8649, 8651, 8652, 8654, 8701, 8800, 8873, 8888, 8899, 8994, 9000, 9001, 9002, 9003, 9009, 9010, 9011, 9040, 9050, 9071, 9080, 9081, 9090, 9091, 9099, 9100,
+    8200, 8222, 8254, 8290, 8291, 8292, 8300, 8333, 8383, 8400, 8402, 8443, 8500, 8600, 8649, 8651, 8652, 8654, 8701, 8728, 8800, 8873, 8888, 8899, 8994, 9000, 9001, 9002, 9003, 9009, 9010, 9011, 9040, 9050, 9071, 9080, 9081, 9090, 9091, 9099, 9100,
     9101, 9102, 9103, 9110, 9111, 9200, 9207, 9220, 9290, 9415, 9418, 9485, 9500, 9502, 9503, 9535, 9575, 9593, 9594, 9595, 9618, 9666, 9876, 9877, 9878, 9898, 9900, 9917, 9929, 9943, 9944, 9968, 9998, 9999, 10000, 10001, 10002, 10003, 10004,
     10009, 10010, 10012, 10024, 10025, 10082, 10180, 10215, 10243, 10566, 10616, 10617, 10621, 10626, 10628, 10629, 10778, 11110, 11111, 11967, 12000, 12174, 12265, 12345, 13456, 13722, 13782, 13783, 14000, 14238, 14441, 14442, 15000, 15002,
     15003, 15004, 15660, 15742, 16000, 16001, 16012, 16016, 16018, 16080, 16113, 16992, 16993, 17877, 17988, 18040, 18101, 18988, 19101, 19283, 19315, 19350, 19780, 19801, 19842, 20000, 20005, 20031, 20221, 20222, 20828, 21571, 22939, 23502,
@@ -306,17 +312,17 @@ def scan(host, porta):
         try:
             l = len(str(porta))
             espaco = " " * (10 - l)
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.settimeout(1.5)
-            if s.connect_ex((host, int(porta))) == 0:
-                with open("ARQ/portscan.txt", "a") as f:
-                    try:
-                        service = socket.getservbyport(porta)
-                        print(f"{str(porta)} / TCP{espaco}{service}")
-                        print(f"{str(porta)} / TCP{espaco}{service}", file=f)
-                    except socket.error:
-                        print(str(porta) + f" / TCP")
-                        print(str(porta) + f" / TCP", file=f)
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(5.5)
+                if s.connect_ex((host, int(porta))) == 0:
+                    with open("ARQ/portscan.txt", "a") as f:
+                        try:
+                            service = socket.getservbyport(porta)
+                            print(f"{str(porta)} / TCP{espaco}{service}")
+                            print(f"{str(porta)} / TCP{espaco}{service}", file=f)
+                        except socket.error:
+                            print(str(porta) + f" / TCP")
+                            print(str(porta) + f" / TCP", file=f)
         except Exception as e:
             pass
 
@@ -445,6 +451,7 @@ def world_scan():
     # Aguardando todos os processos terminarem
     for p in processes:
         p.join()
+
 
 
 #=======================================================================================
@@ -708,7 +715,7 @@ def link():
 ## FAZ UMA VERIFICAÇÃO NOS SITES BAIXADOS, BUSCANDO FORMULÁRIOS ##
 ##################################################################            
 def auto_web():
-    ips = os.popen('grep -iR -A 5 "<form" ARQ/WEB | grep -Eo "([0-9]{1,3}\.){3}[0-9]{1,3}" | sort -u').read().split()
+    ips = os.popen(r'grep -iR -A 5 "<form" ARQ/WEB | grep -Eo "([0-9]{1,3}\.){3}[0-9]{1,3}" | sort -u').read().split()
 
     try:
         #########################################################
@@ -1125,7 +1132,7 @@ Você deseja configurar Servidor ou Client?
         elif opcao == 10:
             pass
         elif opcao == 0:
-            print('Volte sempre! ¯\_(ツ)_/¯')
+            print(r'Volte sempre! ¯\_(ツ)_/¯')
             quit()
         elif opcao > 10:
             print('Digite uma opção válida!')
@@ -1745,19 +1752,20 @@ def suid():
 def nc():
     porta = int(input('Digite a porta a ser utilizada: '))
     try:
-        s.bind(("", porta))
-        s.listen(1)
-        print(f"Escutando na porta {porta}")
-        conn, addr = s.accept()
-        print('Conexão recebida de',addr[0])
-        while True:
-            ans = conn.recv(1024).decode()
-            sys.stdout.write(ans)
-            command = input()
-            command += "\n"
-            conn.send(command.encode())
-            t.sleep(0.1)
-            sys.stdout.write("\033[A" + ans.split("\n")[-1])
+        with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as s:
+            s.bind(("", porta))
+            s.listen(1)
+            print(f"Escutando na porta {porta}")
+            conn, addr = s.accept()
+            print('Conexão recebida de',addr[0])
+            while True:
+                ans = conn.recv(1024).decode()
+                sys.stdout.write(ans)
+                command = input()
+                command += "\n"
+                conn.send(command.encode())
+                t.sleep(0.1)
+                sys.stdout.write("\033[A" + ans.split("\n")[-1])
     except OSError:
         print('Esta PORTA está sendo utilizada.')
         porta = int(input("Digite a Porta: "))
@@ -1775,14 +1783,15 @@ def server_tcp():
         file = open("ARQ/output.txt", "w")
         porta = int(input("Digite a Porta a ser escutada: "))
         try:
-            s.bind(("0.0.0.0", porta))
-            s.listen(5)
-            print("Listening...")
-            client_socket, address = s.accept()
-            print(f"Received from: {address[0]}")
-            data = client_socket.recv(1024).decode()
-            file.write(data)
-            s.close()
+            with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as s:
+                s.bind(("0.0.0.0", porta))
+                s.listen(5)
+                print("Listening...")
+                client_socket, address = s.accept()
+                print(f"Received from: {address[0]}")
+                data = client_socket.recv(1024).decode()
+                file.write(data)
+                s.close()
         except Exception as error:
             print("Erro: ", error)
             s.close()
@@ -1830,14 +1839,15 @@ def wifi_hacking():
             print('\033[7;31mO arquivo "WifiCrack/*.hc22000" não foi encontrado, deixe o DUMP por mais tempo.\033[m')
             exit()
 
-
         ## implementaçao definir a forma de quebra de hash
-        
         for hash in dump.splitlines():
             nome_hash = hash.split('*')
             
             comando1 = f"hashcat -m 22000 WifiCrack/{nome_hash[3]}.hc22000 -a 3 ?d?d?d?d?d?d?d?d | tee WifiCrack/{nome_hash[3]}.result"
-            #comando2 = f"hashcat -m 22000 WifiCrack/{nome_hash[3]}.hc22000 -a 3 ?h?h?h?h?h?h?h?h | tee WifiCrack/{nome_hash[3]}.result"
+            #comando1 = f"hashcat -m 22000 WifiCrack/{nome_hash[3]}.hc22000 -a 3 ?a?a?a?a?a?a?a?a --increment --increment-min=8 --increment-max=15 | tee WifiCrack/{nome_hash[3]}.result"
+            #comando1 = f"hashcat -m 22000 WifiCrack/{nome_hash[3]}.hc22000 -a 0 /caminho/para/wordlist.txt | tee WifiCrack/{nome_hash[3]}.result"
+#hashcat -m 22000 -a 3 ?d?d?d?d?d?d?d?d --increment --increment-min=8 --increment-max=10 -n 1024 -u 256 -w 4
+
             
             with open(f'WifiCrack/{nome_hash[3]}.hc22000','w') as f:
                 f.write(hash)
@@ -1893,7 +1903,7 @@ def wifi_hacking():
                 ## CAPTURA DADOS DURANTE 5 MINUTOS ##
                 #####################################
                 t.sleep(2)
-                os.system(f' hcxdumptool -i {interface} -o dumpfile.pcapng --active_beacon --enable_status=15 --tot={minutos} ')
+                os.system(f'hcxdumptool -i {interface} -w dumpfile.pcapng')
             except KeyboardInterrupt:
                 pass
             
@@ -1955,7 +1965,7 @@ def wifi_hacking():
                 #6: http_finder,
                 #7: link,
                 #8: auto_web,
-                0: lambda: print('Volte sempre! ¯\_(ツ)_/¯') or quit
+                0: lambda: print(r'Volte sempre! ¯\_(ツ)_/¯') or quit
                 }
 
                 opcao = int(input('Escolha uma opção: '))
@@ -2063,7 +2073,7 @@ def banner():
         22: serverhttp,
         23: serverhttp,
         24: lambda: os.system('gnome-terminal --title=Python -- sudo python Tryeres/Tryeres.py') or main,
-        0: lambda: print('Volte sempre! ¯\_(ツ)_/¯') or quit
+        0: lambda: print(r'Volte sempre! ¯\_(ツ)_/¯') or quit
         }
 
         opcao = int(input('Escolha uma opção: '))
@@ -2088,10 +2098,11 @@ def banner():
 def vrf_requisites():
     # Verificar se o pip3 está instalado
     pip_installed = os.system('pip3 --version >/dev/null 2>&1') == 0
+    print('Algumas dependências serão instaladas')
     if not pip_installed:
-        print('Algumas dependências serão instaladas')
+        print('Instalando bibliotecas necessárias')
         input('Pressione Enter para continuar...')
-        print("pip3 não está instalado. Instalando...")
+        print("Pip3 não está instalado. Instalando...")
         os.system('apt-get update')
         os.system('apt-get install -y python3-pip')
     else:
@@ -2141,6 +2152,8 @@ def main():
                 print('Digite a opção correta.')
                 input('(Pressione qualquer tecla para continuar)')
                 main()
+        except SyntaxWarning:
+            pass
     else:
         print("Execute o código como ROOT.")
 
