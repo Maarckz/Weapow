@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-version = "v4.12-dev"
+version = "v4.13-dev"
 
 import os
 import re
 import sys
 import signal
 import socket
-import struct
 import logging
 import requests
 import ipaddress
@@ -1831,7 +1830,7 @@ def wifi_hacking():
             #os.system(comando2)
         
             #em caso de erro:
-            #sudo ifconfig wlxd03745fbcadc down && sudo iwconfig wlxd03745fbcadc mode managed && sudo ifconfig wlxd03745fbcadc up
+            #sudo ifconfig wlp0s20f3 down && sudo iwconfig wlp0s20f3 mode managed && sudo ifconfig wlp0s20f3 up
             #sudo ifconfig wlp4s0 down && sudo iwconfig wlp4s0 mode managed && sudo ifconfig wlp4s0 up
 
     def wifi_crack():
@@ -1876,8 +1875,8 @@ def wifi_hacking():
                 ## CAPTURA DADOS DURANTE 5 MINUTOS ##
                 #####################################
                 t.sleep(2)
-                os.system(f'hcxdumptool -i {interface} | tee dumpfile.pcapng')
-                # hcxdumptool -i {interface} -o dumpfile.pcapng --active_beacon --enable_status=15 --tot={minutos}
+                os.system(f'hcxdumptool -i {interface} -o dumpfile.pcapng --active_beacon --enable_status=15 --tot=10')
+                
             except KeyboardInterrupt:
                 pass
             
