@@ -7,20 +7,20 @@ import sys
 import signal
 import socket
 import struct
+import logging
 import requests
 import ipaddress
 import time as t
 import getpass as g
 import multiprocessing
 import threading as th
-from scapy.all import *
 import http.server as hs
 import socketserver as ss
 from bs4 import BeautifulSoup 
 from requests.exceptions import SSLError
 from urllib.parse import urlparse, urljoin
 from concurrent.futures import ThreadPoolExecutor as exx
-
+from scapy.all import ARP, Ether, srp, IP, ICMP, sr1, sniff
 
 ###########################################################
 ## BANNER PRINCIPAL DO PROGRAMA, EXIBINDO A VERSÃO ATUAL ##
@@ -118,158 +118,131 @@ def interfaces():
 #############################################
 ## FUNÇÃO PARA DESCOBERTA DE HOSTS NA REDE ##
 #############################################
-def host_discovery():
 
+# Configure o logging para reduzir a verbosidade
+logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
+
+# Função para descoberta ARP
+def arp_discovery(ip_network):
+    print("Iniciando descoberta ARP...")
+    arp_request = ARP(pdst=str(ip_network))
+    broadcast = Ether(dst="ff:ff:ff:ff:ff:ff")
+    arp_request_packet = broadcast / arp_request
+
+    ans, _ = srp(arp_request_packet, timeout=2, verbose=False)
+
+    with open('ARQ/hosts.txt', 'a') as file:
+        for _, rcv in ans:
+            ip = rcv.psrc
+            mac = rcv.hwsrc
+            if ip not in existing_hosts:
+                print(f"ARP Discover - IP: {ip}, MAC: {mac}")
+                file.write(f'{ip}\n')
+                existing_hosts.add(ip)
+
+    print("Descoberta ARP concluída.")
+
+# Função para teste de conectividade ICMP
+def icmp_ping(ip):
+    try:
+        # Envia um pacote ICMP e espera a resposta
+        response = sr1(IP(dst=ip)/ICMP(), timeout=1, verbose=False)
+        if response:
+            print(f"Ping ICMP bem-sucedido para {ip}")
+            if ip not in existing_hosts:
+                existing_hosts.add(ip)
+                with open('ARQ/icmp_discovery.txt', 'a') as file:
+                    file.write(f'{ip}\n')
+    except Exception as e:
+        print(f"Erro ao pingar {ip}: {e}")
+
+# Função para enviar pacotes ICMP para todos os IPs
+def envio(addr):
+    print("Iniciando Envio de Pacotes ICMP:", t.strftime("%X %x"))
+    try:
+        for ip in addr:
+            icmp_ping(str(ip))
+            t.sleep(0.1)  # Ajuste o intervalo entre pings conforme necessário
+
+        t.sleep(2)
+        
+        # Finalize o envio e comece a resolver nomes
+        global SIGNALHOSTDISCOVERY
+        SIGNALHOSTDISCOVERY = False
+        
+        print(f'\033[7;31m[+] Verifique o arquivo "icmp_discovery.txt" para hosts ICMP ativos\033[m')
+        print("Terminando, tentando fazer resolução de HostName.", t.strftime("%X %x"))
+        if addr:
+            t_hostname = th.Thread(target=hostname_resolv, args=[addr])
+            t_hostname.start()
+        else:
+            print("Não foi possível gerar a lista de IPs.")
+    except KeyboardInterrupt:
+        print('\nInterrompido pelo usuário.')
+        SIGNALHOSTDISCOVERY = False  # Certifique-se de parar a escuta de ICMP
+
+# Função para resolução de nomes de host
+def hostname_resolv(ips):
+    for ip in ips:
+        try:
+            socket.setdefaulttimeout(5)
+            hostname = socket.gethostbyaddr(ip)
+            with open('ARQ/hostnames.txt', 'a') as f:
+                f.write(f'+ {ip} - {hostname[0]}\n')
+        except (socket.gaierror, OSError, Exception) as e:
+            print(f"Erro ao resolver nome para {ip}: {e}")
+        finally:
+            socket.setdefaulttimeout(None)
+
+    print("Resolução de nomes concluída:", t.strftime("%X %x"))
+
+# Função para escutar pacotes ICMP
+def listen(responses, ip_network):
+    def packet_handler(packet):
+        if IP in packet and ICMP in packet:
+            ip = packet[IP].src
+            if ipaddress.ip_address(ip) in ip_network:
+                if ip not in existing_hosts:
+                    print(f"Host ativo detectado via ICMP: {ip}")
+                    responses.add(ip)
+                    existing_hosts.add(ip)
+                    with open('ARQ/hosts.txt', 'a') as file:
+                        file.write(f'{ip}\n')
+
+    # Utilize sniff sem o contexto de gerenciador de contexto
+    sniff(prn=packet_handler, filter="icmp", timeout=10)
+
+def host_discovery():
     #######################
     ## VARIAVEIS GLOBAIS ##
     #######################
-    responses = set()  # Usar um conjunto para evitar duplicações
-    existing_hosts = set() 
+    global existing_hosts
+    existing_hosts = set()
+    global SIGNALHOSTDISCOVERY
+    SIGNALHOSTDISCOVERY = True
 
-    def checksum(source_string):
-        sum = 0
-        count_to = (len(source_string) // 2) * 2
-        count = 0
-        while count < count_to:
-            this_val = source_string[count + 1] * 256 + source_string[count]
-            sum += this_val
-            sum &= 0xffffffff
-            count += 2
-        if count_to < len(source_string):
-            sum += source_string[len(source_string) - 1]
-            sum &= 0xffffffff
-        sum = (sum >> 16) + (sum & 0xffff)
-        sum += (sum >> 16)
-        answer = ~sum
-        answer &= 0xffff
-        answer = answer >> 8 | (answer << 8 & 0xff00)
-        return answer
-
-# Função para criar um pacote ICMP
-    def create_packet(id):
-        header = struct.pack('bbHHh', 8, 0, 0, id, 1)
-        data = 192 * 'Q'
-        my_checksum = checksum(header + data.encode())
-        header = struct.pack('bbHHh', 8, 0, socket.htons(my_checksum), id, 1)
-        return header + data.encode()
-
-    # Função ping (extraído do "ping.c")
-    def ping(addr, timeout=1):
-        try:
-            # Cria um socket ICMP e estabelece uma conexão
-            s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)
-            packet_id = 1
-            packet = create_packet(packet_id)
-            s.connect((addr, 80))
-            s.sendall(packet)
-            s.close()
-            return True
-        except PermissionError:
-            pass
-        except Exception as e:
-            print(e)
-            
-    # Função para resolver hostname via socket
-    def hostname_resolv(ips):
-        for ip in ips:
-            try:
-                socket.setdefaulttimeout(5)  # Define timeout para operações de socket
-                hostname = socket.gethostbyaddr(ip)
-                with open('ARQ/hostnames.txt', 'a') as f:
-                    f.write(f'+ {ip} - {hostname[0]}\n')
-                socket.setdefaulttimeout(None)  # Reseta timeout após resolução bem-sucedida
-            except (socket.gaierror, OSError, Exception):
-                pass
-            finally:
-                socket.setdefaulttimeout(None)  # Sempre reseta o timeout para evitar efeitos indesejados
-
-        print("Terminado:", t.strftime("%X %x"))
-
-    # Função de envio
-    def envio(addr):
-        print("Iniciando Envio de Pacotes:", t.strftime("%X %x"))
-        try:
-            for ip in addr:
-                ping(str(ip))
-                t.sleep(0.00015)
-            
-            t.sleep(2)
-            
-            global SIGNALHOSTDISCOVERY
-            
-            SIGNALHOSTDISCOVERY = False
-            ping('127.0.0.1')
-            
-            for response in sorted(responses):
-                ip = struct.unpack('BBBB', response)
-                ip = f"{ip[0]}.{ip[1]}.{ip[2]}.{ip[3]}"
-                
-                if ip not in existing_hosts:  # Verifica se o IP não está em existing_hosts
-                    with open('ARQ/discovery.txt', 'a') as file:
-                        file.write(f'{ip}\n')
-                    existing_hosts.add(ip)  # Adiciona IP descoberto a existing_hosts
-                    
-            print(f'\033[7;31m[+] {len(responses)} Hosts-UP! Verifique o arquivo "discovery.txt"\033[m')
-            print("Terminando, tentando fazer resolução de HostName.", t.strftime("%X %x"))
-            if ips:
-                t_hostname = th.Thread(target=hostname_resolv, args=[ips])
-                t_hostname.start()
-            else:
-                print("Não foi possível gerar a lista de IPs.")
-        except KeyboardInterrupt:
-            print('\n' + Ctrl_C)
-            quit()
-
-    # Função para escutar respostas ICMP
-    def listen(responses, ip_network):
-        global SIGNALHOSTDISCOVERY
-        with socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP) as s:
-            s.settimeout(10)
-            s.bind(('', 0))
-            while SIGNALHOSTDISCOVERY:
-                try:
-                    packet = s.recv(2048)[:20][-8:-4]  
-                except TimeoutError:
-                    packet = None  
-
-                if packet is not None and ipaddress.ip_address(packet) in ip_network:
-                    ip = ipaddress.ip_address(packet)
-                    
-                    if ip not in existing_hosts:  # Verifica se o IP não está em existing_hosts
-                        print(ip)
-                        responses.add(packet)
-                        existing_hosts.add(ip)  # Adiciona IP descoberto a existing_hosts
-                        
-                        with open('ARQ/hosts.txt', 'a') as file:
-                            file.write(f'{ip}\n')
-                
-            s.close()
-
-    
-    # Entrada do endereço de IP
     ips = input('Digite a faixa de IP (Ex: xx.xx.xx.xx/xx): ')
 
     rede = ipaddress.ip_network(ips, strict=False)
     ips = list(map(str, rede.hosts()))
 
-    # Cria pasta "ARQ" e remove arquivos antigos
-    os.system('mkdir -p ARQ')
-    os.system('rm ARQ/hosts.txt 2>/dev/null')
-    os.system('rm ARQ/hostnames.txt 2>/dev/null')
-    os.system('rm ARQ/discovery.txt 2>/dev/null')
+    os.makedirs('ARQ', exist_ok=True)
+    for file in ['hosts.txt', 'hostnames.txt', 'icmp_discovery.txt']:
+        os.system(f'rm ARQ/{file} 2>/dev/null')
 
     print('\n\033[7;32mAguarde ...\033[m')
 
     # Thread para escutar pacotes ICMP
-    t_server = th.Thread(target=listen, args=[responses, rede])
+    t_server = th.Thread(target=listen, args=[existing_hosts, rede])
     t_server.start()
 
+    # Thread para descoberta ARP
+    t_arp = th.Thread(target=arp_discovery, args=[rede])
+    t_arp.start()
+    
     # Thread para enviar pacotes ICMP
     t_ping = th.Thread(target=envio, args=[rede])
     t_ping.start()
-
-
-
     
 
 #=======================================================================================
@@ -384,7 +357,7 @@ def world_scan():
     ## DEFINE O NÚMERO DE THREADS E CRIA UM "SEMAFORO" ##
     #####################################################
     MAX_THREADS = 600
-    thread_semaphore = threading.Semaphore(MAX_THREADS)
+    thread_semaphore = th.Semaphore(MAX_THREADS)
 
     ########################################################################
     ## FUNÇÃO QUE REALIZA A TENTATIVA DE CONEXÃO DE ACORDO COM HOST/PORTA ##
@@ -413,7 +386,7 @@ def world_scan():
         for ip in ips:
             ## Adquire o semáforo antes de criar uma nova thread ##
             thread_semaphore.acquire()
-            t = threading.Thread(target=scan, args=(ip,porta))
+            t = th.Thread(target=scan, args=(ip,porta))
             t.start()
             threads.append(t)
         
@@ -1903,7 +1876,8 @@ def wifi_hacking():
                 ## CAPTURA DADOS DURANTE 5 MINUTOS ##
                 #####################################
                 t.sleep(2)
-                os.system(f'hcxdumptool -i {interface} -w dumpfile.pcapng')
+                os.system(f'hcxdumptool -i {interface} | tee dumpfile.pcapng')
+                # hcxdumptool -i {interface} -o dumpfile.pcapng --active_beacon --enable_status=15 --tot={minutos}
             except KeyboardInterrupt:
                 pass
             
@@ -2025,7 +1999,7 @@ def banner():
  \033[0;34m[1]\033[m - Host Discovery
  \033[0;34m[2]\033[m - Port Scanner
  \033[0;34m[3]\033[m - World Scanner
- \033[0;34m[4]\033[m - NC GET
+ \033[0;34m[4]\033[m - BannerGrab
  \033[0;34m[5]\033[m - WebFinder
  \033[0;34m[6]\033[m - WebCrawler (Bugs)
  \033[0;34m[7]\033[m - FormWeb
@@ -2041,7 +2015,7 @@ def banner():
  \033[0;34m[17]\033[m- Potemkin
  \033[0;34m[18]\033[m- Waza
  \033[0;34m[19]\033[m- SUID
- \033[0;34m[20]\033[m- NC Listen
+ \033[0;34m[20]\033[m- Conn. Listen
  \033[0;34m[21]\033[m- Reverse Shell
  \033[0;34m[22]\033[m- Server TCP
  \033[0;34m[23]\033[m- ServerHTTP
