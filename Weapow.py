@@ -1,25 +1,16 @@
 #!/usr/bin/env python3
-version = "v4.13-dev"
+version = "v4.131-dev"
 
+#########################################
+## IMPORTAÇÃO DE BIBLIOTECAS PRINCIPAL ##
+#########################################
 import os
 import re
 import sys
-import signal
 import socket
-import logging
-import requests
+import signal
 import ipaddress
 import time as t
-import getpass as g
-import multiprocessing
-import threading as th
-import http.server as hs
-import socketserver as ss
-from bs4 import BeautifulSoup 
-from requests.exceptions import SSLError
-from urllib.parse import urlparse, urljoin
-from concurrent.futures import ThreadPoolExecutor as exx
-from scapy.all import ARP, Ether, srp, IP, ICMP, sr1, sniff
 
 ###########################################################
 ## BANNER PRINCIPAL DO PROGRAMA, EXIBINDO A VERSÃO ATUAL ##
@@ -33,7 +24,6 @@ Y88b 888 d88P Y8b.     888  888 888 d88P Y88..88P Y88b 888 d88P
 \033[0;31m (\\ (\\\033[m \033[1;35m                         \033[m\033[1;33m888\033[m                 \033[7;32m{version}\033[m
 \033[0;31m ( ^.^)\033[m\033[1;35m-------------------------\033[m\033[1;33m888\033[m 
 \033[0;31m O_(")(")  \033[m                     \033[1;33m888\033[m\n           '''
-
 
 ####################################################
 ## GRUPO DE VARIÁVEIS QUE SÃO REPETIDAS NO CODIGO ##
@@ -70,6 +60,10 @@ def interfaces():
     try:
         
         interfaces = []
+
+        ########################################################
+        ## VERIFICA AS INTERFACES NO DIRETÓRIO A NIVEL KERNEL ##
+        ########################################################
         for interface_name in os.listdir('/sys/class/net'): 
             
             if interface_name == 'lo':
@@ -117,132 +111,66 @@ def interfaces():
 #############################################
 ## FUNÇÃO PARA DESCOBERTA DE HOSTS NA REDE ##
 #############################################
-
-# Configure o logging para reduzir a verbosidade
-logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
-
-# Função para descoberta ARP
-def arp_discovery(ip_network):
-    print("Iniciando descoberta ARP...")
-    arp_request = ARP(pdst=str(ip_network))
-    broadcast = Ether(dst="ff:ff:ff:ff:ff:ff")
-    arp_request_packet = broadcast / arp_request
-
-    ans, _ = srp(arp_request_packet, timeout=2, verbose=False)
-
-    with open('ARQ/hosts.txt', 'a') as file:
-        for _, rcv in ans:
-            ip = rcv.psrc
-            mac = rcv.hwsrc
-            if ip not in existing_hosts:
-                print(f"ARP Discover - IP: {ip}, MAC: {mac}")
-                file.write(f'{ip}\n')
-                existing_hosts.add(ip)
-
-    print("Descoberta ARP concluída.")
-
-# Função para teste de conectividade ICMP
-def icmp_ping(ip):
-    try:
-        # Envia um pacote ICMP e espera a resposta
-        response = sr1(IP(dst=ip)/ICMP(), timeout=1, verbose=False)
-        if response:
-            print(f"Ping ICMP bem-sucedido para {ip}")
-            if ip not in existing_hosts:
-                existing_hosts.add(ip)
-                with open('ARQ/icmp_discovery.txt', 'a') as file:
-                    file.write(f'{ip}\n')
-    except Exception as e:
-        print(f"Erro ao pingar {ip}: {e}")
-
-# Função para enviar pacotes ICMP para todos os IPs
-def envio(addr):
-    print("Iniciando Envio de Pacotes ICMP:", t.strftime("%X %x"))
-    try:
-        for ip in addr:
-            icmp_ping(str(ip))
-            t.sleep(0.1)  # Ajuste o intervalo entre pings conforme necessário
-
-        t.sleep(2)
-        
-        # Finalize o envio e comece a resolver nomes
-        global SIGNALHOSTDISCOVERY
-        SIGNALHOSTDISCOVERY = False
-        
-        print(f'\033[7;31m[+] Verifique o arquivo "icmp_discovery.txt" para hosts ICMP ativos\033[m')
-        print("Terminando, tentando fazer resolução de HostName.", t.strftime("%X %x"))
-        if addr:
-            t_hostname = th.Thread(target=hostname_resolv, args=[addr])
-            t_hostname.start()
-        else:
-            print("Não foi possível gerar a lista de IPs.")
-    except KeyboardInterrupt:
-        print('\nInterrompido pelo usuário.')
-        SIGNALHOSTDISCOVERY = False  # Certifique-se de parar a escuta de ICMP
-
-# Função para resolução de nomes de host
-def hostname_resolv(ips):
-    for ip in ips:
-        try:
-            socket.setdefaulttimeout(5)
-            hostname = socket.gethostbyaddr(ip)
-            with open('ARQ/hostnames.txt', 'a') as f:
-                f.write(f'+ {ip} - {hostname[0]}\n')
-        except (socket.gaierror, OSError, Exception) as e:
-            print(f"Erro ao resolver nome para {ip}: {e}")
-        finally:
-            socket.setdefaulttimeout(None)
-
-    print("Resolução de nomes concluída:", t.strftime("%X %x"))
-
-# Função para escutar pacotes ICMP
-def listen(responses, ip_network):
-    def packet_handler(packet):
-        if IP in packet and ICMP in packet:
-            ip = packet[IP].src
-            if ipaddress.ip_address(ip) in ip_network:
-                if ip not in existing_hosts:
-                    print(f"Host ativo detectado via ICMP: {ip}")
-                    responses.add(ip)
-                    existing_hosts.add(ip)
-                    with open('ARQ/hosts.txt', 'a') as file:
-                        file.write(f'{ip}\n')
-
-    # Utilize sniff sem o contexto de gerenciador de contexto
-    sniff(prn=packet_handler, filter="icmp", timeout=10)
-
 def host_discovery():
-    #######################
-    ## VARIAVEIS GLOBAIS ##
-    #######################
-    global existing_hosts
-    existing_hosts = set()
-    global SIGNALHOSTDISCOVERY
-    SIGNALHOSTDISCOVERY = True
 
-    ips = input('Digite a faixa de IP (Ex: xx.xx.xx.xx/xx): ')
+    ###################################################
+    ## DEFINE O NUMERO MAXÍMO DE THREADS SIMULTANEAS ##
+    ###################################################
+    max_threads = 300 
+    thread_semaphore = Semaphore(max_threads)
 
-    rede = ipaddress.ip_network(ips, strict=False)
-    ips = list(map(str, rede.hosts()))
+    ##########################################################
+    ## EXECUTA O COMANDO PING + EXIBIR E SALVAR OS HOSTS-UP ##
+    ##########################################################
+    def ping_host(ip):
+        with thread_semaphore:
+            ip = str(ip)
+            response = os.system(f'ping -c 2 -W 2 {ip} > /dev/null 2>&1')
 
-    os.makedirs('ARQ', exist_ok=True)
-    for file in ['hosts.txt', 'hostnames.txt', 'icmp_discovery.txt']:
-        os.system(f'rm ARQ/{file} 2>/dev/null')
+            if response == 0:
+                print(f"[+] Host ativo: {ip}")
 
-    print('\n\033[7;32mAguarde ...\033[m')
-
-    # Thread para escutar pacotes ICMP
-    t_server = th.Thread(target=listen, args=[existing_hosts, rede])
-    t_server.start()
-
-    # Thread para descoberta ARP
-    t_arp = th.Thread(target=arp_discovery, args=[rede])
-    t_arp.start()
+                with open('ARQ/hosts.txt','a') as f:
+                    f.write(f'{ip}\n')
     
-    # Thread para enviar pacotes ICMP
-    t_ping = th.Thread(target=envio, args=[rede])
-    t_ping.start()
+    #########################################################
+    ## CRIA UMA POOL PARA GERENCIAR A EXECUÇÃO DOS THREADS ##
+    #########################################################
+    def worker(subnet):
+        with ThreadPoolExecutor(max_workers=max_threads) as executor:
+            executor.map(ping_host, subnet)
+
+    ##########################################
+    ## INPUT PARA RECEBER A MASCARA DE REDE ##
+    ##########################################
+    network = input("Digite a máscara de rede (Exemplo: 10.0.0.0/16): ")
+    os.popen('rm ARQ/hosts.txt 2>/dev/null')
+
+    all_hosts = list(ipaddress.IPv4Network(network, strict=False).hosts())
     
+    ######################################################################
+    ## DEFINE O NUMERO DE PROCESSOS DE ACORDO COM A QUANTIDADE DE HOSTS ##
+    ######################################################################
+    num_processes = multiprocessing.cpu_count()
+    chunk_size = len(all_hosts) // num_processes
+
+    ##################################
+    ## DISTRIBUIÇÃO ENTRE PROCESSOS ##
+    ##################################
+    processes = []
+    for subnet in [all_hosts[i:i + chunk_size] for i in range(0, len(all_hosts), chunk_size)]:
+        p = multiprocessing.Process(target=worker, args=(subnet,))
+        processes.append(p)
+        p.start()
+
+    ###################################
+    ## AGUARDA OS PROCESSOS TERMINAR ##
+    ###################################
+    for p in processes:
+        p.join()
+
+    input(press)
+    main()
 
 #=======================================================================================
 ############################################
@@ -346,10 +274,7 @@ def big_scan():
             for line in file:
                 uniq(line.strip())
 
-#===============================================================================
-#===============================================================================
-#===============================================================================
-#===============================================================================
+
 #===============================================================================
 def world_scan():
     #####################################################
@@ -396,7 +321,9 @@ def world_scan():
     ips = input('Digite a faixa de IP (Ex: xx.xx.xx.xx/xx): ')
     porta = int(input('Qual porta? '))
 
-    # CRIA A REDE DE ACORDO COM A ENTRADA DO USUÁRIO
+    ####################################################
+    ## CRIA A REDE DE ACORDO COM A ENTRADA DO USUÁRIO ##
+    ####################################################
     network = ipaddress.ip_network(ips, strict=False)
     ips_list = list(map(str, network.hosts()))
 
@@ -523,23 +450,21 @@ def cert_subdomain():
 
 #=======================================================================================
 def link():
-
+    
+    # Função para realizar o crawling na URL
     def crawl(url):
         try:
             response = requests.get(url)
-
-        except SSLError as e:
-            print(f"SSLError: {e}")
+            response.raise_for_status()  # Verifica se há erros no status
+        except (SSLError, requests.exceptions.RequestException) as e:
+            print(f"Erro ao acessar {url}: {e}")
             return []
+        
+        soup = BeautifulSoup(response.content, 'html.parser')
+        links = {urljoin(url, link['href']) for link in soup.find_all('a') if 'href' in link.attrs}
+        return links
 
-        if response.status_code == 200:
-            soup = BeautifulSoup(response.content, 'html.parser')
-            links = soup.find_all('a')
-            hrefcode = {urljoin(url, link['href']) for link in links if 'href' in link.attrs}
-            return hrefcode
-
-        return []
-
+    # Função para extrair informações da URL
     def ext_info(url):
         durls = []
         emails = set()
@@ -549,138 +474,112 @@ def link():
 
         try:
             response = requests.get(url)
-        except SSLError as e:
-
-            print(f"SSLError: {e}")
+            response.raise_for_status()
+        except (SSLError, requests.exceptions.RequestException) as e:
+            print(f"Erro ao acessar {url}: {e}")
             return durls, emails, tel, forms, subdomains
 
-        except requests.exceptions.RequestException as e:
-            print(f"RequestException: {e}")
-            return durls, emails, tel, forms, subdomains
+        soup = BeautifulSoup(response.content, 'html.parser')
 
-        if response.status_code == 200:
-            soup = BeautifulSoup(response.content, 'html.parser')
+        # Extração de URLs
+        for link in soup.find_all('a', href=True):
+            href = link['href']
+            if href.startswith(('/', '?')):
+                durls.append(urljoin(url, href))
 
-            for link in soup.find_all('a'):
-                href = link.get('href')
-                
-                if link is soup.find('id'):
-                    print(link)
+        # Extração de emails e telefones
+        for link in soup.find_all('a', href=True):
+            href = link['href']
+            if href.startswith("mailto:"):
+                emails.add(href[7:])
+            elif href.startswith("tel:") or "phone=" in href:
+                tel.add(href[4:])
 
-                elif link is not None:
-                    try:
-                        if href and href.startswith('/') or href.startswith('?'):
-                            durls.append(urljoin(url, href))
+        # Extração de formulários
+        forms.extend(url for _ in soup.find_all('form'))
 
-                        else:
-                            print(href)
+        # Extração de subdomínios
+        for link in soup.find_all('a', href=True):
+            parsed_uri = urlparse(link['href'])
+            domain = parsed_uri.netloc.split(':')[0]
+            if domain:
+                subdomains.add(domain)
 
-                    except AttributeError as e:
-                        print(link,href,e)
+        return durls, emails, tel, forms, subdomains
 
-            for link in soup.find_all('a'):
-                href = link.get('href')
-
-                if href:
-                    if href.startswith("mailto:"):
-                        emails.add(href[7:])
-
-                    elif href.startswith("tel:") or "phone=" in href:
-                        tel.add(href[4:])
-
-            for form in soup.find_all('form'):
-                forms.append(url)
-
-            for link in soup.find_all('a'):
-                href = link.get('href')
-
-                if href:
-                    parsed_uri = urlparse(href)
-                    domain = '{uri.netloc}'.format(uri=parsed_uri).split(':')[0]
-                    subdomains.add(domain)
-
-        return durls, emails, tel, forms, subdomains #######################################  LEMBRAR COMO FUNCIONA
-
-    def process_url(url):
-        visit_urls = set()
-
-        if url in visit_urls:
+    # Função que processa cada URL
+    def process_url(url, visited_urls):
+        if url in visited_urls:
             return
 
-        visit_urls.add(url)
+        visited_urls.add(url)
         divurls = crawl(url)
-        print("\n\nEfetuando WebCrawling em ", url)
+        print(f"\n\nEfetuando WebCrawling em {url}")
 
         for divurl in sorted(divurls):
-            print('\n\033[0;31m============================================================================================>>\033[m',t.strftime("\033[7;32m %d/%m/%y \033[m"))
+            print(f'\n{"="*92}>> {t.strftime("%d/%m/%y %H:%M:%S")}')
             print(divurl)
-            print('\033[0;31m============================================================================================>>\033[m',t.strftime("\033[7;32m %H:%M:%S \033[m"))
+            print(f'{"="*92}>>')
 
             durls, emails, tel, forms, subdomains = ext_info(divurl)
 
             if durls:
                 print('\nURLs INTERNAS:')
-                for url in durls:
-                    print(url)
-                    try:
-                        links(url)
-                    except requests.exceptions.ConnectionError as err:
-                        pass
+                for u in durls:
+                    print(u)
+
             if emails:
                 print('\nEMAILS:')
                 for email in emails:
                     print(email)
+
             if tel:
                 print('\nTELEFONES:')
                 for phone in tel:
                     print(phone)
+
             if forms:
                 print('\nFORMULÁRIOS:')
                 for form in forms:
                     print(form)
+
             if subdomains:
-                print('\nSITES:')
+                print('\nSUBDOMÍNIOS:')
                 for subdomain in subdomains:
                     print(subdomain)
-            if durls:
-                print('\nURLs INTERNAS:')
-                for url in durls:
-                    print(url)
 
+    # Função principal de processamento
     def links(target):
-        url_process = ['http://' + target]
-        url_atual = url_process.pop()
-        process_url(url_atual)
+        visited_urls = set()
+        url_to_process = ['http://' + target]
+
         with open(f'Crawl/{target}_craw.txt', 'w') as f:
-            while url_process:
-                os.dup2(f.fileno(), 1)
-                process_url(url_atual)
-                os.dup2(os.dup(2), 1)
+            while url_to_process:
+                current_url = url_to_process.pop()
+                f.write(process_url(current_url, visited_urls))
 
-    interface = interfaces()
-
-    os.popen('rm -rf Crawl 2>/dev/null')
+    # Preparação do ambiente de saída
+    os.system('rm -rf Crawl')
     t.sleep(1)
-    os.popen('mkdir Crawl 2>/dev/null') 
+    os.system('mkdir Crawl')
 
-    sit_scan = input('Deseja utilizar um (H)ost ou a (L)ista? (H/L): ')
+    # Escolha de host ou lista de sites
+    sit_scan = input('Deseja utilizar um (H)ost ou a (L)ista? (H/L): ').lower()
 
-    if (sit_scan.lower() == 'h'):
-        target = input('Digite o endereço do site: (site.com)\n')
+    if sit_scan == 'h':
+        target = input('Digite o endereço do site (ex: site.com):\n')
         links(target)
 
-    elif (sit_scan.lower() == 'l'):
+    elif sit_scan == 'l':
         for ip in os.listdir("ARQ/WEB"):
-            parse_ip = ip.split(':')
-            result = os.system(f'ping -c 3 -W 1 -I {interface} {parse_ip[0]} > /dev/null')
-            if result == 0:
-                links(ip)
-            nsit = input(f'A busca em {ip} terminou. Deseja continuar? (S/N):  ')
-            if nsit.lower() == 's':
-                pass
-            else:
-                break
+            parse_ip = ip.split(':')[0]
+            result = os.system(f'ping -c 3 -W 1 {parse_ip} > /dev/null')
 
+            if result == 0:
+                links(parse_ip)
+                nsit = input(f'A busca em {parse_ip} terminou. Deseja continuar? (S/N): ').lower()
+                if nsit != 's':
+                    break
 
 #=======================================================================================
 ##################################################################
@@ -1773,21 +1672,29 @@ def server_tcp():
 
 
 #=======================================================================================
+######################################
+## CRIA UM SERVIDOR WEB COM PYTHON3 ##
+######################################
 def serverhttp():
     try:
         port = int(input('Qual porta será usada para o HTTP Server? '))
         server = hs.SimpleHTTPRequestHandler
         request = ss.TCPServer(("",port),server)
-        print(f"Server HTTP \033[1;32m'ONLINE'\033[m na PORTA: \033[7;33m{port}\033[m\n")
+        print(f"Server HTTP \033[1;32m'ONLINE'\033[m na PORTA: \033[7;33m{port}\033[m")
+        print(f'\033[1;33mhttp://127.0.0.1:{port}\n')
         request.serve_forever()
+
     except OverflowError:
         print('\nDigite uma porta valida. (0 ~ 65535)')
         serverhttp()
+
     except ValueError:
         print('\nDigite uma porta valida. (0 ~ 65535)')
         serverhttp()
+
     except PermissionError:
         print('Porta sem permissão.')
+
     except KeyboardInterrupt:
         print('\n'+Ctrl_C)
 
@@ -1842,7 +1749,7 @@ def wifi_hacking():
 
         for programa in dependencias:
             if not os.popen(f'which {programa}').read():
-                os.system(f" apt install {programa}")
+                os.system(f" apt install {programa} -y")
 
         interface = interfaces()
 
@@ -1856,6 +1763,7 @@ def wifi_hacking():
         sitwifi = input('Já existe o arquivo "Wificrack/hash.hc22000"? (S/N) ')
         if sitwifi.lower() == 's':
             magic_crack()
+
         elif sitwifi.lower() == 'n':
             minutos = int(input('\033[7;31mQuantos minutos deseja realizar o DUMP? \033[m'))
 
@@ -1870,12 +1778,12 @@ def wifi_hacking():
             os.system(' systemctl stop NetworkManager.service')
             os.system(' systemctl stop wpa_supplicant.service')
             
+            #####################################
+            ## CAPTURA DADOS DURANTE 5 MINUTOS ##
+            #####################################
             try:
-                #####################################
-                ## CAPTURA DADOS DURANTE 5 MINUTOS ##
-                #####################################
-                t.sleep(2)
-                os.system(f'hcxdumptool -i {interface} -o dumpfile.pcapng --active_beacon --enable_status=15 --tot=10')
+                t.sleep(1)
+                os.system(f'sudo hcxdumptool -i {interface} -w dumpfile.pcapng --tot {minutos}')
                 
             except KeyboardInterrupt:
                 pass
@@ -1884,15 +1792,16 @@ def wifi_hacking():
             ## CASO CANCELE ANTES DO TERMINO DO PROCESSO, RESTAURA OS SERVIÇOS DE REDE ##
             #############################################################################
             if KeyboardInterrupt:
-                os.system(' systemctl start NetworkManager.service')
-                os.system(' systemctl start wpa_supplicant.service')
-
+                os.system(' systemctl restart NetworkManager.service')
+                os.system(' systemctl restart wpa_supplicant.service')
+                os.system('iwconfig wlxd03745fbcadc mode managed')
             
             ##################################
             ## RESTAURA OS SERVIÇOS DE REDE ##
             ##################################
-            os.system(' systemctl start NetworkManager.service')
-            os.system(' systemctl start wpa_supplicant.service')
+            os.system(' systemctl restart NetworkManager.service')
+            os.system(' systemctl restart wpa_supplicant.service')
+            os.system('iwconfig wlxd03745fbcadc mode managed')
             input('Pressione para continuar')
 
             magic_crack()
@@ -1902,6 +1811,9 @@ def wifi_hacking():
             input(press)
             main()
 
+    ##############################
+    ## FUNÇÃO A SER CONFIGURADA ##
+    ##############################
     def wifi_scan():
         def scan(s):
             os.system('rm wash')
@@ -2018,7 +1930,6 @@ def banner():
  \033[0;34m[21]\033[m- Reverse Shell
  \033[0;34m[22]\033[m- Server TCP
  \033[0;34m[23]\033[m- ServerHTTP
- \033[0;34m[24]\033[m- Tryeres
  \033[0;34m[0]\033[m - Sair
 ''')
         options = {
@@ -2043,9 +1954,8 @@ def banner():
         19: suid,
         20: nc,
         21: reverse_shell,
-        22: serverhttp,
+        22: server_tcp,
         23: serverhttp,
-        24: lambda: os.system('gnome-terminal --title=Python -- sudo python Tryeres/Tryeres.py') or main,
         0: lambda: print(r'Volte sempre! ¯\_(ツ)_/¯') or quit
         }
 
@@ -2069,19 +1979,28 @@ def banner():
 ## VERIFICA SE AS BIBLIOTECAS NECESSÁRIAS ##
 ############################################
 def vrf_requisites():
-    # Verificar se o pip3 está instalado
+
+    #####################################
+    ## VERIFICA SE PIP3 ESTÁ INSTALADO ##
+    #####################################
     pip_installed = os.system('pip3 --version >/dev/null 2>&1') == 0
     print('Algumas dependências serão instaladas')
+
+    ########################
+    ## INSTALAÇÃO DO PIP3 ##
+    ########################
     if not pip_installed:
-        print('Instalando bibliotecas necessárias')
-        input('Pressione Enter para continuar...')
+        input(press)
         print("Pip3 não está instalado. Instalando...")
         os.system('apt-get update')
         os.system('apt-get install -y python3-pip')
+
     else:
         print("pip3 já está instalado.")
 
-    # Instalar bibliotecas Python se necessário
+    ###############################
+    ## INSTALAÇÃO DE BIBLIOTECAS ##
+    ###############################
     packages = {
         'scapy': 'scapy',
         'urllib3': 'urllib3',
@@ -2097,7 +2016,9 @@ def vrf_requisites():
             print(f"{package_name} não está instalado. Instalando...")
             os.system(f'pip3 install {package_module}')
 
-    # Verificar se os pacotes foram instalados corretamente
+    ##########################################################
+    ## VERIFICA SE OS PACOTES FORAM INSTALADOS CORRETAMENTE ##
+    ##########################################################
     print("Verificando instalação dos pacotes:")
     for package_name, package_module in packages.items():
         try:
@@ -2105,9 +2026,13 @@ def vrf_requisites():
             print(f"    {package_name}: OK")
         except ImportError:
             print(f"    {package_name}: Falha")
-
-
+    
+    ###############
+    ## CONCLUSÃO ##
+    ###############
     print("Instalação e verificação concluídas.")
+
+
 
 ################################
 ## FUNÇÃO PRINCIPAL DO CÓDIGO ##
@@ -2123,16 +2048,36 @@ def main():
 
         except ValueError:
                 print('Digite a opção correta.')
-                input('(Pressione qualquer tecla para continuar)')
+                input(press)
                 main()
         except SyntaxWarning:
             pass
     else:
         print("Execute o código como ROOT.")
 
+##################
+## VERIFICAÇÕES ##
+##################
+vrf_requisites()
+
+
+############################################
+## IMPORTAÇÃO DE BIBLIOTECAS COMPLEMENTAR ##
+############################################
+import requests
+import getpass as g
+import multiprocessing
+import threading as th
+import http.server as hs
+import socketserver as ss
+from bs4 import BeautifulSoup 
+from threading import Semaphore
+from requests.exceptions import SSLError
+from urllib.parse import urlparse, urljoin
+from concurrent.futures import ThreadPoolExecutor
 
 ##############
 ## EXECUÇÃO ##
 ##############
-vrf_requisites()
 main()
+
