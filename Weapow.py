@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-version = "v4.131-dev"
+version = "v4.14-dev"
 
 #########################################
 ## IMPORTAÇÃO DE BIBLIOTECAS PRINCIPAL ##
@@ -1701,14 +1701,8 @@ def serverhttp():
 
 #=======================================================================================
 def wifi_hacking():
-    ################################################
-    ## FUNÇÃO PARA QUEBRAR SENHA DENTRO DE UM FOR ##
-    ################################################
-    def magic_crack():
+    def magic_crack(wordlist_dir):
         try:
-            #######################
-            #CONVERTE PARA HASHCAT#
-            #######################
             os.system('hcxpcapngtool -o WifiCrack/hash.hc22000 -E essidlist dumpfile.pcapng')
 
             with open('WifiCrack/hash.hc22000','r') as f:
@@ -1718,23 +1712,33 @@ def wifi_hacking():
             print('\033[7;31mO arquivo "WifiCrack/*.hc22000" não foi encontrado, deixe o DUMP por mais tempo.\033[m')
             exit()
 
-        ## implementaçao definir a forma de quebra de hash
         for hash in dump.splitlines():
             nome_hash = hash.split('*')
+            if wordlist_dir:
+                for root, dirs, files in os.walk(wordlist_dir):
+                    for file in files:
+                        if file.endswith(".txt"):
+                            full_path = os.path.join(root, file)
+                            comando1 = f"hashcat -m 22000 WifiCrack/{nome_hash[3]}.hc22000 -a 0 {full_path} | tee WifiCrack/{file}.{nome_hash[3]}.result"
+                            t.sleep(0.025)
+                            with open(f'WifiCrack/{nome_hash[3]}.hc22000','w') as f:
+                                f.write(hash)
+                            print()                
+                            print(nome_hash[3])
+                            print('#################################################################################################################')
+                            os.system(comando1)
+            else:
+                print('else')
+                #comando1 = f"hashcat -m 22000 WifiCrack/{nome_hash[3]}.hc22000 -a 3 ?d?d?d?d?d?d?d?d | tee WifiCrack/{nome_hash[3]}.result"
+                #comando1 = f"hashcat -m 22000 WifiCrack/{nome_hash[3]}.hc22000 -a 3 ?a?a?a?a?a?a?a?a --increment --increment-min=8 --increment-max=15 | tee WifiCrack/{nome_hash[3]}.result"
+                #hashcat -m 22000 -a 3 ?d?d?d?d?d?d?d?d --increment --increment-min=8 --increment-max=10 -n 1024 -u 256 -w 4
             
-            comando1 = f"hashcat -m 22000 WifiCrack/{nome_hash[3]}.hc22000 -a 3 ?d?d?d?d?d?d?d?d | tee WifiCrack/{nome_hash[3]}.result"
-            #comando1 = f"hashcat -m 22000 WifiCrack/{nome_hash[3]}.hc22000 -a 3 ?a?a?a?a?a?a?a?a --increment --increment-min=8 --increment-max=15 | tee WifiCrack/{nome_hash[3]}.result"
-            #comando1 = f"hashcat -m 22000 WifiCrack/{nome_hash[3]}.hc22000 -a 0 /caminho/para/wordlist.txt | tee WifiCrack/{nome_hash[3]}.result"
-#hashcat -m 22000 -a 3 ?d?d?d?d?d?d?d?d --increment --increment-min=8 --increment-max=10 -n 1024 -u 256 -w 4
-
-            
-            with open(f'WifiCrack/{nome_hash[3]}.hc22000','w') as f:
-                f.write(hash)
-            print()                
-            print(nome_hash[3])
-            print('#################################################################################################################')
-            os.system(comando1)
-            #os.system(comando2)
+                with open(f'WifiCrack/{nome_hash[3]}.hc22000','w') as f:
+                    f.write(hash)
+                print()                
+                print(nome_hash[3])
+                print('#################################################################################################################')
+                os.system(comando1)
         
             #em caso de erro:
             #sudo ifconfig wlp0s20f3 down && sudo iwconfig wlp0s20f3 mode managed && sudo ifconfig wlp0s20f3 up
@@ -1761,10 +1765,16 @@ def wifi_hacking():
         os.system('mkdir WifiCrack')
 
         sitwifi = input('Já existe o arquivo "Wificrack/hash.hc22000"? (S/N) ')
+        wordlist_dir = input('Digite o PATH das Wordlists CASO queira usar: ')
+
         if sitwifi.lower() == 's':
-            magic_crack()
+            magic_crack(wordlist_dir)
 
         elif sitwifi.lower() == 'n':
+            sitlogic = input('Existe PCAPNG? (S/N) ')
+
+            if sitlogic.lower() == 's':
+                pass
             minutos = int(input('\033[7;31mQuantos minutos deseja realizar o DUMP? \033[m'))
 
             ################################
@@ -1804,7 +1814,7 @@ def wifi_hacking():
             os.system('iwconfig wlxd03745fbcadc mode managed')
             input('Pressione para continuar')
 
-            magic_crack()
+            magic_crack(wordlist_dir)
 
         else:
             print('Entrada inválida.')
@@ -2080,4 +2090,3 @@ from concurrent.futures import ThreadPoolExecutor
 ## EXECUÇÃO ##
 ##############
 main()
-
