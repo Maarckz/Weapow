@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-version = "v4.14-dev"
+version = "v4.132-dev"
 
 #########################################
 ## IMPORTAÇÃO DE BIBLIOTECAS PRINCIPAL ##
@@ -11,6 +11,9 @@ import socket
 import signal
 import ipaddress
 import time as t
+import threading as th
+import multiprocessing
+from concurrent.futures import ThreadPoolExecutor
 
 ###########################################################
 ## BANNER PRINCIPAL DO PROGRAMA, EXIBINDO A VERSÃO ATUAL ##
@@ -32,6 +35,11 @@ press = '\033[7;31m(Pressione qualquer tecla para voltar ao menu inicial)\033[m'
 Ctrl_C = 'Você pressionou Ctrl+C para interromper o programa!'
 dir = 'mkdir -p ARQ'
 SIGNALHOSTDISCOVERY = True
+
+############################
+## CRIA O DIRETÓRIO ./ARQ ##
+############################
+os.system(dir)
 
 #########################################
 ## FUNÇÃO PARA INTERRUPÇÃO DO PROGRAMA ##
@@ -108,16 +116,17 @@ def interfaces():
         quit()
 
 #=======================================================================================
+
 #############################################
 ## FUNÇÃO PARA DESCOBERTA DE HOSTS NA REDE ##
 #############################################
 def host_discovery():
 
     ###################################################
-    ## DEFINE O NUMERO MAXÍMO DE THREADS SIMULTANEAS ##
+    ## DEFINE O NUMERO MÁXIMO DE THREADS SIMULTÂNEAS ##
     ###################################################
-    max_threads = 300 
-    thread_semaphore = Semaphore(max_threads)
+    max_threads = 160
+    thread_semaphore = th.Semaphore(max_threads)
 
     ##########################################################
     ## EXECUTA O COMANDO PING + EXIBIR E SALVAR OS HOSTS-UP ##
@@ -130,9 +139,9 @@ def host_discovery():
             if response == 0:
                 print(f"[+] Host ativo: {ip}")
 
-                with open('ARQ/hosts.txt','a') as f:
+                with open('ARQ/hosts.txt', 'a') as f:
                     f.write(f'{ip}\n')
-    
+
     #########################################################
     ## CRIA UMA POOL PARA GERENCIAR A EXECUÇÃO DOS THREADS ##
     #########################################################
@@ -141,15 +150,15 @@ def host_discovery():
             executor.map(ping_host, subnet)
 
     ##########################################
-    ## INPUT PARA RECEBER A MASCARA DE REDE ##
+    ## INPUT PARA RECEBER A MÁSCARA DE REDE ##
     ##########################################
     network = input("Digite a máscara de rede (Exemplo: 10.0.0.0/16): ")
-    os.popen('rm ARQ/hosts.txt 2>/dev/null')
+    os.system('rm -f ARQ/hosts.txt')  # Limpa o arquivo anterior
 
     all_hosts = list(ipaddress.IPv4Network(network, strict=False).hosts())
     
     ######################################################################
-    ## DEFINE O NUMERO DE PROCESSOS DE ACORDO COM A QUANTIDADE DE HOSTS ##
+    ## DEFINE O NÚMERO DE PROCESSOS DE ACORDO COM A QUANTIDADE DE HOSTS ##
     ######################################################################
     num_processes = multiprocessing.cpu_count()
     chunk_size = len(all_hosts) // num_processes
@@ -639,6 +648,23 @@ def auto_web():
         pass
     input("Pressione Enter para continuar...")
     main()
+
+#=======================================================================================
+def ferramentas():
+    print("Esta opção irá instalar um conjunto de ferramentas uteis para RECON + PENTEST.")
+    sit_tool = input('Deseja continuar? (S/N) ')
+    
+
+    #separar as ferramentas
+    #verificar se root ou nao
+    #verificar sistema operacional
+    #verificar se as ferramentas estao instaladas
+    #fazer um menu de check
+    #instalar cada ferramenta
+    try:
+        pass
+    except KeyboardInterrupt:
+        print('\n'+Ctrl_C)
 
 
 #=======================================================================================
@@ -1749,7 +1775,7 @@ def wifi_hacking():
         ###########################
         ## VERIFICA DEPENDENCIAS ##
         ###########################
-        dependencias = ["hcxdumptool", "hcxpcapngtool", "hashcat", 'xterm']
+        dependencias = ["hcxdumptool", "hashcat", 'xterm']
 
         for programa in dependencias:
             if not os.popen(f'which {programa}').read():
@@ -1925,12 +1951,12 @@ def banner():
  \033[0;34m[6]\033[m - WebCrawler (Bugs)
  \033[0;34m[7]\033[m - FormWeb
  \033[0;34m[8]\033[m - WifiHacking
- \033[0;34m[9]\033[m - BackUp
+ \033[0;34m[9]\033[m - Instalar Ferramentas
  \033[0;34m[10]\033[m- Clonar Part|Disk
  \033[0;34m[11]\033[m- CronTab
  \033[0;34m[12]\033[m- Finder
  \033[0;34m[13]\033[m- EnumLinux Auditor
- \033[0;34m[14]\033[m- Config Tool
+ \033[0;34m[14]\033[m- Config. Hardening
  \033[0;34m[15]\033[m- LinPeas
  \033[0;34m[16]\033[m- LinEnum
  \033[0;34m[17]\033[m- Potemkin
@@ -1951,7 +1977,7 @@ def banner():
         6: link,
         7: auto_web,
         8: wifi_hacking,
-        9: backup,
+        9: ferramentas,
         10: clonar,
         11: cron,
         12: finder,
@@ -2042,49 +2068,57 @@ def vrf_requisites():
     ###############
     print("Instalação e verificação concluídas.")
 
-
-
+11
 ################################
 ## FUNÇÃO PRINCIPAL DO CÓDIGO ##
 ################################
 def main():
+    try:
+        banner()
 
-    if os.geteuid() == 0:
-        try:
-            banner()
+    except (KeyboardInterrupt):
+        print('\n'+Ctrl_C)
 
-        except (KeyboardInterrupt):
-            print('\n'+Ctrl_C)
+    except ValueError:
+            print('Digite a opção correta.')
+            input(press)
+            main()
+    except SyntaxWarning:
+        pass
 
-        except ValueError:
-                print('Digite a opção correta.')
-                input(press)
-                main()
-        except SyntaxWarning:
-            pass
+###########################################
+## VERIFICA SE ESTÁ EXECUTANDO COMO ROOT ##
+###########################################
+if os.geteuid() == 0:
+    ##################
+    ## VERIFICAÇÕES ##
+    ##################
+    vrf_requisites()
+
+    ############################################
+    ## IMPORTAÇÃO DE BIBLIOTECAS COMPLEMENTAR ##
+    ############################################
+    import requests
+    import getpass as g
+    import http.server as hs
+    import socketserver as ss
+    from bs4 import BeautifulSoup 
+    from requests.exceptions import SSLError
+    from urllib.parse import urlparse, urljoin
+
+###############################
+## CASO NÃO ESTEJA COMO ROOT ##
+###############################
+if os.geteuid() != 0:
+    stroot = input("Existem limitações sem ROOT, deseja continuar mesmo assim? (S/N)  ")
+    if stroot.lower() == 's':
+        main()
     else:
-        print("Execute o código como ROOT.")
+        quit()
 
-##################
-## VERIFICAÇÕES ##
-##################
-vrf_requisites()
+else:
+    quit()
 
-
-############################################
-## IMPORTAÇÃO DE BIBLIOTECAS COMPLEMENTAR ##
-############################################
-import requests
-import getpass as g
-import multiprocessing
-import threading as th
-import http.server as hs
-import socketserver as ss
-from bs4 import BeautifulSoup 
-from threading import Semaphore
-from requests.exceptions import SSLError
-from urllib.parse import urlparse, urljoin
-from concurrent.futures import ThreadPoolExecutor
 
 ##############
 ## EXECUÇÃO ##
