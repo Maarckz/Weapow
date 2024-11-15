@@ -5,9 +5,8 @@
 </div>
 
 
-O WEAPOW é um **projeto** criado em Python, por **Maarckz**, que oferece uma coleção de ferramentas para ajudar profissionais de *segurança da informação, auditoria, e estudos para PENTEST e BUGBOUNTY* em suas tarefas diárias. Se você está procurando uma solução completa e fácil de usar, o WEAPOW pode ser exatamente o que você precisa.
+O WEAPOW é um **projeto** criado em Python, por **Maarckz**, que oferece uma coleção de ferramentas para ajudar profissionais de *segurança da informação, auditoria, e estudos para PENTEST e BUGBOUNTY* em suas tarefas diárias. Se você está procurando uma solução completa e fácil de usar, o WEAPOW pode ser exatamente o que você precisa. Ela inclui funções de descoberta de hosts, scanners de portas, ataques de força bruta em redes Wi-Fi, configuração de firewalls e muito mais.
 
-Algumas das principais funções incluem a criação de ListIP, HostDiscovery, PortScanner, Search HTTP, Server HTTP, BackUP, Configuração CRON e busca por vulnerabilidades específicas em todo o sistema de arquivos. O projeto WEAPOW é um script para facilitar a vida de profissionais de segurança da informação e entusiastas que desejam aprender mais sobre essa área. Com uma gama de recursos e ferramentas, o WEAPOW pode ajudá-lo a proteger sua rede, obter mais  informações sobre ela.
 
 ## Instalação
 
@@ -23,7 +22,7 @@ pip3 install requests
 Baixa bastar e executar:
 
 ```sh
-git clone https://github.com/Maarckz/Weapow.git && cd Weapow && python3 weapow.py
+git clone https://github.com/Maarckz/Weapow.git && cd Weapow && sudo python3 Weapow.py
 ```
 
 ## Bibliotecas
@@ -43,6 +42,26 @@ git clone https://github.com/Maarckz/Weapow.git && cd Weapow && python3 weapow.p
 | requests.exceptions | Necessário para fazer tratamento de erros de requisição. |
 | urllib | Permite manipular URL. Ex: Fazer um parse. |
 | ThreadPoolExecutor | Cria Threads que podem ser usadas para executar funções em paralelo. |
+
+
+os: Interage com o sistema operacional.
+sys: Acesso às variáveis e funções internas do Python.
+socket: Comunicação entre aplicações via rede (protocolos de rede).
+signal: Manipulação de sinais, como interrupções do sistema.
+ipaddress: Manipulação de endereços IP.
+time: Manipulação e controle de tempo.
+threading: Para criação de threads, permitindo execução paralela.
+multiprocessing: Processamento paralelo em múltiplos núcleos.
+concurrent.futures.ThreadPoolExecutor: Executor para facilitar execução paralela usando threads.
+requests: Envio de requisições HTTP.
+getpass: Entrada segura de senhas.
+tqdm: Barra de progresso.
+queue: Estrutura de dados para filas.
+http.server: Criação de servidores HTTP simples.
+socketserver: Infraestrutura para criar servidores de rede.
+BeautifulSoup: Extração de dados de arquivos HTML/XML.
+requests.exceptions: Tratamento de exceções em requisições HTTP.
+urllib.parse: Manipulação de URLs (ex: análise, junção).
 
 
 ## Desenvolvimento
