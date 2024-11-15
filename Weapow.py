@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-version = "v4.2dev"
+version = "v4.212dev"
 
 #########################################
 ## IMPORTAÇÃO DE BIBLIOTECAS PRINCIPAL ##
@@ -32,11 +32,11 @@ Y88b 888 d88P Y8b.     888  888 888 d88P Y88..88P Y88b 888 d88P
 ####################################################
 press = '\033[7;31m(Pressione qualquer tecla para voltar ao menu inicial)\033[m'
 Ctrl_C = 'Você pressionou Ctrl+C para interromper o programa!'
-dir = 'mkdir -p ARQ'
+dir = 'mkdir -p .ARQ'
 SIGNALHOSTDISCOVERY = True
 
 ############################
-## CRIA O DIRETÓRIO ./ARQ ##
+## CRIA O DIRETÓRIO ./.ARQ ##
 ############################
 os.system(dir)
 
@@ -134,7 +134,7 @@ def host_discovery():
 
             if response == 0:
                 tqdm.write(f"[+] Host ativo: {ip}")  # Usa tqdm.write para evitar conflito com a barra
-                with open('ARQ/hosts.txt', 'a') as f:
+                with open('.ARQ/hosts.txt', 'a') as f:
                     f.write(f'{ip}\n')
             
             progress_bar.update(1)  # Atualiza a barra de progresso
@@ -150,7 +150,7 @@ def host_discovery():
     ## INPUT PARA RECEBER A MÁSCARA DE REDE ##
     ##########################################
     network = input("Digite a máscara de rede (Exemplo: 10.0.0.0/16): ")
-    os.system('rm -f ARQ/hosts.txt')  # Limpa o arquivo anterior
+    os.system('rm -f .ARQ/hosts.txt')  # Limpa o .ARQuivo anterior
 
     all_hosts = list(ipaddress.IPv4Network(network, strict=False).hosts())
     total_hosts = len(all_hosts)  # Total de hosts para progresso
@@ -200,7 +200,7 @@ def scan(host, porta):
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.settimeout(5.5)
                 if s.connect_ex((host, int(porta))) == 0:
-                    with open("ARQ/portscan.txt", "a") as f:
+                    with open(".ARQ/portscan.txt", "a") as f:
                         try:
                             service = socket.getservbyport(porta)
                             print(f"{str(porta)} / TCP{espaco}{service}")
@@ -221,7 +221,7 @@ def big_scan():
     ##############################################################
     def uniq(host):
         try:
-            with open("ARQ/portscan.txt", "a") as f:
+            with open(".ARQ/portscan.txt", "a") as f:
                 print("\n[+] Host: " + host)
                 print("\n[+] Host: " + host, file=f)
                 print("PORTA          SERVIÇO")
@@ -248,20 +248,24 @@ def big_scan():
     ###########################################################
     ## INTERAÇÃO COM O USUÁRIO PARA DIRECIONAMENTO DA FUNÇÃO ##
     ###########################################################
-    os.popen('rm ARQ/portscan.txt 2>/dev/null')
+    os.popen('rm .ARQ/portscan.txt 2>/dev/null')
     sit_scan = input('Deseja utilizar um (H)ost ou a (L)ista? (H/L): ')
 
     if sit_scan.lower() == 'h':
         host = input("Digite o endereço IP ou domínio: ")
         uniq(host)
     elif sit_scan.lower() == 'l':
-        with open('ARQ/hosts.txt','r') as file:
+        with open('.ARQ/hosts.txt','r') as file:
             for line in file:
                 uniq(line.strip())
 
 
 #-----------------------------------------------------------------------------
+###################################################################
+## UM ENUMERADOR PORDEROSO DE PORTAS DE ACORDO COM O RANGE DE IP ##
+###################################################################
 def world_scan():
+
     #####################################################
     ## DEFINE O NÚMERO DE THREADS E CRIA UM "SEMAFORO" ##
     #####################################################
@@ -344,8 +348,8 @@ def world_scan():
 ######################################################################
 def nc_get():
     # Limpa o diretório e garante sua existência
-    os.system('rm -rf ARQ/HEAD/* 2>/dev/null')
-    os.makedirs("ARQ/HEAD", exist_ok=True)
+    os.system('rm -rf .ARQ/HEAD/* 2>/dev/null')
+    os.makedirs(".ARQ/HEAD", exist_ok=True)
 
     print('No código, existe a função nc(), mais lenta e verifica todas as portas.')
 
@@ -354,9 +358,9 @@ def nc_get():
         try:
             comando = f'echo -e "\\n" | nc -vn -w 10 {host} {porta} 2>&1'
             resultado = os.popen(comando).read()
-            caminho_arquivo = f"ARQ/HEAD/{host}"
+            caminho_arquivo = f".ARQ/HEAD/{host}"
 
-            # Escreve o resultado no arquivo
+            # Escreve o resultado no .ARQuivo
             with open(caminho_arquivo, "a") as arquivo_respostas:
                 resposta = f"[+] Host: {host}    Porta: {porta}    Serviço: {servico}\n{resultado}\n"
                 arquivo_respostas.write(resposta)
@@ -373,7 +377,7 @@ def nc_get():
     
     # Lê os resultados do portscan e executa a função get para cada host/porta
     try:
-        with open("ARQ/portscan.txt", "r") as arquivo:
+        with open(".ARQ/portscan.txt", "r") as arquivo:
             linhas = arquivo.read().strip().split('\n')
             host = None
 
@@ -385,20 +389,20 @@ def nc_get():
                     if host:
                         th.Thread(target=get, args=(host, porta, servico)).start()
     except FileNotFoundError:
-        print("Arquivo ARQ/portscan.txt não encontrado.")
+        print(".ARQuivo .ARQ/portscan.txt não encontrado.")
     except Exception as e:
-        print(f"Erro ao processar ARQ/portscan.txt: {e}")
+        print(f"Erro ao processar .ARQ/portscan.txt: {e}")
 
     input("Pressione Enter para continuar...")
     main()
 
 def wget_pg(host, porta):
         try:
-            os.makedirs(f"ARQ/WEB/{host}", exist_ok=True)
+            os.makedirs(f".ARQ/WEB/{host}", exist_ok=True)
             os.system(f'wget --no-check-certificate --mirror --convert-links '
                       f'--adjust-extension --page-requisites --timeout=10 '
-                      f'http://{host}:{porta} -P ARQ/WEB/')
-            os.system(f'chmod 777 -R ARQ/WEB/{host}')
+                      f'http://{host}:{porta} -P .ARQ/WEB/')
+            os.system(f'chmod 777 -R .ARQ/WEB/{host}')
         except Exception as e:
             print(f"Erro ao realizar download do site {host}:{porta} - {e}")
 
@@ -616,7 +620,7 @@ def link():
         links(target)
 
     elif sit_scan == 'l':
-        for ip in os.listdir("ARQ/WEB"):
+        for ip in os.listdir(".ARQ/WEB"):
             parse_ip = ip.split(':')[0]
             result = os.system(f'ping -c 3 -W 1 {parse_ip} > /dev/null')
 
@@ -632,20 +636,20 @@ def link():
 ## FAZ UMA VERIFICAÇÃO NOS SITES BAIXADOS, BUSCANDO FORMULÁRIOS ##
 ##################################################################            
 def auto_web():
-    os.makedirs("ARQ/WEB", exist_ok=True)
+    os.makedirs(".ARQ/WEB", exist_ok=True)
     sit_scan = input('Deseja utilizar um (H)ost ou a (L)ista? (H/L): ').lower()
     if sit_scan.lower() == 'h':
         url = input('Digite a URL a ser Verificada:')
         wget_pg(url, 80)
     elif sit_scan.lower() == 'l':
-        ips = os.popen(r'grep -iR -A 5 "<form" ARQ/WEB | grep -Eo "([0-9]{1,3}\.){3}[0-9]{1,3}" | sort -u').read().split()
+        ips = os.popen(r'grep -iR -A 5 "<form" .ARQ/WEB | grep -Eo "([0-9]{1,3}\.){3}[0-9]{1,3}" | sort -u').read().split()
 
         try:
             #########################################################
-            ## FAZ UMA VARREDURA NO ARQUIVO QUE TIVER "index.html" ##
+            ## FAZ UMA VARREDURA NO .ARQUIVO QUE TIVER "index.html" ##
             #########################################################
             for ip in ips:
-                caminho_html = f'ARQ/WEB/{ip}/index.html'
+                caminho_html = f'.ARQ/WEB/{ip}/index.html'
                 with open(caminho_html, 'r', encoding='utf-8') as arquivo:
                     conteudo_html = arquivo.read()
                     soup = BeautifulSoup(conteudo_html, 'html.parser')
@@ -665,10 +669,10 @@ def auto_web():
                             print('---------------------------------------------------------\n')
 
             ########################################################
-            ## FAZ UMA VARREDURA NO ARQUIVO QUE TIVER "index.php" ##
+            ## FAZ UMA VARREDURA NO .ARQUIVO QUE TIVER "index.php" ##
             ########################################################
             for ip in ips:
-                caminho_html = f'ARQ/WEB/{ip}/index.php'
+                caminho_html = f'.ARQ/WEB/{ip}/index.php'
                 with open(caminho_html, 'r', encoding='utf-8') as arquivo:
                     conteudo_html = arquivo.read()
                     soup = BeautifulSoup(conteudo_html, 'html.parser')
@@ -715,7 +719,7 @@ def ferramentas():
 
 #-----------------------------------------------------------------------------
 def backup():
-    print("Este processo poderá levar MUITO tempo dependendo da quantidade de arquivos.")
+    print("Este processo poderá levar MUITO tempo dependendo da quantidade de .ARQuivos.")
     sit_bak = input('Deseja realmente fazer BKP do usuário desta estação? (S/N) ')
     try:
         if(sit_bak.lower() == "s"):
@@ -749,7 +753,7 @@ Para configurar uma rotina C[R]ON:
 
 \033[1;33m*  *  *  *  *  /usr/bin/python3 /caminho/do/script.*\033[m
 \033[0;31m-  -  -  -  -     |                                |\033[m
-\033[0;31m|  |  |  |  |     +---\033[m Caminho do Executável\033[m       \033[0;31m+---\033[m Extensão do arquivo a ser Executado. Ex: .sh .c .py
+\033[0;31m|  |  |  |  |     +---\033[m Caminho do Executável\033[m       \033[0;31m+---\033[m Extensão do .ARQuivo a ser Executado. Ex: .sh .c .py
 \033[0;31m|  |  |  |  |
 \033[0;31m|  |  |  |  +----------------------\033[m Dia da Semana (0-6) [Sendo 0 = Domingo]
 \033[0;31m|  |  |  +-------------------------\033[m Mês (1-12)
@@ -758,7 +762,7 @@ Para configurar uma rotina C[R]ON:
 \033[0;31m+----------------------------------\033[m Minutos (0-59) se quiser a cada 15min use: '/15'
 
 Exemplo:
-\033[7;33m*/15 * * * * /usr/bin/python3 /caminho/do/weapow.py\033[m   [A cada 15min EXEC o arquivo weapow.py usando Python3]
+\033[7;33m*/15 * * * * /usr/bin/python3 /caminho/do/weapow.py\033[m   [A cada 15min EXEC o .ARQuivo weapow.py usando Python3]
 \033[7;33m30 15 14 6 * /tmp/backup.sh\033[m                        [No dia 14JUN às 15:30 EXEC o backup.sh]
 
 
@@ -785,7 +789,7 @@ Você pode conferir a alteração com o comando: "\033[0;34m$ crontab -e\033[m"
 #-----------------------------------------------------------------------------
 def finder():
     try:
-        find = str(input('Digite o arquivo que deseja encontrar: '))
+        find = str(input('Digite o .ARQuivo que deseja encontrar: '))
         print('Procurando com FIND:')
         print('==================================================================================\n')
         os.system(f' find / -name {find} 2>/dev/null | grep {find}')
@@ -899,12 +903,6 @@ def infosys():
         output += '===============================================================\n'
 
         output += '\n'
-        output += 'CAPTIVEF ======================================================\n'
-        output += os.popen('echo Travando o programa.').read()
-        #output += os.popen('getcap -r / 2>/dev/null').read()
-        output += '===============================================================\n'
-
-        output += '\n'
         output += 'VARIAVEIS DE AMBIENTE =========================================\n'
         output += os.popen('env').read()
         output += '===============================================================\n'
@@ -935,12 +933,12 @@ def infosys():
 
         print(output)
 
-        sit_audi = input('Deseja salvar em arquivo? (S/N) ')
+        sit_audi = input('Deseja salvar em .ARQuivo? (S/N) ')
         if(sit_audi.lower() == "s"):
-            os.system('rm -rf ARQ/auditoria.txt')
-            with open('ARQ/auditoria.txt', 'w') as file:
+            os.system('rm -rf .ARQ/auditoria.txt')
+            with open('.ARQ/auditoria.txt', 'w') as file:
                 file.write(output)
-            print('Seu Arquivo foi gerado com Sucesso!')
+            print('Seu .ARQuivo foi gerado com Sucesso!')
             input(press)
             main()
         else:
@@ -950,9 +948,9 @@ def infosys():
         print('\n'+Ctrl_C)
     except FileNotFoundError:
         os.system(dir)
-        with open('ARQ/auditoria.txt', 'w') as file:
+        with open('.ARQ/auditoria.txt', 'w') as file:
                 file.write(output)
-        print('Seu Arquivo foi gerado com Sucesso!')
+        print('Seu .ARQuivo foi gerado com Sucesso!')
         input(press)
         main()
 
@@ -986,7 +984,7 @@ def config():
         \033[0;34m[3]\033[m - Restringir TODOS os comandos
         \033[0;34m[4]\033[m - Config SSH
         \033[0;34m[5]\033[m - Configurar IP
-        \033[0;34m[6]\033[m - xxx
+        \033[0;34m[6]\033[m - Remove KeySensitive
         \033[0;34m[7]\033[m - xxx
         \033[0;34m[8]\033[m - xxx
         \033[0;34m[9]\033[m - xxx
@@ -1039,7 +1037,7 @@ def config():
             os.system(f'''echo 'for comando in "${{comandos[@]}}"; do' |  tee -a {dir} > /dev/null''')
             os.system(f'''echo '  alias "$comando"="echo 'Comando bloqueado'"' |  tee -a {dir} > /dev/null''')
             os.system(f'''echo 'done' |  tee -a {dir} > /dev/null''')
-            print("Arquivo modificado com sucesso!")
+            print(".ARQuivo modificado com sucesso!")
 
     #############################################
     ## Função para configurar SSH ##
@@ -1076,7 +1074,7 @@ Banner = /etc/issue.net
         print("Configuração de IP:")
         
         # Definir interface de rede (substitua 'eth0' ou 'enp0s3' com a interface correta)
-        interface = input("Digite o nome da interface de rede (exemplo: eth0 ou enp0s3): ")
+        interface = interfaces()
         
         # Configurar o IP
         ip = input("Digite o IP a ser configurado: ")
@@ -1093,8 +1091,17 @@ Banner = /etc/issue.net
         # Configurar DNS
         dns = input("Digite o DNS primário: ")
         os.system(f"echo 'nameserver {dns}' > /etc/resolv.conf")
-        
+        os.system(f'ip link set {interface} down')
+        os.system(f'ip link set {interface} up')
         print("Configuração de IP aplicada com sucesso!")
+
+
+    #############################################
+    ## Remove o KeySensitive do Terminal ##
+    #############################################
+    def remove_keysensitive():
+        os.system('echo set completion-ignore-case on | sudo tee -a /etc/inputrc')
+
 
     #############################################
     ## Função principal que chama as opções ##
@@ -1115,6 +1122,8 @@ Banner = /etc/issue.net
             configure_ssh()
         elif opcao == 5:
             configure_ip()
+        elif opcao == 6:
+            remove_keysensitive()
         elif opcao == 0:
             print(r'Volte sempre! ¯\_(ツ)_/¯')
             quit()
@@ -1758,7 +1767,7 @@ def reverse_shell():
 #=======================================================================================
 def server_tcp():
     try:
-        file = open("ARQ/output.txt", "w")
+        file = open(".ARQ/output.txt", "w")
         porta = int(input("Digite a Porta a ser escutada: "))
         try:
             with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as s:
@@ -1817,7 +1826,7 @@ def wifi_hacking():
             with open('WifiCrack/hash.hc22000', 'r') as f:
                 dump = f.read()
         except FileNotFoundError:
-            print('\033[7;31mO arquivo "WifiCrack/*.hc22000" não foi encontrado. Prolongue o DUMP.\033[m')
+            print('\033[7;31mO .ARQuivo "WifiCrack/*.hc22000" não foi encontrado. Prolongue o DUMP.\033[m')
             exit()
 
         for hash in dump.splitlines():
@@ -1844,7 +1853,7 @@ def wifi_hacking():
         os.system('rm -rf WifiCrack')
         os.system('mkdir WifiCrack')
 
-        sitwifi = input('Já existe o arquivo "WifiCrack/hash.hc22000"? (S/N) ').lower()
+        sitwifi = input('Já existe o .ARQuivo "WifiCrack/hash.hc22000"? (S/N) ').lower()
         wordlist_dir = input('Digite o PATH das Wordlists CASO queira usar: ')
 
         if sitwifi == 's':
@@ -1950,7 +1959,7 @@ def banner():
  \033[0;34m[11]\033[m- CronTab
  \033[0;34m[12]\033[m- Finder
  \033[0;34m[13]\033[m- EnumLinux Auditor
- \033[0;34m[14]\033[m- Config. Hardening
+ \033[0;34m[14]\033[m- Config. Linux
  \033[0;34m[15]\033[m- LinPeas
  \033[0;34m[16]\033[m- LinEnum
  \033[0;34m[17]\033[m- Instalar Wazuh
@@ -2042,12 +2051,11 @@ if os.geteuid() == 0:
     #####################################
     pip_installed = os.system('pip3 --version >/dev/null 2>&1') == 0
     print('Algumas dependências serão instaladas')
-
+    input('Continuar ...')
     ########################
     ## INSTALAÇÃO DO PIP3 ##
     ########################
     if not pip_installed:
-        input(press)
         print("Pip3 não está instalado. Instalando...")
         os.system('apt-get update')
         os.system('apt-get install -y python3-pip')
@@ -2058,6 +2066,8 @@ if os.geteuid() == 0:
     ###############################
     ## INSTALAÇÃO DE BIBLIOTECAS ##
     ###############################
+
+
     packages = {
         'scapy': 'scapy',
         'urllib3': 'urllib3',
@@ -2073,6 +2083,7 @@ if os.geteuid() == 0:
             __import__(package_module)
         except ImportError:
             print(f"{package_name} não está instalado. Instalando...")
+            os.system('mv /usr/local/lib/python3.*/EXTERNALLY-MANAGED /usr/local/lib/python3.*/EXTERNALLY-MANAGED.bkp')
             os.system(f'pip3 install {package_module}')
 
     ##########################################################
