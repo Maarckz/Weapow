@@ -1947,20 +1947,20 @@ def banner():
  \033[0;34m[6]\033[m - WebCrawler (Bugs)
  \033[0;34m[7]\033[m - FormWeb (Descontinuado)
  \033[0;34m[8]\033[m - WifiHacking
- \033[0;34m[10]\033[m- Clonar Part|Disk
- \033[0;34m[11]\033[m- CronTab
- \033[0;34m[12]\033[m- Finder
- \033[0;34m[13]\033[m- EnumLinux Auditor
- \033[0;34m[14]\033[m- Config. Linux
- \033[0;34m[15]\033[m- LinPeas
- \033[0;34m[16]\033[m- LinEnum
- \033[0;34m[17]\033[m- Instalar Wazuh
- \033[0;34m[18]\033[m- Waza
- \033[0;34m[19]\033[m- SUID
- \033[0;34m[20]\033[m- Conn. Listen
- \033[0;34m[21]\033[m- Reverse Shell
- \033[0;34m[22]\033[m- Server TCP
- \033[0;34m[23]\033[m- ServerHTTP
+ \033[0;34m[9]\033[m- Clonar Part|Disk
+ \033[0;34m[10]\033[m- CronTab
+ \033[0;34m[11]\033[m- Finder
+ \033[0;34m[12]\033[m- EnumLinux Auditor
+ \033[0;34m[13]\033[m- Config. Linux
+ \033[0;34m[14]\033[m- LinPeas
+ \033[0;34m[15]\033[m- LinEnum
+ \033[0;34m[16]\033[m- Instalar Wazuh
+ \033[0;34m[17]\033[m- Waza
+ \033[0;34m[18]\033[m- SUID
+ \033[0;34m[19]\033[m- Conn. Listen
+ \033[0;34m[20]\033[m- Reverse Shell
+ \033[0;34m[21]\033[m- Server TCP
+ \033[0;34m[22]\033[m- ServerHTTP
  \033[0;34m[0]\033[m - Sair
 ''')
         options = {
