@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-version = "v4.214dev"
+version = "v4.213dev"
 
 #########################################
 ## IMPORTAÇÃO DE BIBLIOTECAS PRINCIPAL ##
@@ -341,7 +341,6 @@ def world_scan():
         p.join()
 
 
-
 #-----------------------------------------------------------------------------
 ######################################################################
 ## ENVIA UMA CONEXÃO VIA NETCAT PARA RETORNAR UM POSSÍVEL CABEÇALHO ##
@@ -351,16 +350,14 @@ def nc_get():
     os.system('rm -rf .ARQ/HEAD/* 2>/dev/null')
     os.makedirs(".ARQ/HEAD", exist_ok=True)
 
-    print('No código, existe a função nc(), mais lenta e verifica todas as portas.')
-
     # Função para enviar requisição usando netcat
-    def get(host, porta, servico):
+    def get(host, porta, servico="Desconhecido"):
         try:
             comando = f'echo -e "\\n" | nc -vn -w 10 {host} {porta} 2>&1'
             resultado = os.popen(comando).read()
             caminho_arquivo = f".ARQ/HEAD/{host}"
 
-            # Escreve o resultado no .ARQuivo
+            # Escreve o resultado no arquivo
             with open(caminho_arquivo, "a") as arquivo_respostas:
                 resposta = f"[+] Host: {host}    Porta: {porta}    Serviço: {servico}\n{resultado}\n"
                 arquivo_respostas.write(resposta)
@@ -374,29 +371,7 @@ def nc_get():
             print(f"Erro ao executar o comando nc: {e}")
 
     # Função para realizar o download de páginas web
-    
-    # Lê os resultados do portscan e executa a função get para cada host/porta
-    try:
-        with open(".ARQ/portscan.txt", "r") as arquivo:
-            linhas = arquivo.read().strip().split('\n')
-            host = None
-
-            for linha in linhas:
-                if '[+] Host:' in linha:
-                    host = linha.split(':')[-1].strip()
-                elif 'PORTA' not in linha and '/' in linha:
-                    porta, servico = map(str.strip, linha.split('/')[:2])
-                    if host:
-                        th.Thread(target=get, args=(host, porta, servico)).start()
-    except FileNotFoundError:
-        print(".ARQuivo .ARQ/portscan.txt não encontrado.")
-    except Exception as e:
-        print(f"Erro ao processar .ARQ/portscan.txt: {e}")
-
-    input("Pressione Enter para continuar...")
-    main()
-
-def wget_pg(host, porta):
+    def wget_pg(host, porta):
         try:
             os.makedirs(f".ARQ/WEB/{host}", exist_ok=True)
             os.system(f'wget --no-check-certificate --mirror --convert-links '
@@ -406,23 +381,58 @@ def wget_pg(host, porta):
         except Exception as e:
             print(f"Erro ao realizar download do site {host}:{porta} - {e}")
 
-def cert_subdomain():
-    target_domain = input('Digite o dominio: ')
-    target = target_domain.replace('www.', '').split('/')[0]
+    # Função para realizar o port scanning
+    def port_scanner(host, port_range):
+        open_ports = []
+        for porta in port_range:
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.settimeout(0.5)  # Define timeout para conexões
+                    if s.connect_ex((host, porta)) == 0:  # Porta aberta
+                        open_ports.append(porta)
+            except Exception as e:
+                print(f"Erro ao escanear porta {porta} em {host}: {e}")
+        return open_ports
 
-    try:
-        req = requests.get(f"https://crt.sh/?q=%.{target}&output=json")
-        req.raise_for_status()
-    except requests.RequestException:
-        print("[X] Information not available!")
+    # Pergunta ao usuário se quer usar um host ou uma lista
+    sit_scan = input('Deseja utilizar um (H)ost ou a (L)ista? (H/L): ').strip().lower()
 
-    subdomains = sorted({value['name_value'] for value in req.json()})
+    if sit_scan == 'h':
+        # Solicita ao usuário o host
+        host = input("Digite o host: ").strip()
+        port_range = range(1, 65536)  # Todas as portas
+        print(f"Escaneando portas em {host}...")
+        open_ports = port_scanner(host, port_range)
 
-    print(f"\n[!] TARGET: {target} [!] \n")
+        # Captura banners das portas abertas
+        for porta in open_ports:
+            th.Thread(target=get, args=(host, str(porta))).start()
 
-    for subdomain in subdomains:
-        print(subdomain)
+    elif sit_scan == 'l':
+        # Lê os hosts da lista
+        try:
+            with open(".ARQ/portscan.txt", "r") as arquivo:
+                hosts = arquivo.read().strip().split('\n')
 
+            for host in hosts:
+                host = host.strip()
+                if host:
+                    print(f"Escaneando portas em {host}...")
+                    open_ports = port_scanner(host, range(1, 65536))
+
+                    # Captura banners das portas abertas
+                    for porta in open_ports:
+                        th.Thread(target=get, args=(host, str(porta))).start()
+
+        except FileNotFoundError:
+            print(".ARQ/portscan.txt não encontrado.")
+        except Exception as e:
+            print(f"Erro ao processar .ARQ/portscan.txt: {e}")
+
+    else:
+        print("Opção inválida! Escolha 'H' ou 'L'.")
+
+    input("Pressione Enter para continuar...")
 
 
 #-----------------------------------------------------------------------------
@@ -698,23 +708,6 @@ def auto_web():
     
     else:
         main()
-
-#-----------------------------------------------------------------------------
-def ferramentas():
-    print("Esta opção irá instalar um conjunto de ferramentas uteis para RECON + PENTEST.")
-    sit_tool = input('Deseja continuar? (S/N) ')
-    
-
-    #separar as ferramentas
-    #verificar se root ou nao
-    #verificar sistema operacional
-    #verificar se as ferramentas estao instaladas
-    #fazer um menu de check
-    #instalar cada ferramenta
-    try:
-        pass
-    except KeyboardInterrupt:
-        print('\n'+Ctrl_C)
 
 
 #-----------------------------------------------------------------------------
@@ -1952,9 +1945,8 @@ def banner():
  \033[0;34m[4]\033[m - BannerGrab
  \033[0;34m[5]\033[m - Web Discovery + Subdomain
  \033[0;34m[6]\033[m - WebCrawler (Bugs)
- \033[0;34m[7]\033[m - FormWeb
+ \033[0;34m[7]\033[m - FormWeb (Descontinuado)
  \033[0;34m[8]\033[m - WifiHacking
- \033[0;34m[9]\033[m - Instalar Ferramentas
  \033[0;34m[10]\033[m- Clonar Part|Disk
  \033[0;34m[11]\033[m- CronTab
  \033[0;34m[12]\033[m- Finder
@@ -1980,21 +1972,20 @@ def banner():
         6: link,
         7: auto_web,
         8: wifi_hacking,
-        9: ferramentas,
-        10: clonar,
-        11: cron,
-        12: finder,
-        13: infosys,
-        14: config,
-        15: linpeas,
-        16: linenum,
-        17: wazuh,
-        18: waza,
-        19: suid,
-        20: nc,
-        21: reverse_shell,
-        22: server_tcp,
-        23: serverhttp,
+        9: clonar,
+        10: cron,
+        11: finder,
+        12: infosys,
+        13: config,
+        14: linpeas,
+        15: linenum,
+        16: wazuh,
+        17: waza,
+        18: suid,
+        19: nc,
+        20: reverse_shell,
+        21: server_tcp,
+        22: serverhttp,
         0: lambda: print(r'Volte sempre! ¯\_(ツ)_/¯') or quit
         }
 
@@ -2004,7 +1995,7 @@ def banner():
         if funcao:
             funcao()
 
-        elif opcao > 24:
+        elif opcao > 23:
             print('Digite uma opção válida!')
             input("Pressione Enter para continuar...")
             main()
