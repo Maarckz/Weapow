@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-version = "v4.212dev"
+version = "v4.213dev"
 
 #########################################
 ## IMPORTAÇÃO DE BIBLIOTECAS PRINCIPAL ##
@@ -2051,6 +2051,7 @@ if os.geteuid() == 0:
     #####################################
     pip_installed = os.system('pip3 --version >/dev/null 2>&1') == 0
     print('Algumas dependências serão instaladas')
+    input('Continuar ...')
     ########################
     ## INSTALAÇÃO DO PIP3 ##
     ########################
@@ -2082,7 +2083,9 @@ if os.geteuid() == 0:
             __import__(package_module)
         except ImportError:
             print(f"{package_name} não está instalado. Instalando...")
-            os.system('mv /usr/local/lib/python3.*/EXTERNALLY-MANAGED /usr/local/lib/python3.*/EXTERNALLY-MANAGED.bkp')
+            p_path = os.popen('find /usr -name EXTERNALLY-MANAGED 2>/dev/null').read()
+            if p_path:
+                os.system(f'mv {p_path} {p_path}.bkp')
             os.system(f'pip3 install {package_module}')
 
     ##########################################################
