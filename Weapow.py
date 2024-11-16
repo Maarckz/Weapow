@@ -7,7 +7,7 @@ version = "v4.214dev"
 import os
 import sys
 import socket
-import signalC
+import signal
 import ipaddress
 import time as t
 import threading as th
