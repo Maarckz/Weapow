@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-version = "v4.213dev"
+version = "v4.214dev"
 
 #########################################
 ## IMPORTAÇÃO DE BIBLIOTECAS PRINCIPAL ##
