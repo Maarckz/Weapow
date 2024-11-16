@@ -7,7 +7,7 @@ version = "v4.214dev"
 import os
 import sys
 import socket
-import signal
+import signalC
 import ipaddress
 import time as t
 import threading as th
@@ -2051,7 +2051,6 @@ if os.geteuid() == 0:
     #####################################
     pip_installed = os.system('pip3 --version >/dev/null 2>&1') == 0
     print('Algumas dependências serão instaladas')
-    input('Continuar ...')
     ########################
     ## INSTALAÇÃO DO PIP3 ##
     ########################
