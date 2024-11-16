@@ -782,7 +782,7 @@ Você pode conferir a alteração com o comando: "\033[0;34m$ crontab -e\033[m"
 #-----------------------------------------------------------------------------
 def finder():
     try:
-        find = str(input('Digite o .ARQuivo que deseja encontrar: '))
+        find = str(input('Digite o arquivo que deseja encontrar: '))
         print('Procurando com FIND:')
         print('==================================================================================\n')
         os.system(f' find / -name {find} 2>/dev/null | grep {find}')
@@ -1178,6 +1178,13 @@ def wazuh():
         if sit_wazuh.lower() == 's':
             comando = "curl -sO https://packages.wazuh.com/4.9/wazuh-install.sh && sudo bash ./wazuh-install.sh -a"
             os.system(comando)
+            sit_thehive = input('Deseja instalar o TheHive? (S\N)')
+            if sit_thehive.lower() == 's':
+                os.system('wget https://github.com/Maarckz/Maarckz/blob/main/Code/docker-compose.yml')
+                os.system('sudo apt install docker-compose*')
+                os.system('sudo docker-compose up -d')
+            else:
+                main()
         elif sit_wazuh.lower() == 'n':
             main()
         else:
@@ -1947,14 +1954,14 @@ def banner():
  \033[0;34m[6]\033[m - WebCrawler (Bugs)
  \033[0;34m[7]\033[m - FormWeb (Descontinuado)
  \033[0;34m[8]\033[m - WifiHacking
- \033[0;34m[9]\033[m- Clonar Part|Disk
+ \033[0;34m[9]\033[m-  Clonar Part|Disk
  \033[0;34m[10]\033[m- CronTab
  \033[0;34m[11]\033[m- Finder
  \033[0;34m[12]\033[m- EnumLinux Auditor
  \033[0;34m[13]\033[m- Config. Linux
  \033[0;34m[14]\033[m- LinPeas
  \033[0;34m[15]\033[m- LinEnum
- \033[0;34m[16]\033[m- Instalar Wazuh
+ \033[0;34m[16]\033[m- Instalar Wazuh + TheHive
  \033[0;34m[17]\033[m- Waza
  \033[0;34m[18]\033[m- SUID
  \033[0;34m[19]\033[m- Conn. Listen
