@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-version = "v4.213dev"
+version = "v4.214dev"
 
 #########################################
 ## IMPORTAÇÃO DE BIBLIOTECAS PRINCIPAL ##
@@ -1178,7 +1178,7 @@ def wazuh():
         if sit_wazuh.lower() == 's':
             comando = "curl -sO https://packages.wazuh.com/4.9/wazuh-install.sh && sudo bash ./wazuh-install.sh -a"
             os.system(comando)
-            sit_thehive = input('Deseja instalar o TheHive? (S\N)')
+            sit_thehive = input('Deseja instalar o TheHive? (S/N)')
             if sit_thehive.lower() == 's':
                 os.system('wget https://github.com/Maarckz/Maarckz/blob/main/Code/docker-compose.yml')
                 os.system('sudo apt install docker-compose*')
@@ -1826,7 +1826,7 @@ def wifi_hacking():
             with open('WifiCrack/hash.hc22000', 'r') as f:
                 dump = f.read()
         except FileNotFoundError:
-            print('\033[7;31mO .ARQuivo "WifiCrack/*.hc22000" não foi encontrado. Prolongue o DUMP.\033[m')
+            print('\033[7;31mO arquivo "WifiCrack/*.hc22000" não foi encontrado. Prolongue o DUMP.\033[m')
             exit()
 
         for hash in dump.splitlines():
@@ -1844,6 +1844,26 @@ def wifi_hacking():
                             print('#################################################################################################################')
                             os.system(comando)
 
+    def hash_crack():
+        try:
+            os.system('hcxpcapngtool -o WifiCrack/hash.hc22000 -E essidlist dumpfile.pcapng')
+            with open('WifiCrack/hash.hc22000', 'r') as f:
+                dump = f.read()
+        except FileNotFoundError:
+            print('\033[7;31mO .ARQuivo "WifiCrack/*.hc22000" não foi encontrado. Prolongue o DUMP.\033[m')
+            exit()
+
+        for hash in dump.splitlines():
+            nome_hash = hash.split('*')
+            #-1 ?l?u?d
+            comando = f"hashcat -m 22000 WifiCrack/{nome_hash[3]}.hc22000 -a 3 ?1?1?1?1?1?1?1?1 ?d | tee WifiCrack/{nome_hash[3]}.result"
+            t.sleep(0.025)
+            with open(f'WifiCrack/{nome_hash[3]}.hc22000', 'w') as f:
+                f.write(hash)
+            print(nome_hash[3])
+            print('#################################################################################################################')
+            os.system(comando)
+
     def wifi_crack():
         dependencias = ["hcxdumptool", "hashcat", 'xterm']
         for programa in dependencias:
@@ -1853,21 +1873,31 @@ def wifi_hacking():
         os.system('rm -rf WifiCrack')
         os.system('mkdir WifiCrack')
 
-        sitwifi = input('Já existe o .ARQuivo "WifiCrack/hash.hc22000"? (S/N) ').lower()
-        wordlist_dir = input('Digite o PATH das Wordlists CASO queira usar: ')
+        interface = interfaces()
 
-        if sitwifi == 's':
+        sitwifi = input('Já existe o arquivo "WifiCrack/hash.hc22000"? (S/N) ').lower()
+        wordlist_dir = input('Digite o PATH das Wordlists CASO queira usar ou N: ')
+
+        if sitwifi.lower() == 's':
             magic_crack(wordlist_dir)
-        elif sitwifi == 'n':
+        elif sitwifi.lower() == 'n':
             minutos = int(input('\033[7;31mQuantos minutos deseja realizar o DUMP? \033[m'))
 
             os.system('rm dumpfile* essidlist hash.hc22000 2>/dev/null')
             os.system('systemctl stop NetworkManager.service')
             os.system('systemctl stop wpa_supplicant.service')
-            
+            try:
+                #####################################
+                ## CAPTURA DADOS DURANTE 5 MINUTOS ##
+                #####################################
+                t.sleep(2)
+                os.system(f'hcxdumptool -i {interface} --tot={minutos} | tee dumpfile.pcapng')
+                
+            except KeyboardInterrupt:
+                pass
             try:
                 t.sleep(1)
-                os.system(f'sudo hcxdumptool -i {interfaces()} -w dumpfile.pcapng --tot {minutos}')
+                hash_crack()
             except KeyboardInterrupt:
                 print("Processo interrompido pelo usuário.")
             finally:
