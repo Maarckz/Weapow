@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-version = "v4.3dev"
+version = "v4.214dev"
 
 #########################################
 ## IMPORTAÇÃO DE BIBLIOTECAS PRINCIPAL ##
@@ -650,7 +650,7 @@ def auto_web():
     sit_scan = input('Deseja utilizar um (H)ost ou a (L)ista? (H/L): ').lower()
     if sit_scan.lower() == 'h':
         url = input('Digite a URL a ser Verificada:')
-        wget_pg(url, 80)
+        #wget_pg(url, 80)
     elif sit_scan.lower() == 'l':
         ips = os.popen(r'grep -iR -A 5 "<form" .ARQ/WEB | grep -Eo "([0-9]{1,3}\.){3}[0-9]{1,3}" | sort -u').read().split()
 
@@ -1818,10 +1818,9 @@ def serverhttp():
 #=======================================================================================
 def wifi_hacking():
     #########################
-    ## FUNÇÃO PRINCIPAL    ##
     #########################
     def magic_crack(wordlist_dir):
-
+        
         try:
             os.system('hcxpcapngtool -o WifiCrack/hash.hc22000 -E essidlist dumpfile.pcapng')
             with open('WifiCrack/hash.hc22000', 'r') as f:
@@ -1832,6 +1831,7 @@ def wifi_hacking():
 
         for hash in dump.splitlines():
             nome_hash = hash.split('*')
+
             if wordlist_dir:
                 for root, dirs, files in os.walk(wordlist_dir):
                     for file in files:
@@ -1845,6 +1845,9 @@ def wifi_hacking():
                             print('#################################################################################################################')
                             os.system(comando)
 
+            else:
+                pass
+
     def hash_crack():
         try:
             os.system('hcxpcapngtool -o WifiCrack/hash.hc22000 -E essidlist dumpfile.pcapng')
@@ -1857,7 +1860,7 @@ def wifi_hacking():
         for hash in dump.splitlines():
             nome_hash = hash.split('*')
             #-1 ?l?u?d
-            comando = f"hashcat -m 22000 WifiCrack/{nome_hash[3]}.hc22000 -a 3 ?1?1?1?1?1?1?1?1 ?d | tee WifiCrack/{nome_hash[3]}.result"
+            comando = f"hashcat -m 22000 WifiCrack/{nome_hash[3]}.hc22000 -w 3 -D 2 -a 3 ?d?d?d?d?d?d?d?d | tee WifiCrack/{nome_hash[3]}.result"
             t.sleep(0.025)
             with open(f'WifiCrack/{nome_hash[3]}.hc22000', 'w') as f:
                 f.write(hash)
@@ -1880,7 +1883,11 @@ def wifi_hacking():
         wordlist_dir = input('Digite o PATH das Wordlists CASO queira usar ou N: ')
 
         if sitwifi.lower() == 's':
-            magic_crack(wordlist_dir)
+            if "/" in wordlist_dir:
+                magic_crack(wordlist_dir)
+            elif wordlist_dir.lower() == 'n':
+                hash_crack()
+
         elif sitwifi.lower() == 'n':
             interface = interfaces()
             minutos = int(input('\033[7;31mQuantos minutos deseja realizar o DUMP? \033[m'))
@@ -1913,14 +1920,16 @@ def wifi_hacking():
                 
                 os.system('systemctl restart NetworkManager.service')
                 os.system('systemctl restart wpa_supplicant.service')
-        
+            
+
+            if "/" in wordlist_dir :
+                magic_crack(wordlist_dir)
+            elif wordlist_dir.lower() == 'n':
+                hash_crack()
         else:
             print('Entrada inválida.')
         
-        if wordlist_dir:
-            magic_crack(wordlist_dir)
-        elif wordlist_dir.lower() == 'n':
-            hash_crack()
+        
 
     def wifi_scan():
 
@@ -1956,7 +1965,6 @@ def wifi_hacking():
         scan(selected_iface)
 
     def main_menu():
-        while True:
             print("""\n
 ==========================
 MENU DE ATAQUES WI-FI
@@ -1973,7 +1981,7 @@ MENU DE ATAQUES WI-FI
                 wifi_scan()
             elif opcao == "0":
                 print("Encerrando...")
-                break
+                main()
             else:
                 print("Opção inválida! Tente novamente.")
                 t.sleep(2)
@@ -2180,4 +2188,3 @@ if os.geteuid() != 0:
         quit()
 else:
     main()
-
