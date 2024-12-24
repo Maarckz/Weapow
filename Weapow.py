@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-version = "v4.214dev"
+version = "v4.23dev"
 
 #########################################
 ## IMPORTAÇÃO DE BIBLIOTECAS PRINCIPAL ##
@@ -2188,3 +2188,4 @@ if os.geteuid() != 0:
         quit()
 else:
     main()
+
